@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.HomeController"
+            prefWidth="1280" prefHeight="800"
+            styleClass="student-root">
+
+    <!-- ===== NAVBAR EN HAUT ===== -->
+    <top>
+        <HBox styleClass="navbar" alignment="CENTER_LEFT" prefHeight="65" spacing="0">
+            <padding><Insets top="0" left="24" right="24" bottom="0"/></padding>
+
+            <!-- Logo -->
+            <HBox spacing="8" alignment="CENTER_LEFT" prefWidth="160">
+                <Label text="🎓" styleClass="nav-logo-icon"/>
+                <Label text="Fluently" styleClass="nav-logo-text"/>
+            </HBox>
+
+            <!-- Liens de navigation au centre -->
+            <HBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4">
+                <Button fx:id="btnAccueil" text="Accueil"
+                        styleClass="nav-link,nav-link-active"
+                        onAction="#showAccueil"/>
+                <Button fx:id="btnLangues" text="Langues"
+                        styleClass="nav-link"
+                        onAction="#showLangues"/>
+                <Button fx:id="btnTests" text="Tests"
+                        styleClass="nav-link"
+                        onAction="#showMesTests"/>
+                <Button fx:id="btnGroupes" text="Groupes"
+                        styleClass="nav-link"
+                        onAction="#showGroupes"/>
+                <Button fx:id="btnSessions" text="Sessions"
+                        styleClass="nav-link"
+                        onAction="#showSessions"/>
+                <Button fx:id="btnObjectifs" text="Objectifs"
+                        styleClass="nav-link"
+                        onAction="#showObjectifs"/>
+            </HBox>
+
+            <!-- Utilisateur à droite -->
+            <HBox fx:id="navUserPill" styleClass="nav-user-pill"
+                  spacing="6" alignment="CENTER" prefWidth="160"
+                  onMouseClicked="#showUserMenu">
+                <Label text="👤" styleClass="nav-logo-icon"/>
+                <Label fx:id="navUsername" text="Emna" styleClass="nav-user-name"/>
+                <Label text="(online)" styleClass="online-dot"/>
+                <Label text="▾" styleClass="nav-arrow"/>
+            </HBox>
+        </HBox>
+    </top>
+
+    <!-- ===== ZONE CENTRALE DYNAMIQUE ===== -->
+    <center>
+        <StackPane fx:id="contentArea"/>
+    </center>
+
+</BorderPane>
