@@ -1,4 +1,4 @@
-package com.example.pijava_fluently;
+package com.example.pijava_fluently.controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -18,16 +18,25 @@ import java.util.ResourceBundle;
 
 public class HomeController implements Initializable {
 
-    @FXML private StackPane contentArea;
-    @FXML private Label navUsername;
-    @FXML private HBox navUserPill;
+    @FXML
+    private StackPane contentArea;
+    @FXML
+    private Label navUsername;
+    @FXML
+    private HBox navUserPill;
 
-    @FXML private Button btnAccueil;
-    @FXML private Button btnLangues;
-    @FXML private Button btnTests;
-    @FXML private Button btnGroupes;
-    @FXML private Button btnSessions;
-    @FXML private Button btnObjectifs;
+    @FXML
+    private Button btnAccueil;
+    @FXML
+    private Button btnLangues;
+    @FXML
+    private Button btnTests;
+    @FXML
+    private Button btnGroupes;
+    @FXML
+    private Button btnSessions;
+    @FXML
+    private Button btnObjectifs;
 
     private ContextMenu userMenu;
 
@@ -113,7 +122,7 @@ public class HomeController implements Initializable {
     private void loadView(String fxmlFile) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/" + fxmlFile)
+                    getClass().getResource("/com/example/pijava_fluently/fxml/" + fxmlFile)
             );
             Node view = loader.load();
             if (contentArea != null) {
@@ -153,12 +162,12 @@ public class HomeController implements Initializable {
     private void navigateToLogin() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/login.fxml")
+                    getClass().getResource("/com/example/pijava_fluently/fxml/login.fxml")
             );
             Parent root = loader.load();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(
-                    getClass().getResource("/com/example/pijava_fluently/fluently.css").toExternalForm()
+                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
             );
             Stage stage = (Stage) navUsername.getScene().getWindow();
             stage.setScene(scene);

@@ -1,4 +1,4 @@
-package com.example.pijava_fluently;
+package com.example.pijava_fluently.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
