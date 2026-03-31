@@ -8,7 +8,7 @@
 
 <StackPane xmlns="http://javafx.com/javafx/17"
            xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.example.pijava_fluently.LoginController"
+           fx:controller="com.example.pijava_fluently.controller.LoginController"
            prefWidth="1000" prefHeight="650"
            styleClass="root-pane">
 

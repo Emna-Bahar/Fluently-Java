@@ -1,4 +1,4 @@
-package com.example.pijava_fluently;
+package com.example.pijava_fluently.controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -144,11 +144,11 @@ public class LoginController {
 
     private void navigateTo(String fxmlFile, String title) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/" + fxmlFile));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/fxml/" + fxmlFile));
             Parent root = loader.load();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(
-                    getClass().getResource("/com/example/pijava_fluently/fluently.css").toExternalForm()
+                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
             );
             Stage stage = (Stage) loginEmail.getScene().getWindow();
             stage.setTitle(title);
