@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.NiveauController"
+      spacing="20" styleClass="content-area">
+    <padding><Insets top="32" left="32" right="32" bottom="32"/></padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="16">
+        <Label text="📶 Gestion des Niveaux" styleClass="page-title" HBox.hgrow="ALWAYS"/>
+        <Button text="＋ Ajouter" styleClass="btn-primary" onAction="#handleAjouter"/>
+    </HBox>
+
+    <VBox fx:id="formCard" styleClass="table-card" spacing="16" visible="false" managed="false">
+        <padding><Insets top="20" left="20" right="20" bottom="20"/></padding>
+        <Label fx:id="formTitle" text="Nouveau Niveau" styleClass="table-title"/>
+        <GridPane hgap="16" vgap="12">
+            <TextField fx:id="fieldTitre"         promptText="Titre"           GridPane.columnIndex="0" GridPane.rowIndex="0" prefWidth="200"/>
+            <TextField fx:id="fieldDescription"   promptText="Description"     GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="200"/>
+            <TextField fx:id="fieldDifficulte"    promptText="Difficulté"      GridPane.columnIndex="0" GridPane.rowIndex="1" prefWidth="200"/>
+            <TextField fx:id="fieldOrdre"         promptText="Ordre"           GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="200"/>
+            <TextField fx:id="fieldScoreMin"      promptText="Score min"       GridPane.columnIndex="0" GridPane.rowIndex="2" prefWidth="200"/>
+            <TextField fx:id="fieldScoreMax"      promptText="Score max"       GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="200"/>
+            <TextField fx:id="fieldImageCouverture" promptText="Image (url)"   GridPane.columnIndex="0" GridPane.rowIndex="3" prefWidth="200"/>
+            <ComboBox  fx:id="comboLangue"        promptText="Langue"          GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="200"/>
+        </GridPane>
+        <HBox spacing="10">
+            <Button text="💾 Enregistrer" styleClass="btn-primary" onAction="#handleSave"/>
+            <Button text="Annuler"         styleClass="btn-secondary" onAction="#handleCancel"/>
+        </HBox>
+    </VBox>
+
+    <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
+        <HBox styleClass="table-header" alignment="CENTER_LEFT">
+            <padding><Insets top="14" left="20" right="20" bottom="14"/></padding>
+            <Label text="Liste des Niveaux" styleClass="table-title" HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="searchField" promptText="🔍 Rechercher..." prefWidth="220"
+                       onKeyReleased="#handleSearch"/>
+        </HBox>
+        <TableView fx:id="tableNiveaux" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colId"          text="ID"          prefWidth="50"/>
+                <TableColumn fx:id="colTitre"       text="Titre"       prefWidth="130"/>
+                <TableColumn fx:id="colDifficulte"  text="Difficulté"  prefWidth="100"/>
+                <TableColumn fx:id="colOrdre"       text="Ordre"       prefWidth="70"/>
+                <TableColumn fx:id="colScoreMin"    text="Score min"   prefWidth="90"/>
+                <TableColumn fx:id="colScoreMax"    text="Score max"   prefWidth="90"/>
+                <TableColumn fx:id="colLangue"      text="Langue"      prefWidth="110"/>
+                <TableColumn fx:id="colActions"     text="Actions"     prefWidth="160"/>
+            </columns>
+        </TableView>
+    </VBox>
+</VBox>
