@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.LangueController"
+      spacing="0" style="-fx-background-color:#F8F9FD;">
+
+    <!-- ══ HEADER ══ -->
+    <HBox alignment="CENTER_LEFT" spacing="16"
+          style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+        <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
+        <VBox HBox.hgrow="ALWAYS" spacing="3">
+            <Label text="🌍  Gestion des Langues"
+                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+            <Label text="Ajoutez, modifiez ou supprimez les langues disponibles sur Fluently"
+                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+        </VBox>
+        <Button text="＋  Ajouter une langue"
+                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;-fx-cursor:hand;"
+                onAction="#handleAjouter"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background:transparent;-fx-background-color:transparent;">
+        <VBox spacing="20">
+            <padding><Insets top="28" left="32" right="32" bottom="28"/></padding>
+
+            <!-- ══ FORMULAIRE ══ -->
+            <VBox fx:id="formCard" visible="false" managed="false" spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+
+                <!-- Titre formulaire -->
+                <HBox alignment="CENTER_LEFT" spacing="10"
+                      style="-fx-background-color:#6C63FF;-fx-background-radius:16 16 0 0;-fx-padding:18 24 18 24;">
+                    <Label fx:id="formTitleIcon" text="✚"
+                           style="-fx-font-size:16px;-fx-text-fill:white;"/>
+                    <Label fx:id="formTitle" text="Nouvelle Langue"
+                           style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                </HBox>
+
+                <VBox spacing="20">
+                    <padding><Insets top="28" left="28" right="28" bottom="28"/></padding>
+
+                    <!-- Ligne 1 : Nom + Popularité -->
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Nom de la langue *"
+                                   style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <TextField fx:id="fieldNom" promptText="Ex: Français, English…"
+                                       style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14 10 14;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Popularité"
+                                   style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <ComboBox fx:id="comboPopularite" maxWidth="Infinity"
+                                      promptText="Sélectionner…"
+                                      style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Ligne 2 : Description -->
+                    <VBox spacing="6">
+                        <Label text="Description"
+                               style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                        <TextArea fx:id="fieldDescription" promptText="Décrivez brièvement cette langue…"
+                                  prefRowCount="3" wrapText="true"
+                                  style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14 10 14;-fx-font-size:13px;"/>
+                    </VBox>
+
+                    <!-- Ligne 3 : Image drapeau -->
+                    <VBox spacing="8">
+                        <Label text="Drapeau (image)"
+                               style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <!-- Preview -->
+                            <StackPane fx:id="imagePreviewPane"
+                                       style="-fx-background-color:#F4F5FA;-fx-background-radius:12;-fx-border-color:#E0E3F0;-fx-border-radius:12;"
+                                       prefWidth="80" prefHeight="60">
+                                <ImageView fx:id="imagePreview" fitWidth="70" fitHeight="50"
+                                           preserveRatio="true"/>
+                                <Label fx:id="imagePlaceholder" text="🖼"
+                                       style="-fx-font-size:24px;-fx-text-fill:#C0C4D8;"/>
+                            </StackPane>
+                            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                <TextField fx:id="fieldDrapeau" promptText="Chemin de l'image sélectionnée…"
+                                           editable="false"
+                                           style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14 10 14;-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+                                <Button text="📁  Choisir une image"
+                                        style="-fx-background-color:#EEF0FF;-fx-text-fill:#6C63FF;-fx-font-weight:bold;-fx-font-size:12px;-fx-background-radius:8;-fx-padding:8 16 8 16;-fx-cursor:hand;"
+                                        onAction="#handleChooseImage"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Ligne 4 : isActive -->
+                    <HBox spacing="12" alignment="CENTER_LEFT"
+                          style="-fx-background-color:#F4F5FA;-fx-background-radius:12;-fx-padding:14 18 14 18;">
+                        <CheckBox fx:id="checkActive"/>
+                        <VBox spacing="2">
+                            <Label text="Langue active"
+                                   style="-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                            <Label text="Si cochée, cette langue sera visible et accessible aux étudiants"
+                                   style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Boutons -->
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Annuler"
+                                style="-fx-background-color:#F4F5FA;-fx-text-fill:#4A4D6A;-fx-font-size:13px;-fx-background-radius:10;-fx-padding:10 22 10 22;-fx-cursor:hand;-fx-border-color:#E0E3F0;-fx-border-radius:10;"
+                                onAction="#handleCancel"/>
+                        <Button text="💾  Enregistrer"
+                                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 24 10 24;-fx-cursor:hand;"
+                                onAction="#handleSave"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- ══ TABLE ══ -->
+            <VBox spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+
+                <!-- Header table -->
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-padding:18 24 18 24;-fx-border-color:#F0F1F7;-fx-border-width:0 0 1 0;">
+                    <VBox HBox.hgrow="ALWAYS" spacing="2">
+                        <Label text="Liste des Langues"
+                               style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                        <Label fx:id="countLabel" text="0 langue(s)"
+                               style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+                    </VBox>
+                    <!-- Barre de recherche -->
+                    <HBox alignment="CENTER_LEFT" spacing="8"
+                          style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-padding:8 14 8 14;-fx-border-color:#E0E3F0;-fx-border-radius:10;"
+                          prefWidth="260">
+                        <Label text="🔍" style="-fx-font-size:13px;"/>
+                        <TextField fx:id="searchField" promptText="Rechercher une langue…"
+                                   HBox.hgrow="ALWAYS" onKeyReleased="#handleSearch"
+                                   style="-fx-background-color:transparent;-fx-border-color:transparent;-fx-font-size:13px;-fx-padding:0;"/>
+                    </HBox>
+                </HBox>
+
+                <!-- TableView -->
+                <TableView fx:id="tableLangues" VBox.vgrow="ALWAYS"
+                           style="-fx-background-color:transparent;-fx-border-color:transparent;"
+                           prefHeight="420">
+                    <columns>
+                        <TableColumn fx:id="colId"          text="ID"          prefWidth="55"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colDrapeau"     text="Drapeau"      prefWidth="90"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colNom"         text="Nom"          prefWidth="150"/>
+                        <TableColumn fx:id="colDescription" text="Description"  prefWidth="250"/>
+                        <TableColumn fx:id="colPopularite"  text="Popularité"   prefWidth="110" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActive"      text="Statut"       prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActions"     text="Actions"      prefWidth="180" style="-fx-alignment:CENTER;"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="Aucune langue trouvée."
+                               style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;"/>
+                    </placeholder>
+                </TableView>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

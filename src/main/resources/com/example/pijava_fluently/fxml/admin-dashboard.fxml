@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
@@ -30,19 +29,33 @@
             </Label>
 
             <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="sidebar-scroll">
-
                 <VBox spacing="2">
                     <padding><Insets top="4" left="8" right="8" bottom="8"/></padding>
 
-                    <!-- Utilisateurs (simple bouton, pas de sous-menu) -->
+                    <!-- Utilisateurs -->
                     <Button fx:id="navEtudiants" text="👥  Utilisateurs"
                             styleClass="nav-btn" maxWidth="Infinity"
                             onAction="#showEtudiants"/>
 
-                    <!-- Langues (simple) -->
-                    <Button fx:id="navLangues" text="🌍  Langues"
-                            styleClass="nav-btn" maxWidth="Infinity"
-                            onAction="#showLangues"/>
+                    <!-- Langues — menu déroulant -->
+                    <VBox styleClass="nav-group">
+                        <Button fx:id="navLanguesToggle" text="🌍  Langues  ▾"
+                                styleClass="nav-btn" maxWidth="Infinity"
+                                onAction="#toggleLangues"/>
+                        <VBox fx:id="languesSubmenu" visible="false" managed="false"
+                              styleClass="nav-submenu" spacing="1">
+                            <padding><Insets top="2" left="16" bottom="2"/></padding>
+                            <Button text="• Langues"
+                                    styleClass="nav-btn-sub" maxWidth="Infinity"
+                                    onAction="#showLangues"/>
+                            <Button text="• Niveaux"
+                                    styleClass="nav-btn-sub" maxWidth="Infinity"
+                                    onAction="#showNiveaux"/>
+                            <Button text="• Cours"
+                                    styleClass="nav-btn-sub" maxWidth="Infinity"
+                                    onAction="#showCours"/>
+                        </VBox>
+                    </VBox>
 
                     <!-- Tests — menu déroulant -->
                     <VBox styleClass="nav-group">
@@ -52,22 +65,22 @@
                         <VBox fx:id="testsSubmenu" visible="false" managed="false"
                               styleClass="nav-submenu" spacing="1">
                             <padding><Insets top="2" left="16" bottom="2"/></padding>
-                            <Button fx:id="navTests" text="• Tests"
+                            <Button text="• Tests"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showTests"/>
-                            <Button fx:id="navQuestions" text="• Questions"
+                            <Button text="• Questions"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showQuestions"/>
-                            <Button fx:id="navReponses" text="• Réponses"
+                            <Button text="• Réponses"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showReponses"/>
-                            <Button fx:id="navPassages" text="• Passage de tests"
+                            <Button text="• Passage de tests"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showPassages"/>
                         </VBox>
                     </VBox>
 
-                    <!-- Groupes (simple) -->
+                    <!-- Groupes -->
                     <Button fx:id="navGroupes" text="💬  Groupes"
                             styleClass="nav-btn" maxWidth="Infinity"
                             onAction="#showGroupes"/>
@@ -80,10 +93,10 @@
                         <VBox fx:id="sessionsSubmenu" visible="false" managed="false"
                               styleClass="nav-submenu" spacing="1">
                             <padding><Insets top="2" left="16" bottom="2"/></padding>
-                            <Button fx:id="navSessionsList" text="• Liste Sessions"
+                            <Button text="• Liste Sessions"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showSessions"/>
-                            <Button fx:id="navReservations" text="• Réservations"
+                            <Button text="• Réservations"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showReservations"/>
                         </VBox>
@@ -97,10 +110,10 @@
                         <VBox fx:id="objectifsSubmenu" visible="false" managed="false"
                               styleClass="nav-submenu" spacing="1">
                             <padding><Insets top="2" left="16" bottom="2"/></padding>
-                            <Button fx:id="navObjectifsList" text="• Objectifs"
+                            <Button text="• Objectifs"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showObjectifs"/>
-                            <Button fx:id="navTaches" text="• Tâches"
+                            <Button text="• Tâches"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showTaches"/>
                         </VBox>
@@ -146,7 +159,7 @@
                 </HBox>
             </HBox>
 
-            <!-- Content -->
+            <!-- Zone de contenu — toutes les vues empilées -->
             <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" styleClass="content-scroll">
                 <VBox styleClass="content-area" spacing="0">
                     <padding><Insets top="32" left="32" right="32" bottom="32"/></padding>
@@ -196,44 +209,46 @@
                             <TableView fx:id="recentPassagesTable" prefHeight="220">
                                 <columns>
                                     <TableColumn fx:id="colEtudiant" text="Étudiant" prefWidth="200"/>
-                                    <TableColumn fx:id="colTest" text="Test" prefWidth="200"/>
-                                    <TableColumn fx:id="colScore" text="Score" prefWidth="100"/>
-                                    <TableColumn fx:id="colStatut" text="Statut" prefWidth="120"/>
-                                    <TableColumn fx:id="colDate" text="Date" prefWidth="150"/>
+                                    <TableColumn fx:id="colTest"     text="Test"     prefWidth="200"/>
+                                    <TableColumn fx:id="colScore"    text="Score"    prefWidth="100"/>
+                                    <TableColumn fx:id="colStatut"   text="Statut"   prefWidth="120"/>
+                                    <TableColumn fx:id="colDate"     text="Date"     prefWidth="150"/>
                                 </columns>
                             </TableView>
                         </VBox>
                     </VBox>
 
-                    <VBox fx:id="testsView" visible="false" managed="false" spacing="16">
-                        <Label text="📝 Gestion des Tests" styleClass="page-title"/>
-                        <Label text="À implémenter — liste des tests depuis la DB" styleClass="loading-label"/>
-                    </VBox>
-                    <VBox fx:id="questionsView" visible="false" managed="false" spacing="16">
-                        <Label text="❓ Gestion des Questions" styleClass="page-title"/>
-                        <Label text="À implémenter" styleClass="loading-label"/>
-                    </VBox>
-                    <VBox fx:id="reponsesView" visible="false" managed="false" spacing="16">
-                        <Label text="✅ Gestion des Réponses" styleClass="page-title"/>
-                        <Label text="À implémenter" styleClass="loading-label"/>
-                    </VBox>
-                    <VBox fx:id="passagesView" visible="false" managed="false" spacing="16">
-                        <Label text="📋 Passages de Tests" styleClass="page-title"/>
-                        <Label text="À implémenter" styleClass="loading-label"/>
-                    </VBox>
-                    <VBox fx:id="etudiantsView" visible="false" managed="false" spacing="16">
+                    <!-- LANGUES — conteneur vide, rempli dynamiquement -->
+                    <VBox fx:id="languesView"  visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="niveauxView"  visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="coursView"    visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+
+                    <!-- AUTRES VUES placeholder -->
+                    <VBox fx:id="etudiantsView"   visible="false" managed="false" spacing="16">
                         <Label text="👥 Gestion des Utilisateurs" styleClass="page-title"/>
                         <Label text="À implémenter" styleClass="loading-label"/>
                     </VBox>
-                    <VBox fx:id="languesView" visible="false" managed="false" spacing="16">
-                        <Label text="🌍 Gestion des Langues" styleClass="page-title"/>
+                    <VBox fx:id="testsView"       visible="false" managed="false" spacing="16">
+                        <Label text="📝 Gestion des Tests" styleClass="page-title"/>
                         <Label text="À implémenter" styleClass="loading-label"/>
                     </VBox>
-                    <VBox fx:id="groupesView" visible="false" managed="false" spacing="16">
+                    <VBox fx:id="questionsView"   visible="false" managed="false" spacing="16">
+                        <Label text="❓ Gestion des Questions" styleClass="page-title"/>
+                        <Label text="À implémenter" styleClass="loading-label"/>
+                    </VBox>
+                    <VBox fx:id="reponsesView"    visible="false" managed="false" spacing="16">
+                        <Label text="✅ Gestion des Réponses" styleClass="page-title"/>
+                        <Label text="À implémenter" styleClass="loading-label"/>
+                    </VBox>
+                    <VBox fx:id="passagesView"    visible="false" managed="false" spacing="16">
+                        <Label text="📋 Passages de Tests" styleClass="page-title"/>
+                        <Label text="À implémenter" styleClass="loading-label"/>
+                    </VBox>
+                    <VBox fx:id="groupesView"     visible="false" managed="false" spacing="16">
                         <Label text="💬 Gestion des Groupes" styleClass="page-title"/>
                         <Label text="À implémenter" styleClass="loading-label"/>
                     </VBox>
-                    <VBox fx:id="sessionsView" visible="false" managed="false" spacing="16">
+                    <VBox fx:id="sessionsView"    visible="false" managed="false" spacing="16">
                         <Label text="📅 Gestion des Sessions" styleClass="page-title"/>
                         <Label text="À implémenter" styleClass="loading-label"/>
                     </VBox>
@@ -241,11 +256,11 @@
                         <Label text="📅 Réservations" styleClass="page-title"/>
                         <Label text="À implémenter" styleClass="loading-label"/>
                     </VBox>
-                    <VBox fx:id="objectifsView" visible="false" managed="false" spacing="16">
+                    <VBox fx:id="objectifsView"   visible="false" managed="false" spacing="16">
                         <Label text="🎯 Gestion des Objectifs" styleClass="page-title"/>
                         <Label text="À implémenter" styleClass="loading-label"/>
                     </VBox>
-                    <VBox fx:id="tachesView" visible="false" managed="false" spacing="16">
+                    <VBox fx:id="tachesView"      visible="false" managed="false" spacing="16">
                         <Label text="✔ Gestion des Tâches" styleClass="page-title"/>
                         <Label text="À implémenter" styleClass="loading-label"/>
                     </VBox>
