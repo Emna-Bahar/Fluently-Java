@@ -1,52 +1,153 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.pijava_fluently.controller.CoursController"
-      spacing="20" styleClass="content-area">
-    <padding><Insets top="32" left="32" right="32" bottom="32"/></padding>
+      spacing="0" style="-fx-background-color:#F8F9FD;">
 
-    <HBox alignment="CENTER_LEFT" spacing="16">
-        <Label text="📚 Gestion des Cours" styleClass="page-title" HBox.hgrow="ALWAYS"/>
-        <Button text="＋ Ajouter" styleClass="btn-primary" onAction="#handleAjouter"/>
+    <!-- HEADER -->
+    <HBox alignment="CENTER_LEFT" spacing="16"
+          style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+        <padding>
+            <Insets top="20" left="32" right="32" bottom="20"/>
+        </padding>
+        <VBox HBox.hgrow="ALWAYS" spacing="3">
+            <Label text="📚 Gestion des Cours"
+                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+            <Label text="Ajoutez, modifiez ou supprimez les cours d'apprentissage"
+                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+        </VBox>
+        <Button text="＋ Ajouter un cours"
+                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;-fx-cursor:hand;"
+                onAction="#handleAjouter"/>
     </HBox>
 
-    <VBox fx:id="formCard" styleClass="table-card" spacing="16" visible="false" managed="false">
-        <padding><Insets top="20" left="20" right="20" bottom="20"/></padding>
-        <Label fx:id="formTitle" text="Nouveau Cours" styleClass="table-title"/>
-        <GridPane hgap="16" vgap="12">
-            <TextField fx:id="fieldNumero"    promptText="Numéro"          GridPane.columnIndex="0" GridPane.rowIndex="0" prefWidth="200"/>
-            <TextField fx:id="fieldRessource" promptText="Ressource (url)" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="200"/>
-            <DatePicker fx:id="fieldDate"     promptText="Date création"   GridPane.columnIndex="0" GridPane.rowIndex="1" prefWidth="200"/>
-            <ComboBox   fx:id="comboNiveau"   promptText="Niveau"          GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="200"/>
-            <ComboBox   fx:id="comboPrecedent" promptText="Cours précédent (optionnel)" GridPane.columnIndex="0" GridPane.rowIndex="2" prefWidth="200"/>
-        </GridPane>
-        <HBox spacing="10">
-            <Button text="💾 Enregistrer" styleClass="btn-primary" onAction="#handleSave"/>
-            <Button text="Annuler"         styleClass="btn-secondary" onAction="#handleCancel"/>
-        </HBox>
-    </VBox>
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background:transparent;-fx-background-color:transparent;">
+        <VBox spacing="20">
+            <padding>
+                <Insets top="28" left="32" right="32" bottom="28"/>
+            </padding>
 
-    <VBox styleClass="table-card" VBox.vgrow="ALWAYS">
-        <HBox styleClass="table-header" alignment="CENTER_LEFT">
-            <padding><Insets top="14" left="20" right="20" bottom="14"/></padding>
-            <Label text="Liste des Cours" styleClass="table-title" HBox.hgrow="ALWAYS"/>
-            <TextField fx:id="searchField" promptText="🔍 Rechercher..." prefWidth="220"
-                       onKeyReleased="#handleSearch"/>
-        </HBox>
-        <TableView fx:id="tableCours" VBox.vgrow="ALWAYS">
-            <columns>
-                <TableColumn fx:id="colId"        text="ID"        prefWidth="50"/>
-                <TableColumn fx:id="colNumero"    text="N°"        prefWidth="60"/>
-                <TableColumn fx:id="colRessource" text="Ressource" prefWidth="200"/>
-                <TableColumn fx:id="colDate"      text="Date"      prefWidth="120"/>
-                <TableColumn fx:id="colNiveau"    text="Niveau"    prefWidth="120"/>
-                <TableColumn fx:id="colPrecedent" text="Précédent" prefWidth="100"/>
-                <TableColumn fx:id="colActions"   text="Actions"   prefWidth="160"/>
-            </columns>
-        </TableView>
-    </VBox>
+            <!-- FORMULAIRE -->
+            <VBox fx:id="formCard" visible="false" managed="false" spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+
+                <HBox alignment="CENTER_LEFT" spacing="10"
+                      style="-fx-background-color:#6C63FF;-fx-background-radius:16 16 0 0;-fx-padding:18 24 18 24;">
+                    <Label fx:id="formTitleIcon" text="✚" style="-fx-font-size:16px;-fx-text-fill:white;"/>
+                    <Label fx:id="formTitle" text="Nouveau Cours"
+                           style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                </HBox>
+
+                <VBox spacing="20">
+                    <padding>
+                        <Insets top="28" left="28" right="28" bottom="28"/>
+                    </padding>
+
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Numéro du cours *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <TextField fx:id="fieldNumero" promptText="1, 2, 3..."
+                                       style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14 10 14;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Niveau *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <ComboBox fx:id="comboNiveau" maxWidth="Infinity"
+                                      promptText="Sélectionner un niveau..."
+                                      style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Date de création *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <DatePicker fx:id="fieldDate" promptText="jj/mm/aaaa"
+                                        style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Cours précédent (optionnel)" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <ComboBox fx:id="comboPrecedent" maxWidth="Infinity"
+                                      promptText="Aucun"
+                                      style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- SECTION RESSOURCES -->
+                    <VBox spacing="12">
+                        <Label text="📎 Ressources du cours" style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                        <ListView fx:id="ressourcesList" prefHeight="120"
+                                  style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;"/>
+                        <HBox spacing="10">
+                            <Button text="📄 Ajouter un fichier"
+                                    style="-fx-background-color:#EEF0FF;-fx-text-fill:#6C63FF;-fx-font-weight:bold;-fx-font-size:12px;-fx-background-radius:8;-fx-padding:8 16 8 16;-fx-cursor:hand;"
+                                    onAction="#handleAddFile"/>
+                            <Button text="🎬 Ajouter un lien YouTube"
+                                    style="-fx-background-color:#EEF0FF;-fx-text-fill:#6C63FF;-fx-font-weight:bold;-fx-font-size:12px;-fx-background-radius:8;-fx-padding:8 16 8 16;-fx-cursor:hand;"
+                                    onAction="#handleAddYoutubeLink"/>
+                            <Button text="🗑 Supprimer sélection"
+                                    style="-fx-background-color:#FFEBEE;-fx-text-fill:#E53935;-fx-font-weight:bold;-fx-font-size:12px;-fx-background-radius:8;-fx-padding:8 16 8 16;-fx-cursor:hand;"
+                                    onAction="#handleRemoveRessource"/>
+                        </HBox>
+                    </VBox>
+
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Annuler"
+                                style="-fx-background-color:#F4F5FA;-fx-text-fill:#4A4D6A;-fx-font-size:13px;-fx-background-radius:10;-fx-padding:10 22 10 22;-fx-cursor:hand;-fx-border-color:#E0E3F0;-fx-border-radius:10;"
+                                onAction="#handleCancel"/>
+                        <Button text="💾 Enregistrer"
+                                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 24 10 24;-fx-cursor:hand;"
+                                onAction="#handleSave"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- TABLE -->
+            <VBox spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-padding:18 24 18 24;-fx-border-color:#F0F1F7;-fx-border-width:0 0 1 0;">
+                    <VBox HBox.hgrow="ALWAYS" spacing="2">
+                        <Label text="📖 Liste des Cours"
+                               style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                        <Label fx:id="countLabel" text="0 cours" style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+                    </VBox>
+                    <HBox alignment="CENTER_LEFT" spacing="8"
+                          style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-padding:8 14 8 14;-fx-border-color:#E0E3F0;-fx-border-radius:10;"
+                          prefWidth="260">
+                        <Label text="🔍" style="-fx-font-size:13px;"/>
+                        <TextField fx:id="searchField" promptText="Rechercher un cours..."
+                                   HBox.hgrow="ALWAYS" onKeyReleased="#handleSearch"
+                                   style="-fx-background-color:transparent;-fx-border-color:transparent;-fx-font-size:13px;-fx-padding:0;"/>
+                    </HBox>
+                </HBox>
+
+                <TableView fx:id="tableCours" VBox.vgrow="ALWAYS" prefHeight="450"
+                           style="-fx-background-color:transparent;-fx-border-color:transparent;">
+                    <columns>
+                        <TableColumn fx:id="colNumero" text="📌 N°" prefWidth="80" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colTitre" text="📖 Titre" prefWidth="220"/>
+                        <TableColumn fx:id="colNiveau" text="🎯 Niveau" prefWidth="150"/>
+                        <TableColumn fx:id="colDate" text="📅 Date" prefWidth="130" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colRessource" text="📎 Ressources" prefWidth="150" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActions" text="⚙️ Actions" prefWidth="310" style="-fx-alignment:CENTER;"/>
+                    </columns>
+                    <placeholder>
+                        <VBox alignment="CENTER" spacing="10">
+                            <padding><Insets top="40" bottom="40"/></padding>
+                            <Label text="📭" style="-fx-font-size:48px;"/>
+                            <Label text="Aucun cours trouvé" style="-fx-font-size:14px;-fx-text-fill:#8A8FA8;"/>
+                            <Label text="Cliquez sur ＋ Ajouter pour commencer" style="-fx-font-size:12px;-fx-text-fill:#C0C4D8;"/>
+                        </VBox>
+                    </placeholder>
+                </TableView>
+            </VBox>
+        </VBox>
+    </ScrollPane>
 </VBox>

@@ -873,3 +873,36 @@
 .sidebar-scroll > .viewport {
     -fx-background-color: transparent;
 }
+
+.langue-card {
+    -fx-translate-y: 0;
+}
+
+.langue-card:hover {
+    -fx-translate-y: -5px;
+}
+/* Badge de popularité */
+.popularity-badge {
+    -fx-background-color: #EEF0FF;
+    -fx-text-fill: #6C63FF;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 4 12 4 12;
+}
+
+/* Style du bouton commencer */
+.start-btn {
+    -fx-background-color: #6C63FF;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 30;
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+}
+
+.start-btn:hover {
+    -fx-background-color: #5849C4;
+}
+
