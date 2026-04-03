@@ -87,7 +87,7 @@ public class HomeController implements Initializable {
 
     @FXML
     public void showLangues() {
-        loadView("langues.fxml");
+        loadView("langues_etudiant.fxml");
         setActiveButton(btnLangues);
     }
 
