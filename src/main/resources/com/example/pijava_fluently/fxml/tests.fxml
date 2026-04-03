@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.TestController"
+      spacing="0" style="-fx-background-color:#F8F9FD;">
+
+    <HBox alignment="CENTER_LEFT" spacing="16" style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+        <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
+        <VBox HBox.hgrow="ALWAYS" spacing="3">
+            <Label text="📝 Gestion des Tests" style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+            <Label text="Créez et gérez les tests de niveau et de fin de niveau" style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+        </VBox>
+        <Button text="＋ Ajouter un test" style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20;-fx-cursor:hand;" onAction="#handleAjouter"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background:transparent;-fx-background-color:transparent;">
+        <VBox spacing="20">
+            <padding><Insets top="28" left="32" right="32" bottom="28"/></padding>
+
+            <!-- FORMULAIRE -->
+            <VBox fx:id="formCard" visible="false" managed="false" spacing="0" style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+                <HBox alignment="CENTER_LEFT" style="-fx-background-color:#6C63FF;-fx-background-radius:16 16 0 0;-fx-padding:18 24;">
+                    <Label fx:id="formTitle" text="Nouveau Test" style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                </HBox>
+                <VBox spacing="16">
+                    <padding><Insets top="24" left="28" right="28" bottom="24"/></padding>
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Titre *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <TextField fx:id="fieldTitre" promptText="Ex: Test de niveau A1" style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Type *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <ComboBox fx:id="comboType" maxWidth="Infinity" promptText="Sélectionner…" style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Durée estimée (min)" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <TextField fx:id="fieldDuree" promptText="Ex: 30" style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="ID Langue" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <TextField fx:id="fieldLangueId" promptText="Ex: 1" style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="ID Niveau" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <TextField fx:id="fieldNiveauId" promptText="Ex: 5" style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Annuler" style="-fx-background-color:#F4F5FA;-fx-text-fill:#4A4D6A;-fx-font-size:13px;-fx-background-radius:10;-fx-padding:10 22;-fx-cursor:hand;-fx-border-color:#E0E3F0;-fx-border-radius:10;" onAction="#handleCancel"/>
+                        <Button text="💾 Enregistrer" style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 24;-fx-cursor:hand;" onAction="#handleSave"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- TABLE -->
+            <VBox spacing="0" style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+                <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding:18 24;-fx-border-color:#F0F1F7;-fx-border-width:0 0 1 0;">
+                    <VBox HBox.hgrow="ALWAYS" spacing="2">
+                        <Label text="📝 Liste des Tests" style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                        <Label fx:id="countLabel" text="0 test(s)" style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+                    </VBox>
+                    <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-padding:8 14;-fx-border-color:#E0E3F0;-fx-border-radius:10;" prefWidth="260">
+                        <Label text="🔍" style="-fx-font-size:13px;"/>
+                        <TextField fx:id="searchField" promptText="Rechercher…" HBox.hgrow="ALWAYS" onKeyReleased="#handleSearch" style="-fx-background-color:transparent;-fx-border-color:transparent;-fx-font-size:13px;-fx-padding:0;"/>
+                    </HBox>
+                </HBox>
+                <TableView fx:id="tableTests" VBox.vgrow="ALWAYS" prefHeight="450" style="-fx-background-color:transparent;-fx-border-color:transparent;">
+                    <columns>
+                        <TableColumn fx:id="colId" text="ID" prefWidth="60" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colTitre" text="Titre" prefWidth="250"/>
+                        <TableColumn fx:id="colType" text="Type" prefWidth="140" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colDuree" text="Durée" prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colLangue" text="Langue ID" prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colNiveau" text="Niveau ID" prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActions" text="Actions" prefWidth="220" style="-fx-alignment:CENTER;"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

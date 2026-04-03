@@ -8,7 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
+import javafx.scene.Node;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -111,21 +111,25 @@ public class AdminDashboardController implements Initializable {
 
     @FXML private void showTests() {
         showView(testsView, "Gestion des Tests", "Administration › Tests › Tests");
+        loadModuleInto(testsView, "tests.fxml");
         setActive(navTests);
     }
 
     @FXML private void showQuestions() {
         showView(questionsView, "Gestion des Questions", "Administration › Tests › Questions");
+        loadModuleInto(questionsView, "questions.fxml");
         setActive(navQuestions);
     }
 
     @FXML private void showReponses() {
         showView(reponsesView, "Gestion des Réponses", "Administration › Tests › Réponses");
+        loadModuleInto(reponsesView, "reponses.fxml");
         setActive(navReponses);
     }
 
     @FXML private void showPassages() {
         showView(passagesView, "Passages de Tests", "Administration › Tests › Passages");
+        loadModuleInto(passagesView, "passages.fxml");
         setActive(navPassages);
     }
 
@@ -213,6 +217,19 @@ public class AdminDashboardController implements Initializable {
             stage.setTitle("Fluently - Connexion");
             stage.setScene(scene);
             stage.centerOnScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadModuleInto(VBox container, String fxmlName) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/" + fxmlName)
+            );
+            Node content = loader.load();
+            container.getChildren().setAll(content);
+            VBox.setVgrow(content, javafx.scene.layout.Priority.ALWAYS);
         } catch (IOException e) {
             e.printStackTrace();
         }
