@@ -27,7 +27,7 @@ public class ReponseController {
     @FXML private ComboBox<Question> comboQuestion;
     @FXML private Label countLabel;
     @FXML private TextField searchField;
-
+    @FXML private Label labelErreur;
     @FXML private TableView<Reponse> tableReponses;
     @FXML private TableColumn<Reponse, Integer>   colId;
     @FXML private TableColumn<Reponse, String>    colContenu;
@@ -176,28 +176,39 @@ public class ReponseController {
     }
 
     @FXML private void handleSave() {
-        if (!validateForm()) return;
+        String erreur = validateForm();
+        if (erreur != null) {
+            afficherErreur(erreur);
+            return;
+        }
+        cacherErreur();
         try {
             int score      = Integer.parseInt(fieldScore.getText().trim());
             int questionId = comboQuestion.getValue().getId();
 
             if (selectedReponse == null) {
+                // dateReponse = aujourd'hui (gérée automatiquement)
                 service.ajouter(new Reponse(
-                        fieldContenu.getText().trim(), checkCorrect.isSelected(),
-                        score, LocalDate.now(), questionId));
+                        fieldContenu.getText().trim(),
+                        checkCorrect.isSelected(),
+                        score,
+                        java.time.LocalDate.now(),
+                        questionId));
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "✅ Réponse ajoutée !");
             } else {
                 selectedReponse.setContenuRep(fieldContenu.getText().trim());
                 selectedReponse.setCorrect(checkCorrect.isSelected());
                 selectedReponse.setScore(score);
                 selectedReponse.setQuestionId(questionId);
+                // On ne change pas la dateReponse lors d'une modification
                 service.modifier(selectedReponse);
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "✅ Réponse modifiée !");
             }
             handleCancel();
             loadData();
         } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.WARNING, "Format invalide", "Le score doit être un nombre.");
+            showAlert(Alert.AlertType.WARNING, "Format invalide",
+                    "⚠ Le score doit être un nombre entier valide.");
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
         }
@@ -222,16 +233,42 @@ public class ReponseController {
         selectedReponse = null;
     }
 
-    private boolean validateForm() {
-        if (fieldContenu.getText().isBlank()) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ Le contenu est obligatoire.");
-            return false;
+    private String validateForm() {
+        // 1. Contenu obligatoire, min 1 caractère
+        String contenu = fieldContenu.getText().trim();
+        if (contenu.isBlank())
+            return "⚠ Le contenu de la réponse est obligatoire.";
+        if (contenu.length() < 1)
+            return "⚠ Le contenu ne peut pas être vide.";
+        if (contenu.length() > 500)
+            return "⚠ Le contenu ne peut pas dépasser 500 caractères.";
+
+        // 2. Score : obligatoire, entier, > 0
+        if (fieldScore.getText().isBlank())
+            return "⚠ Le score est obligatoire.";
+        int score;
+        try {
+            score = Integer.parseInt(fieldScore.getText().trim());
+        } catch (NumberFormatException e) {
+            return "⚠ Le score doit être un nombre entier (ex: 2).";
         }
-        if (comboQuestion.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ Sélectionnez une question.");
-            return false;
-        }
-        return true;
+        if (score <= 0)
+            return "⚠ Le score doit être supérieur à 0.";
+        if (score > 100)
+            return "⚠ Le score ne peut pas dépasser 100.";
+
+        // 3. Question associée obligatoire
+        if (comboQuestion.getValue() == null)
+            return "⚠ Veuillez sélectionner une question associée.";
+
+        // 4. Vérifier cohérence : le score de la réponse ne doit pas
+        //    dépasser le scoreMax de la question
+        int scoreMaxQuestion = comboQuestion.getValue().getScoreMax();
+        if (score > scoreMaxQuestion)
+            return "⚠ Le score (" + score + ") ne peut pas dépasser le score max "
+                    + "de la question (" + scoreMaxQuestion + ").";
+
+        return null; // tout est OK
     }
 
     private void clearForm() {
@@ -244,5 +281,21 @@ public class ReponseController {
     private void showAlert(Alert.AlertType type, String title, String msg) {
         Alert a = new Alert(type, msg, ButtonType.OK);
         a.setTitle(title); a.setHeaderText(null); a.showAndWait();
+    }
+    private void afficherErreur(String message) {
+        if (labelErreur != null) {
+            labelErreur.setText("⚠ " + message);
+            labelErreur.setVisible(true);
+            labelErreur.setManaged(true);
+        } else {
+            showAlert(Alert.AlertType.WARNING, "Validation", message);
+        }
+    }
+
+    private void cacherErreur() {
+        if (labelErreur != null) {
+            labelErreur.setVisible(false);
+            labelErreur.setManaged(false);
+        }
     }
 }

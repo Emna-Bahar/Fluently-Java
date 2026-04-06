@@ -31,6 +31,7 @@ public class TestController {
     @FXML private TableColumn<Test, Integer> colLangue;
     @FXML private TableColumn<Test, Integer> colNiveau;
     @FXML private TableColumn<Test, Void> colActions;
+    @FXML private Label labelErreur;
 
     private final TestService service = new TestService();
     private ObservableList<Test> allData = FXCollections.observableArrayList();
@@ -38,7 +39,7 @@ public class TestController {
 
     @FXML
     public void initialize() {
-        comboType.setItems(FXCollections.observableArrayList("Niveau", "Fin de niveau", "Placement", "Examen"));
+        comboType.setItems(FXCollections.observableArrayList("Test de niveau", "Test de fin de niveau", "quiz_debutant"));
         setupColumns();
         loadData();
     }
@@ -121,34 +122,37 @@ public class TestController {
         formCard.setManaged(true);
     }
 
-    @FXML
-    private void handleSave() {
-        if (!validateForm()) return;
-
+    @FXML private void handleSave() {
+        String erreur = validateForm();
+        if (erreur != null) {
+            afficherErreur(erreur);
+            return;
+        }
+        cacherErreur();
         try {
-            String type = comboType.getValue();
-            String titre = fieldTitre.getText().trim();
-            int duree = Integer.parseInt(fieldDuree.getText().trim());
+            int duree    = Integer.parseInt(fieldDuree.getText().trim());
             int langueId = Integer.parseInt(fieldLangueId.getText().trim());
             int niveauId = Integer.parseInt(fieldNiveauId.getText().trim());
 
             if (selectedTest == null) {
-                service.ajouter(new Test(type, titre, duree, langueId, niveauId));
+                service.ajouter(new Test(
+                        comboType.getValue(), fieldTitre.getText().trim(),
+                        duree, langueId, niveauId));
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "✅ Test ajouté !");
             } else {
-                selectedTest.setType(type);
-                selectedTest.setTitre(titre);
+                selectedTest.setTitre(fieldTitre.getText().trim());
+                selectedTest.setType(comboType.getValue());
                 selectedTest.setDureeEstimee(duree);
                 selectedTest.setLangueId(langueId);
                 selectedTest.setNiveauId(niveauId);
                 service.modifier(selectedTest);
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "✅ Test modifié !");
             }
-
             handleCancel();
             loadData();
         } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.WARNING, "Format invalide", "Durée et IDs doivent être des nombres.");
+            showAlert(Alert.AlertType.WARNING, "Format invalide",
+                    "⚠ La durée doit être un nombre entier valide.");
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
         }
@@ -178,16 +182,39 @@ public class TestController {
         selectedTest = null;
     }
 
-    private boolean validateForm() {
-        if (fieldTitre.getText().isBlank()) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "Le titre est obligatoire.");
-            return false;
+    private String validateForm() {
+        // 1. Titre obligatoire
+        if (fieldTitre.getText().isBlank())
+            return "⚠ Le titre est obligatoire.";
+
+        // Titre : longueur min 3 caractères
+        if (fieldTitre.getText().trim().length() < 3)
+            return "⚠ Le titre doit contenir au moins 3 caractères.";
+
+        // 2. Type obligatoire et dans les valeurs acceptées
+        String type = comboType.getValue();
+        if (type == null)
+            return "⚠ Le type est obligatoire.";
+        if (!type.equals("Test de niveau")
+                && !type.equals("Test de fin de niveau")
+                && !type.equals("quiz_debutant"))
+            return "⚠ Le type doit être : 'Test de niveau', 'Test de fin de niveau' ou 'quiz_debutant'.";
+
+        // 3. Durée : obligatoire, entier, > 0
+        if (fieldDuree.getText().isBlank())
+            return "⚠ La durée estimée est obligatoire.";
+        int duree;
+        try {
+            duree = Integer.parseInt(fieldDuree.getText().trim());
+        } catch (NumberFormatException e) {
+            return "⚠ La durée doit être un nombre entier (ex: 30).";
         }
-        if (comboType.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "Le type est obligatoire.");
-            return false;
-        }
-        return true;
+        if (duree <= 0)
+            return "⚠ La durée doit être supérieure à 0.";
+        if (duree > 300)
+            return "⚠ La durée ne peut pas dépasser 300 minutes.";
+
+        return null; // tout est OK
     }
 
     private void clearForm() {
@@ -203,5 +230,20 @@ public class TestController {
         a.setTitle(title);
         a.setHeaderText(null);
         a.showAndWait();
+    }
+    private void afficherErreur(String message) {
+        if (labelErreur != null) {
+            labelErreur.setText("⚠ " + message);
+            labelErreur.setVisible(true);
+            labelErreur.setManaged(true);
+        } else {
+            showAlert(Alert.AlertType.WARNING, "Validation", message);
+        }
+    }
+    private void cacherErreur() {
+        if (labelErreur != null) {
+            labelErreur.setVisible(false);
+            labelErreur.setManaged(false);
+        }
     }
 }
