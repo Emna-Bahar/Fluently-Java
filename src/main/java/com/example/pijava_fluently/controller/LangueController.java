@@ -66,9 +66,9 @@ public class LangueController {
     @FXML
     public void initialize() {
         comboPopularite.setItems(FXCollections.observableArrayList(
-                "⭐ Très populaire", "🔥 Populaire",
-                "📈 En croissance",  "🌱 Émergente", "💤 Peu demandée"
+                "très haute", "haute", "moyenne", "faible"
         ));
+
         tableLangues.setFixedCellSize(52);
         setupColumns();
         loadData();
