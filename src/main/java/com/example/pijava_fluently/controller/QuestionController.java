@@ -26,7 +26,7 @@ public class QuestionController {
     @FXML private ComboBox<Test> comboTest;
     @FXML private Label countLabel;
     @FXML private TextField searchField;
-
+    @FXML private Label labelErreur;
     @FXML private TableView<Question> tableQuestions;
     @FXML private TableColumn<Question, Integer> colId;
     @FXML private TableColumn<Question, String>  colEnonce;
@@ -184,10 +184,14 @@ public class QuestionController {
     }
 
     @FXML private void handleSave() {
-        if (!validateForm()) return;
+        String erreur = validateForm();
+        if (erreur != null) {
+            afficherErreur(erreur);
+            return;
+        }
+        cacherErreur();
         try {
-            int score  = fieldScoreMax.getText().isBlank() ? 2
-                    : Integer.parseInt(fieldScoreMax.getText().trim());
+            int score  = Integer.parseInt(fieldScoreMax.getText().trim());
             int testId = comboTest.getValue().getId();
 
             if (selectedQuestion == null) {
@@ -207,7 +211,7 @@ public class QuestionController {
             loadData();
         } catch (NumberFormatException e) {
             showAlert(Alert.AlertType.WARNING, "Format invalide",
-                    "Le score doit être un nombre entier.");
+                    "⚠ Le score doit être un nombre entier valide.");
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
         }
@@ -234,21 +238,40 @@ public class QuestionController {
         selectedQuestion = null;
     }
 
-    private boolean validateForm() {
-        if (fieldEnonce.getText().isBlank()) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ L'énoncé est obligatoire.");
-            return false;
+    private String validateForm() {
+        // 1. Énoncé obligatoire, min 5 caractères
+        String enonce = fieldEnonce.getText().trim();
+        if (enonce.isBlank())
+            return "⚠ L'énoncé de la question est obligatoire.";
+        if (enonce.length() < 5)
+            return "⚠ L'énoncé doit contenir au moins 5 caractères.";
+
+        // 2. Type obligatoire et dans les valeurs acceptées
+        String type = comboType.getValue();
+        if (type == null)
+            return "⚠ Le type est obligatoire.";
+        if (!type.equals("qcm") && !type.equals("oral") && !type.equals("texte_libre"))
+            return "⚠ Le type doit être : 'qcm', 'oral' ou 'texte_libre'.";
+
+        // 3. Score max : obligatoire, entier, > 0
+        if (fieldScoreMax.getText().isBlank())
+            return "⚠ Le score maximum est obligatoire.";
+        int score;
+        try {
+            score = Integer.parseInt(fieldScoreMax.getText().trim());
+        } catch (NumberFormatException e) {
+            return "⚠ Le score doit être un nombre entier (ex: 2).";
         }
-        if (comboType.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ Le type est obligatoire.");
-            return false;
-        }
-        if (comboTest.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis",
-                    "⚠ Sélectionnez un test.");
-            return false;
-        }
-        return true;
+        if (score <= 0)
+            return "⚠ Le score maximum doit être supérieur à 0.";
+        if (score > 100)
+            return "⚠ Le score maximum ne peut pas dépasser 100.";
+
+        // 4. Test associé obligatoire
+        if (comboTest.getValue() == null)
+            return "⚠ Veuillez sélectionner un test associé.";
+
+        return null; // tout est OK
     }
 
     private void clearForm() {
@@ -261,5 +284,21 @@ public class QuestionController {
     private void showAlert(Alert.AlertType type, String title, String msg) {
         Alert a = new Alert(type, msg, ButtonType.OK);
         a.setTitle(title); a.setHeaderText(null); a.showAndWait();
+    }
+    private void afficherErreur(String message) {
+        if (labelErreur != null) {
+            labelErreur.setText("⚠ " + message);
+            labelErreur.setVisible(true);
+            labelErreur.setManaged(true);
+        } else {
+            showAlert(Alert.AlertType.WARNING, "Validation", message);
+        }
+    }
+
+    private void cacherErreur() {
+        if (labelErreur != null) {
+            labelErreur.setVisible(false);
+            labelErreur.setManaged(false);
+        }
     }
 }
