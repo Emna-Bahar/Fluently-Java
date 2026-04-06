@@ -75,6 +75,10 @@ public class HomeController implements Initializable {
         }
     }
 
+    public void setContent(Node node) {
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(node);
+    }
     // ========================
     // NAVIGATION
     // ========================
@@ -87,8 +91,23 @@ public class HomeController implements Initializable {
 
     @FXML
     public void showLangues() {
-        loadView("langues_etudiant.fxml");
-        setActiveButton(btnLangues);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/fxml/langues_etudiant.fxml"));
+            Node view = loader.load();
+
+            // Récupérer le contrôleur et lui passer homeController
+            LanguesEtudiantController controller = loader.getController();
+            controller.setHomeController(this);  // ← AJOUTE CETTE LIGNE !
+
+            if (contentArea != null) {
+                contentArea.getChildren().clear();
+                contentArea.getChildren().add(view);
+            }
+            setActiveButton(btnLangues);
+        } catch (IOException e) {
+            System.err.println("❌ Impossible de charger : langues_etudiant.fxml");
+            e.printStackTrace();
+        }
     }
 
     @FXML

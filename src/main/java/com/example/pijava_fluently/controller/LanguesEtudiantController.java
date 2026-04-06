@@ -4,15 +4,18 @@ import com.example.pijava_fluently.entites.Langue;
 import com.example.pijava_fluently.services.LangueService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.TextAlignment;
-
+import javafx.stage.Stage;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +31,7 @@ public class LanguesEtudiantController {
 
     private final LangueService langueService = new LangueService();
     private List<Langue> allLangues;
+    private HomeController homeController;
 
     @FXML
     public void initialize() {
@@ -36,9 +40,13 @@ public class LanguesEtudiantController {
         loadLangues();
     }
 
+    public void setHomeController(HomeController homeController) {
+        this.homeController = homeController;
+    }
+
     private void setupFilters() {
         filterPopularite.setItems(javafx.collections.FXCollections.observableArrayList(
-                "⭐ Très populaire", "🔥 Populaire", "📈 En croissance", "🌱 Émergente", "💤 Peu demandée"
+                "très haute", "haute", "moyenne", "faible"
         ));
         filterPopularite.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> applyFilters());
     }
@@ -236,8 +244,7 @@ public class LanguesEtudiantController {
         ));
 
         startBtn.setOnAction(e -> {
-            // À implémenter : ouvrir la page d'apprentissage
-            showAlert("Information", "Démarrage du cours pour " + langue.getNom());
+            ouvrirApprentissage(langue);
         });
 
         card.getChildren().addAll(imageContainer, nameLabel, descLabel, popBadge, startBtn);
@@ -247,6 +254,29 @@ public class LanguesEtudiantController {
         VBox.setMargin(popBadge, new Insets(4, 0, 8, 0));
 
         return card;
+    }
+
+    // Méthode pour ouvrir la page d'apprentissage
+    // Méthode pour ouvrir la page d'apprentissage
+    private void ouvrirApprentissage(Langue langue) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/fxml/apprentissage.fxml"));
+            Node apprentissageView = loader.load();
+
+            ApprentissageController controller = loader.getController();
+            controller.setLangue(langue);
+            controller.setHomeController(homeController);
+
+            // Utiliser le HomeController pour changer le contenu
+            if (homeController != null) {
+                // Assure-toi que HomeController a une méthode setContent
+                homeController.setContent(apprentissageView);
+            }
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            showAlert("Erreur", "Impossible d'ouvrir la page d'apprentissage");
+        }
     }
 
     private void showAlert(String title, String message) {
