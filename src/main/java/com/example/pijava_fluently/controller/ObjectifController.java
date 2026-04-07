@@ -1,18 +1,20 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.Objectif;
+import com.example.pijava_fluently.entites.Tache;
 import com.example.pijava_fluently.services.ObjectifService;
+import com.example.pijava_fluently.services.TacheService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.text.Text;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -21,7 +23,6 @@ import java.util.stream.Collectors;
 
 public class ObjectifController {
 
-    // ── Formulaire ─────────────────────────────────────────────────
     @FXML private VBox      formCard;
     @FXML private Label     formTitle;
     @FXML private Label     formTitleIcon;
@@ -31,31 +32,35 @@ public class ObjectifController {
     @FXML private DatePicker fieldDateFin;
     @FXML private ComboBox<String> comboStatut;
     @FXML private TextField fieldIdUser;
-
-    // ── Container cartes ───────────────────────────────────────────
     @FXML private FlowPane  cardsContainer;
     @FXML private TextField searchField;
     @FXML private Label     countLabel;
 
-    // ── State ──────────────────────────────────────────────────────
-    private final ObjectifService service = new ObjectifService();
-    private ObservableList<Objectif> allData = FXCollections.observableArrayList();
-    private Objectif selectedObjectif = null;
+    private final ObjectifService service     = new ObjectifService();
+    private final TacheService    tacheService = new TacheService();
+    private ObservableList<Objectif> allData  = FXCollections.observableArrayList();
+    private Objectif selectedObjectif         = null;
+
+    // Référence au HomeController pour la navigation
+    private HomeController homeController;
 
     private static final String[] STATUTS = {"En cours", "Terminé", "En pause", "Annulé"};
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    // Couleurs pour les cartes (cyclique)
     private static final String[][] CARD_COLORS = {
-            {"#6C63FF", "#8B5CF6"}, // violet
-            {"#3B82F6", "#2563EB"}, // bleu
-            {"#10B981", "#059669"}, // vert
-            {"#F59E0B", "#D97706"}, // orange
-            {"#EF4444", "#DC2626"}, // rouge
-            {"#8B5CF6", "#7C3AED"}, // purple
-            {"#06B6D4", "#0891B2"}, // cyan
-            {"#EC4899", "#DB2777"}, // pink
+            {"#6C63FF", "#8B5CF6"},
+            {"#3B82F6", "#2563EB"},
+            {"#10B981", "#059669"},
+            {"#F59E0B", "#D97706"},
+            {"#EF4444", "#DC2626"},
+            {"#8B5CF6", "#7C3AED"},
+            {"#06B6D4", "#0891B2"},
+            {"#EC4899", "#DB2777"},
     };
+
+    public void setHomeController(HomeController hc) {
+        this.homeController = hc;
+    }
 
     @FXML
     public void initialize() {
@@ -63,14 +68,13 @@ public class ObjectifController {
         loadData();
     }
 
-    // ── Charger et afficher les cartes ─────────────────────────────
     private void loadData() {
         try {
             allData = FXCollections.observableArrayList(service.recuperer());
             renderCards(allData);
             updateCountLabel(allData.size());
         } catch (SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de charger les objectifs : " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
         }
     }
 
@@ -83,7 +87,7 @@ public class ObjectifController {
         }
         if (list.isEmpty()) {
             Label empty = new Label("📭  Aucun objectif trouvé");
-            empty.setStyle("-fx-font-size:16px;-fx-text-fill:#9CA3AF;-fx-padding:40;");
+            empty.setStyle("-fx-font-size:16px;-fx-text-fill:#9CA3AF;-fx-padding:60;");
             cardsContainer.getChildren().add(empty);
         }
     }
@@ -92,115 +96,153 @@ public class ObjectifController {
         String c1 = CARD_COLORS[colorIdx][0];
         String c2 = CARD_COLORS[colorIdx][1];
 
+        // Compter les tâches
+        int nbTaches = 0;
+        try { nbTaches = tacheService.recupererParObjectif(o.getId()).size(); } catch (SQLException ignored) {}
+
         VBox card = new VBox(0);
-        card.setPrefWidth(300);
-        card.setMaxWidth(300);
+        card.setPrefWidth(295);
+        card.setMaxWidth(295);
         card.setStyle(
-                "-fx-background-color:#FFFFFF;" +
-                        "-fx-background-radius:16;" +
-                        "-fx-border-radius:16;" +
-                        "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),18,0,0,4);"
+                "-fx-background-color:#FFFFFF;-fx-background-radius:18;" +
+                        "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),20,0,0,5);"
         );
 
-        // ── Header coloré ──────────────────────────────────────────
-        HBox header = new HBox();
-        header.setPadding(new Insets(18, 18, 14, 18));
-        header.setAlignment(Pos.CENTER_LEFT);
+        // ── Header gradient ────────────────────────────────────────
+        VBox header = new VBox(8);
+        header.setPadding(new Insets(20, 20, 16, 20));
         header.setStyle(
-                "-fx-background-color:linear-gradient(to right," + c1 + "," + c2 + ");" +
-                        "-fx-background-radius:16 16 0 0;"
+                "-fx-background-color:linear-gradient(to bottom right," + c1 + "," + c2 + ");" +
+                        "-fx-background-radius:18 18 0 0;"
         );
 
-        // Icône cercle
-        StackPane iconCircle = new StackPane();
-        iconCircle.setPrefSize(38, 38);
-        iconCircle.setMinSize(38, 38);
-        iconCircle.setStyle(
-                "-fx-background-color:rgba(255,255,255,0.25);" +
-                        "-fx-background-radius:50;"
-        );
+        HBox headerTop = new HBox(10);
+        headerTop.setAlignment(Pos.CENTER_LEFT);
+
+        // Icône
         Label iconLbl = new Label(getStatutIcon(o.getStatut()));
-        iconLbl.setStyle("-fx-font-size:16px;");
-        iconCircle.getChildren().add(iconLbl);
-
-        // Titre
-        Label titreLabel = new Label(o.getTitre() != null ? o.getTitre() : "Sans titre");
-        titreLabel.setStyle(
-                "-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:white;" +
-                        "-fx-wrap-text:true;-fx-max-width:200;"
+        iconLbl.setStyle(
+                "-fx-font-size:18px;-fx-background-color:rgba(255,255,255,0.22);" +
+                        "-fx-background-radius:50;-fx-padding:6 8 6 8;"
         );
-        titreLabel.setWrapText(true);
-        titreLabel.setMaxWidth(200);
 
-        HBox.setMargin(titreLabel, new Insets(0, 0, 0, 12));
-        HBox.setHgrow(titreLabel, Priority.ALWAYS);
-        header.getChildren().addAll(iconCircle, titreLabel);
+        // Compteur tâches
+        Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label tachesCount = new Label("📋 " + nbTaches + " tâche" + (nbTaches > 1 ? "s" : ""));
+        tachesCount.setStyle(
+                "-fx-background-color:rgba(255,255,255,0.22);-fx-text-fill:white;" +
+                        "-fx-font-size:10px;-fx-font-weight:bold;-fx-background-radius:20;-fx-padding:3 9 3 9;"
+        );
+        headerTop.getChildren().addAll(iconLbl, spacer, tachesCount);
+
+        Label titreLabel = new Label(o.getTitre() != null ? o.getTitre() : "Sans titre");
+        titreLabel.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:white;-fx-wrap-text:true;");
+        titreLabel.setWrapText(true);
+
+        header.getChildren().addAll(headerTop, titreLabel);
 
         // ── Corps ──────────────────────────────────────────────────
         VBox body = new VBox(10);
-        body.setPadding(new Insets(14, 18, 6, 18));
+        body.setPadding(new Insets(14, 18, 10, 18));
 
         // Description
         String desc = o.getDescription() != null && !o.getDescription().isBlank()
-                ? (o.getDescription().length() > 80
-                ? o.getDescription().substring(0, 77) + "…"
-                : o.getDescription())
+                ? (o.getDescription().length() > 75 ? o.getDescription().substring(0, 72) + "…" : o.getDescription())
                 : "Aucune description.";
         Label descLabel = new Label(desc);
         descLabel.setStyle("-fx-font-size:12px;-fx-text-fill:#6B7280;-fx-wrap-text:true;");
         descLabel.setWrapText(true);
 
         // Dates
-        HBox datesBox = new HBox(12);
+        HBox datesBox = new HBox(10);
         datesBox.setAlignment(Pos.CENTER_LEFT);
         datesBox.getChildren().addAll(
                 dateBadge("📅 Début", o.getDateDeb(), "#EFF6FF", "#3B82F6"),
-                dateBadge("📅 Fin",   o.getDateFin(), "#FFF7ED", "#EA580C")
+                dateBadge("🏁 Fin",   o.getDateFin(), "#FFF7ED", "#EA580C")
         );
 
-        // Statut badge
+        // Statut
         Label statutBadge = buildStatutBadge(o.getStatut());
 
         body.getChildren().addAll(descLabel, datesBox, statutBadge);
 
         // ── Séparateur ─────────────────────────────────────────────
         Separator sep = new Separator();
-        sep.setStyle("-fx-background-color:#F3F4F6;");
-        VBox.setMargin(sep, new Insets(6, 0, 0, 0));
+        VBox.setMargin(sep, new Insets(4, 0, 0, 0));
 
-        // ── Boutons actions ────────────────────────────────────────
-        HBox actions = new HBox(8);
-        actions.setPadding(new Insets(12, 18, 14, 18));
-        actions.setAlignment(Pos.CENTER);
+        // ── Boutons ────────────────────────────────────────────────
+        VBox actionsBox = new VBox(8);
+        actionsBox.setPadding(new Insets(12, 16, 14, 16));
 
-        Button btnVoir = actionBtn("👁 Détails", "#EFF6FF", "#3B82F6", "#DBEAFE");
-        Button btnEdit = actionBtn("✏ Modifier", c1.replace("FF", "15").replace("B6", "15"), c1, c1.replace("FF", "25").replace("B6", "25"));
-        Button btnDel  = actionBtn("🗑 Supprimer", "#FFF1F2", "#E11D48", "#FFE4E6");
-
-        // Style boutons overrides
-        btnVoir.setStyle("-fx-background-color:#EFF6FF;-fx-text-fill:#3B82F6;-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:6 10 6 10;-fx-cursor:hand;");
+        // Ligne 1 : Détails + Modifier + Supprimer
+        HBox row1 = new HBox(6);
+        row1.setAlignment(Pos.CENTER);
+        Button btnVoir = makeBtn("👁 Détails",   "#EFF6FF", "#3B82F6");
+        Button btnEdit = makeBtn("✏ Modifier",   c1 + "22", c1);
+        Button btnDel  = makeBtn("🗑 Supprimer", "#FFF1F2", "#E11D48");
+        btnVoir.setStyle(btnVoir.getStyle() + "-fx-background-color:#EFF6FF;-fx-text-fill:#3B82F6;");
         btnEdit.setStyle("-fx-background-color:" + c1 + "22;-fx-text-fill:" + c1 + ";-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:6 10 6 10;-fx-cursor:hand;");
         btnDel.setStyle("-fx-background-color:#FFF1F2;-fx-text-fill:#E11D48;-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:6 10 6 10;-fx-cursor:hand;");
+        HBox.setHgrow(btnVoir, Priority.ALWAYS); btnVoir.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(btnEdit, Priority.ALWAYS); btnEdit.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(btnDel,  Priority.ALWAYS); btnDel.setMaxWidth(Double.MAX_VALUE);
+        row1.getChildren().addAll(btnVoir, btnEdit, btnDel);
 
-        btnVoir.setOnAction(e -> showDetails(o));
-        btnEdit.setOnAction(e -> openEditForm(o));
-        btnDel.setOnAction(e  -> handleDelete(o));
+        // Ligne 2 : Voir les tâches (pleine largeur)
+        Button btnTaches = new Button("📋  Voir les tâches (" + nbTaches + ")");
+        btnTaches.setMaxWidth(Double.MAX_VALUE);
+        btnTaches.setStyle(
+                "-fx-background-color:linear-gradient(to right," + c1 + "," + c2 + ");" +
+                        "-fx-text-fill:white;-fx-font-size:12px;-fx-font-weight:bold;" +
+                        "-fx-background-radius:10;-fx-padding:9 0 9 0;-fx-cursor:hand;"
+        );
 
-        HBox.setHgrow(btnVoir, Priority.ALWAYS);
-        HBox.setHgrow(btnEdit, Priority.ALWAYS);
-        HBox.setHgrow(btnDel,  Priority.ALWAYS);
-        btnVoir.setMaxWidth(Double.MAX_VALUE);
-        btnEdit.setMaxWidth(Double.MAX_VALUE);
-        btnDel.setMaxWidth(Double.MAX_VALUE);
+        btnVoir.setOnAction(e   -> showDetails(o));
+        btnEdit.setOnAction(e   -> openEditForm(o));
+        btnDel.setOnAction(e    -> handleDelete(o));
+        btnTaches.setOnAction(e -> ouvrirTaches(o));
 
-        actions.getChildren().addAll(btnVoir, btnEdit, btnDel);
-
-        card.getChildren().addAll(header, body, sep, actions);
-        VBox.setMargin(card, new Insets(0, 0, 0, 0));
-
+        actionsBox.getChildren().addAll(row1, btnTaches);
+        card.getChildren().addAll(header, body, sep, actionsBox);
         return card;
     }
 
+    /** Ouvre la vue des tâches de cet objectif */
+    private void ouvrirTaches(Objectif o) {
+        if (homeController == null) {
+            showAlert(Alert.AlertType.ERROR, "Erreur", "HomeController non initialisé.");
+            return;
+        }
+        try {
+            // ✅ Vérifier d'abord que la ressource existe
+            var resource = getClass().getResource("/com/example/pijava_fluently/fxml/Tache-view.fxml");
+            if (resource == null) {
+                showAlert(Alert.AlertType.ERROR, "Erreur",
+                        "Fichier introuvable : tache-view.fxml\n" +
+                                "Vérifiez le nom et l'emplacement dans src/main/resources/");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(resource);
+            Node view = loader.load();
+            TacheController ctrl = loader.getController();
+            ctrl.setObjectif(o);
+            ctrl.setObjectifController(this);
+            homeController.setContent(view);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de charger la vue des tâches : " + e.getMessage());
+        }
+    }
+    /** Appelé par TacheController pour revenir à la liste des objectifs */
+    public void retourObjectifs() {
+        if (homeController != null) {
+            homeController.showObjectifs();
+        }
+    }
+
+    // ── Helpers visuels ────────────────────────────────────────────
     private VBox dateBadge(String label, LocalDate date, String bg, String fg) {
         VBox box = new VBox(2);
         Label lbl = new Label(label);
@@ -235,15 +277,11 @@ public class ObjectifController {
         };
     }
 
-    private Button actionBtn(String text, String bg, String fg, String hoverBg) {
+    private Button makeBtn(String text, String bg, String fg) {
         Button btn = new Button(text);
         btn.setStyle("-fx-background-color:" + bg + ";-fx-text-fill:" + fg + ";" +
                 "-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:8;" +
                 "-fx-padding:6 10 6 10;-fx-cursor:hand;");
-        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color:" + hoverBg + ";-fx-text-fill:" + fg + ";" +
-                "-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:6 10 6 10;-fx-cursor:hand;"));
-        btn.setOnMouseExited(e  -> btn.setStyle("-fx-background-color:" + bg + ";-fx-text-fill:" + fg + ";" +
-                "-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:6 10 6 10;-fx-cursor:hand;"));
         return btn;
     }
 
@@ -251,106 +289,74 @@ public class ObjectifController {
         countLabel.setText(count + " objectif(s)");
     }
 
-    // ── Recherche ──────────────────────────────────────────────────
     @FXML
     private void handleSearch() {
         String q = searchField.getText().toLowerCase().trim();
-        if (q.isEmpty()) {
-            renderCards(allData);
-            updateCountLabel(allData.size());
-        } else {
-            List<Objectif> filtered = allData.stream()
-                    .filter(o ->
-                            (o.getTitre() != null && o.getTitre().toLowerCase().contains(q)) ||
-                                    (o.getDescription() != null && o.getDescription().toLowerCase().contains(q)) ||
-                                    (o.getStatut() != null && o.getStatut().toLowerCase().contains(q))
-                    ).collect(Collectors.toList());
-            renderCards(filtered);
-            updateCountLabel(filtered.size());
-        }
+        if (q.isEmpty()) { renderCards(allData); updateCountLabel(allData.size()); return; }
+        List<Objectif> filtered = allData.stream()
+                .filter(o -> (o.getTitre() != null && o.getTitre().toLowerCase().contains(q)) ||
+                        (o.getDescription() != null && o.getDescription().toLowerCase().contains(q)) ||
+                        (o.getStatut() != null && o.getStatut().toLowerCase().contains(q)))
+                .collect(Collectors.toList());
+        renderCards(filtered);
+        updateCountLabel(filtered.size());
     }
 
-    // ── Ajouter ────────────────────────────────────────────────────
     @FXML
     private void handleAjouter() {
-        selectedObjectif = null;
-        clearForm();
-        formTitle.setText("Nouvel Objectif");
-        formTitleIcon.setText("✚");
-        formCard.setVisible(true);
-        formCard.setManaged(true);
-        formCard.setStyle(formCard.getStyle().replace("display:none;", ""));
+        selectedObjectif = null; clearForm();
+        formTitle.setText("Nouvel Objectif"); formTitleIcon.setText("✚");
+        formCard.setVisible(true); formCard.setManaged(true);
     }
 
-    // ── Modifier ───────────────────────────────────────────────────
     private void openEditForm(Objectif o) {
         selectedObjectif = o;
         fieldTitre.setText(o.getTitre() != null ? o.getTitre() : "");
         fieldDescription.setText(o.getDescription() != null ? o.getDescription() : "");
-        fieldDateDeb.setValue(o.getDateDeb());
-        fieldDateFin.setValue(o.getDateFin());
+        fieldDateDeb.setValue(o.getDateDeb()); fieldDateFin.setValue(o.getDateFin());
         comboStatut.setValue(o.getStatut());
         fieldIdUser.setText(String.valueOf(o.getIdUserId()));
-        formTitle.setText("Modifier l'Objectif");
-        formTitleIcon.setText("✎");
-        formCard.setVisible(true);
-        formCard.setManaged(true);
+        formTitle.setText("Modifier l'Objectif"); formTitleIcon.setText("✎");
+        formCard.setVisible(true); formCard.setManaged(true);
     }
 
-    // ── Détails ────────────────────────────────────────────────────
     private void showDetails(Objectif o) {
         int colorIdx = (int)(o.getId() % CARD_COLORS.length);
-        String c1 = CARD_COLORS[colorIdx][0];
-        String c2 = CARD_COLORS[colorIdx][1];
+        String c1 = CARD_COLORS[colorIdx][0], c2 = CARD_COLORS[colorIdx][1];
 
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Détails — " + o.getTitre());
-        dialog.setHeaderText(null);
+        dialog.setTitle("Détails — " + o.getTitre()); dialog.setHeaderText(null);
 
-        VBox content = new VBox(0);
-        content.setPrefWidth(500);
+        VBox content = new VBox(0); content.setPrefWidth(500);
 
-        // Header gradient
         VBox header = new VBox(6);
         header.setPadding(new Insets(24, 28, 20, 28));
         header.setStyle("-fx-background-color:linear-gradient(to right," + c1 + "," + c2 + ");");
-        Label titleLbl = new Label(o.getTitre() != null ? o.getTitre() : "Sans titre");
+        Label titleLbl = new Label(o.getTitre() != null ? o.getTitre() : "—");
         titleLbl.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:white;-fx-wrap-text:true;");
         titleLbl.setWrapText(true);
-        Label statutLbl = new Label(getStatutIcon(o.getStatut()) + "  " + (o.getStatut() != null ? o.getStatut() : "—"));
-        statutLbl.setStyle("-fx-font-size:12px;-fx-text-fill:rgba(255,255,255,0.85);-fx-font-weight:bold;");
-        header.getChildren().addAll(titleLbl, statutLbl);
+        Label statLbl = new Label(getStatutIcon(o.getStatut()) + "  " + (o.getStatut() != null ? o.getStatut() : "—"));
+        statLbl.setStyle("-fx-font-size:12px;-fx-text-fill:rgba(255,255,255,0.85);-fx-font-weight:bold;");
+        header.getChildren().addAll(titleLbl, statLbl);
 
-        // Corps
-        VBox body = new VBox(16);
-        body.setPadding(new Insets(20, 28, 20, 28));
-        body.setStyle("-fx-background-color:#FFFFFF;");
-
-        // Grille infos
-        GridPane grid = new GridPane();
-        grid.setHgap(16); grid.setVgap(12);
+        VBox body = new VBox(14); body.setPadding(new Insets(20, 28, 24, 28));
+        GridPane grid = new GridPane(); grid.setHgap(16); grid.setVgap(12);
         grid.setStyle("-fx-background-color:#F8F9FD;-fx-background-radius:12;-fx-padding:16;");
         ColumnConstraints cc1 = new ColumnConstraints(110);
         ColumnConstraints cc2 = new ColumnConstraints(); cc2.setHgrow(Priority.ALWAYS);
         grid.getColumnConstraints().addAll(cc1, cc2);
-
         String ls = "-fx-font-size:11px;-fx-text-fill:#9CA3AF;-fx-font-weight:bold;";
         String vs = "-fx-font-size:13px;-fx-text-fill:#1F2937;-fx-font-weight:bold;";
+        addRow(grid, 0, "ID",          String.valueOf(o.getId()), ls, vs);
+        addRow(grid, 1, "Date début",  o.getDateDeb() != null ? o.getDateDeb().format(FMT) : "—", ls, vs);
+        addRow(grid, 2, "Date fin",    o.getDateFin() != null ? o.getDateFin().format(FMT)  : "—", ls, vs);
+        addRow(grid, 3, "Utilisateur", "User #" + o.getIdUserId(), ls, vs);
 
-        addRow(grid, 0, "ID",           String.valueOf(o.getId()), ls, vs);
-        addRow(grid, 1, "Date début",   o.getDateDeb() != null ? o.getDateDeb().format(FMT) : "—", ls, vs);
-        addRow(grid, 2, "Date fin",     o.getDateFin() != null ? o.getDateFin().format(FMT)  : "—", ls, vs);
-        addRow(grid, 3, "Utilisateur",  "User #" + o.getIdUserId(), ls, vs);
-
-        // Description
         Label descTitle = new Label("📝  Description");
         descTitle.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#374151;");
-        TextArea descArea = new TextArea(
-                o.getDescription() != null && !o.getDescription().isBlank()
-                        ? o.getDescription() : "Aucune description.");
+        TextArea descArea = new TextArea(o.getDescription() != null ? o.getDescription() : "Aucune description.");
         descArea.setEditable(false); descArea.setWrapText(true); descArea.setPrefHeight(80);
-        descArea.setStyle("-fx-background-color:#F9FAFB;-fx-background-radius:10;" +
-                "-fx-border-color:#E5E7EB;-fx-border-radius:10;-fx-font-size:13px;-fx-text-fill:#374151;");
+        descArea.setStyle("-fx-background-color:#F9FAFB;-fx-border-color:#E5E7EB;-fx-border-radius:10;-fx-font-size:13px;");
 
         body.getChildren().addAll(grid, descTitle, descArea);
         content.getChildren().addAll(header, body);
@@ -360,9 +366,8 @@ public class ObjectifController {
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         Button close = (Button) dialog.getDialogPane().lookupButton(ButtonType.CLOSE);
         close.setText("Fermer");
-        close.setStyle("-fx-background-color:" + c1 + ";-fx-text-fill:white;" +
-                "-fx-font-size:13px;-fx-font-weight:bold;" +
-                "-fx-background-radius:8;-fx-padding:8 24 8 24;-fx-cursor:hand;");
+        close.setStyle("-fx-background-color:" + c1 + ";-fx-text-fill:white;-fx-font-size:13px;" +
+                "-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:8 24 8 24;-fx-cursor:hand;");
         dialog.showAndWait();
     }
 
@@ -372,134 +377,77 @@ public class ObjectifController {
         g.add(ll, 0, row); g.add(vv, 1, row);
     }
 
-    // ── Enregistrer ────────────────────────────────────────────────
     @FXML
     private void handleSave() {
         if (!validateForm()) return;
         try {
-            String titre       = fieldTitre.getText().trim();
-            String description = fieldDescription.getText().trim();
-            LocalDate dateDeb  = fieldDateDeb.getValue();
-            LocalDate dateFin  = fieldDateFin.getValue();
-            String statut      = comboStatut.getValue();
-            int idUser         = Integer.parseInt(fieldIdUser.getText().trim());
+            String titre      = fieldTitre.getText().trim();
+            String desc       = fieldDescription.getText().trim();
+            LocalDate dateDeb = fieldDateDeb.getValue();
+            LocalDate dateFin = fieldDateFin.getValue();
+            String statut     = comboStatut.getValue();
+            int idUser        = Integer.parseInt(fieldIdUser.getText().trim());
 
             if (selectedObjectif == null) {
-                service.ajouter(new Objectif(titre, description, dateDeb, dateFin, statut, idUser));
+                service.ajouter(new Objectif(titre, desc, dateDeb, dateFin, statut, idUser));
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "✅ Objectif ajouté !");
             } else {
-                selectedObjectif.setTitre(titre);
-                selectedObjectif.setDescription(description);
-                selectedObjectif.setDateDeb(dateDeb);
-                selectedObjectif.setDateFin(dateFin);
-                selectedObjectif.setStatut(statut);
-                selectedObjectif.setIdUserId(idUser);
+                selectedObjectif.setTitre(titre); selectedObjectif.setDescription(desc);
+                selectedObjectif.setDateDeb(dateDeb); selectedObjectif.setDateFin(dateFin);
+                selectedObjectif.setStatut(statut); selectedObjectif.setIdUserId(idUser);
                 service.modifier(selectedObjectif);
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "✅ Objectif modifié !");
             }
-            handleCancel();
-            loadData();
+            handleCancel(); loadData();
         } catch (NumberFormatException e) {
             showAlert(Alert.AlertType.WARNING, "Validation", "⚠ L'ID utilisateur doit être un entier.");
-            fieldIdUser.requestFocus();
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
         }
     }
 
-    // ── Supprimer ──────────────────────────────────────────────────
     private void handleDelete(Objectif o) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                "Supprimer \"" + o.getTitre() + "\" ?\nCette action est irréversible.",
+                "Supprimer \"" + o.getTitre() + "\" ?\nSes tâches seront aussi supprimées.",
                 ButtonType.YES, ButtonType.NO);
         confirm.setTitle("Confirmation"); confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.YES) {
-                try {
-                    service.supprimer(o.getId());
-                    showAlert(Alert.AlertType.INFORMATION, "Succès", "🗑 Objectif supprimé !");
-                    loadData();
-                } catch (SQLException e) {
-                    showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
-                }
+                try { service.supprimer(o.getId()); loadData(); }
+                catch (SQLException e) { showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage()); }
             }
         });
     }
 
-    // ── Annuler ────────────────────────────────────────────────────
     @FXML
     private void handleCancel() {
-        formCard.setVisible(false);
-        formCard.setManaged(false);
-        clearForm();
-        selectedObjectif = null;
+        formCard.setVisible(false); formCard.setManaged(false);
+        clearForm(); selectedObjectif = null;
     }
 
-    // ── Validation ────────────────────────────────────────────────
     private boolean validateForm() {
         String titre = fieldTitre.getText().trim();
-        if (titre.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ Le titre est obligatoire.");
-            fieldTitre.requestFocus(); return false;
-        }
-        if (titre.length() < 3) {
-            showAlert(Alert.AlertType.WARNING, "Titre trop court", "⚠ Le titre doit contenir au moins 3 caractères.");
-            fieldTitre.requestFocus(); return false;
-        }
-        if (titre.length() > 50) {
-            showAlert(Alert.AlertType.WARNING, "Titre trop long", "⚠ Le titre ne peut pas dépasser 50 caractères.");
-            fieldTitre.requestFocus(); return false;
-        }
+        if (titre.isEmpty()) { showAlert(Alert.AlertType.WARNING, "Requis", "⚠ Le titre est obligatoire."); fieldTitre.requestFocus(); return false; }
+        if (titre.length() < 3) { showAlert(Alert.AlertType.WARNING, "Trop court", "⚠ Minimum 3 caractères."); fieldTitre.requestFocus(); return false; }
+        if (titre.length() > 50) { showAlert(Alert.AlertType.WARNING, "Trop long", "⚠ Maximum 50 caractères."); fieldTitre.requestFocus(); return false; }
         String desc = fieldDescription.getText().trim();
-        if (desc.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ La description est obligatoire.");
-            fieldDescription.requestFocus(); return false;
-        }
-        if (desc.length() > 255) {
-            showAlert(Alert.AlertType.WARNING, "Trop long", "⚠ La description ne peut pas dépasser 255 caractères.");
-            fieldDescription.requestFocus(); return false;
-        }
-        if (fieldDateDeb.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ La date de début est obligatoire.");
-            fieldDateDeb.requestFocus(); return false;
-        }
-        if (fieldDateFin.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ La date de fin est obligatoire.");
-            fieldDateFin.requestFocus(); return false;
-        }
-        if (!fieldDateFin.getValue().isAfter(fieldDateDeb.getValue())) {
-            showAlert(Alert.AlertType.WARNING, "Dates invalides", "⚠ La date de fin doit être après la date de début.");
-            fieldDateFin.requestFocus(); return false;
-        }
-        if (comboStatut.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ Veuillez sélectionner un statut.");
-            comboStatut.requestFocus(); return false;
-        }
+        if (desc.isEmpty()) { showAlert(Alert.AlertType.WARNING, "Requis", "⚠ La description est obligatoire."); fieldDescription.requestFocus(); return false; }
+        if (desc.length() > 255) { showAlert(Alert.AlertType.WARNING, "Trop long", "⚠ Maximum 255 caractères."); fieldDescription.requestFocus(); return false; }
+        if (fieldDateDeb.getValue() == null) { showAlert(Alert.AlertType.WARNING, "Requis", "⚠ Date de début obligatoire."); return false; }
+        if (fieldDateFin.getValue() == null) { showAlert(Alert.AlertType.WARNING, "Requis", "⚠ Date de fin obligatoire."); return false; }
+        if (!fieldDateFin.getValue().isAfter(fieldDateDeb.getValue())) { showAlert(Alert.AlertType.WARNING, "Dates invalides", "⚠ La date de fin doit être après la date de début."); return false; }
+        if (comboStatut.getValue() == null) { showAlert(Alert.AlertType.WARNING, "Requis", "⚠ Sélectionnez un statut."); return false; }
         String idStr = fieldIdUser.getText().trim();
-        if (idStr.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis", "⚠ L'ID utilisateur est obligatoire.");
-            fieldIdUser.requestFocus(); return false;
-        }
-        try {
-            int idUser = Integer.parseInt(idStr);
-            if (idUser <= 0) {
-                showAlert(Alert.AlertType.WARNING, "ID invalide", "⚠ L'ID utilisateur doit être un entier positif.");
-                fieldIdUser.requestFocus(); return false;
-            }
-        } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.WARNING, "ID invalide", "⚠ L'ID utilisateur doit être un nombre entier.");
-            fieldIdUser.requestFocus(); return false;
-        }
+        if (idStr.isEmpty()) { showAlert(Alert.AlertType.WARNING, "Requis", "⚠ L'ID utilisateur est obligatoire."); fieldIdUser.requestFocus(); return false; }
+        try { if (Integer.parseInt(idStr) <= 0) { showAlert(Alert.AlertType.WARNING, "Invalide", "⚠ ID positif requis."); return false; } }
+        catch (NumberFormatException e) { showAlert(Alert.AlertType.WARNING, "Invalide", "⚠ ID doit être un entier."); return false; }
         return true;
     }
 
     private void clearForm() {
-        fieldTitre.clear();
-        fieldDescription.clear();
-        fieldDateDeb.setValue(LocalDate.now());
-        fieldDateFin.setValue(null);
-        comboStatut.setValue(null);
-        fieldIdUser.clear();
+        fieldTitre.clear(); fieldDescription.clear();
+        fieldDateDeb.setValue(LocalDate.now()); fieldDateFin.setValue(null);
+        comboStatut.setValue(null); fieldIdUser.clear();
     }
 
     private void showAlert(Alert.AlertType type, String title, String msg) {
