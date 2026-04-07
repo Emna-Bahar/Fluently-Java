@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.QuestionController"
+      spacing="0" style="-fx-background-color:#F8F9FD;">
+
+    <HBox alignment="CENTER_LEFT" spacing="16"
+          style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+        <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
+        <VBox HBox.hgrow="ALWAYS" spacing="3">
+            <Label text="❓ Gestion des Questions"
+                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+            <Label text="Ajoutez et gérez les questions associées aux tests"
+                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+        </VBox>
+        <Button text="＋ Ajouter une question"
+                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20;-fx-cursor:hand;"
+                onAction="#handleAjouter"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background:transparent;-fx-background-color:transparent;">
+        <VBox spacing="20">
+            <padding><Insets top="28" left="32" right="32" bottom="28"/></padding>
+
+            <!-- FORMULAIRE -->
+            <VBox fx:id="formCard" visible="false" managed="false" spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+                <HBox alignment="CENTER_LEFT"
+                      style="-fx-background-color:#6C63FF;-fx-background-radius:16 16 0 0;-fx-padding:18 24;">
+                    <Label fx:id="formTitle" text="Nouvelle Question"
+                           style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                </HBox>
+                <VBox spacing="16">
+                    <padding><Insets top="24" left="28" right="28" bottom="24"/></padding>
+                    <VBox spacing="6">
+                        <Label text="Énoncé *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                        <TextArea fx:id="fieldEnonce" promptText="Écrivez l'énoncé de la question…"
+                                  prefRowCount="3" wrapText="true"
+                                  style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14;-fx-font-size:13px;"/>
+                    </VBox>
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Type *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <ComboBox fx:id="comboType" maxWidth="Infinity" promptText="Sélectionner…"
+                                      style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Score max" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <TextField fx:id="fieldScoreMax" promptText="Ex: 2"
+                                       style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-padding:10 14;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Test associé *" style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <ComboBox fx:id="comboTest" maxWidth="Infinity" promptText="Sélectionner un test…"
+                                      style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+                    <!-- Dans le formulaire, avant les boutons -->
+                    <Label fx:id="labelErreur" text=""
+                                   visible="false" managed="false"
+                                   wrapText="true"
+                                   style="-fx-font-size:12px;-fx-text-fill:#E11D48;
+                      -fx-background-color:#FFF1F2;-fx-background-radius:8;
+                      -fx-padding:10 14;-fx-border-color:#FECDD3;
+                      -fx-border-radius:8;-fx-border-width:1;"/>
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="Annuler"
+                                style="-fx-background-color:#F4F5FA;-fx-text-fill:#4A4D6A;-fx-font-size:13px;-fx-background-radius:10;-fx-padding:10 22;-fx-cursor:hand;-fx-border-color:#E0E3F0;-fx-border-radius:10;"
+                                onAction="#handleCancel"/>
+                        <Button text="💾 Enregistrer"
+                                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 24;-fx-cursor:hand;"
+                                onAction="#handleSave"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- TABLE -->
+            <VBox spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);">
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-padding:18 24;-fx-border-color:#F0F1F7;-fx-border-width:0 0 1 0;">
+                    <VBox HBox.hgrow="ALWAYS" spacing="2">
+                        <Label text="❓ Liste des Questions"
+                               style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                        <Label fx:id="countLabel" text="0 question(s)"
+                               style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+                    </VBox>
+                    <HBox alignment="CENTER_LEFT" spacing="8"
+                          style="-fx-background-color:#F4F5FA;-fx-background-radius:10;-fx-padding:8 14;-fx-border-color:#E0E3F0;-fx-border-radius:10;"
+                          prefWidth="260">
+                        <Label text="🔍" style="-fx-font-size:13px;"/>
+                        <TextField fx:id="searchField" promptText="Rechercher…"
+                                   HBox.hgrow="ALWAYS" onKeyReleased="#handleSearch"
+                                   style="-fx-background-color:transparent;-fx-border-color:transparent;-fx-font-size:13px;-fx-padding:0;"/>
+                    </HBox>
+                </HBox>
+                <TableView fx:id="tableQuestions" VBox.vgrow="ALWAYS" prefHeight="420"
+                           style="-fx-background-color:transparent;-fx-border-color:transparent;">
+                    <columns>
+                        <TableColumn fx:id="colId"      text="ID"      prefWidth="50"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colEnonce"  text="Énoncé"  prefWidth="280"/>
+                        <TableColumn fx:id="colType"    text="Type"    prefWidth="120" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colScore"   text="Score"   prefWidth="90"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colTest"    text="Test"    prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActions" text="Actions" prefWidth="220" style="-fx-alignment:CENTER;"/>
+                    </columns>
+                    <placeholder>
+                        <VBox alignment="CENTER" spacing="10">
+                            <padding><Insets top="40" bottom="40"/></padding>
+                            <Label text="📭" style="-fx-font-size:48px;"/>
+                            <Label text="Aucune question trouvée" style="-fx-font-size:14px;-fx-text-fill:#8A8FA8;"/>
+                        </VBox>
+                    </placeholder>
+                </TableView>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>
