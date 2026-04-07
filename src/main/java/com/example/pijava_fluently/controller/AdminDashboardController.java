@@ -11,6 +11,7 @@ import java.util.List;
 
 public class AdminDashboardController {
 
+    
     // ── Labels topbar ──────────────────────────────────────────────
     @FXML private Button navEtudiants;
     @FXML private Button navLangues;
