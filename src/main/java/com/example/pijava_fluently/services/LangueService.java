@@ -62,10 +62,12 @@ public class LangueService implements IService<Langue> {
             l.setId(rs.getInt("id"));
             l.setNom(rs.getString("nom"));
             l.setDrapeau(rs.getString("drapeau"));
-            l.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+            Timestamp updatedAt = rs.getTimestamp("updated_at");
+            l.setUpdatedAt(updatedAt != null ? updatedAt.toLocalDateTime() : null);
             l.setDescription(rs.getString("description"));
             l.setPopularite(rs.getString("popularite"));
-            l.setDateAjout(rs.getDate("date_ajout").toLocalDate());
+            Date dateAjout = rs.getDate("date_ajout");
+            l.setDateAjout(dateAjout != null ? dateAjout.toLocalDate() : null);
             l.setActive(rs.getBoolean("is_active"));
             langues.add(l);
         }
