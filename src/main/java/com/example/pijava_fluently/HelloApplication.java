@@ -19,6 +19,7 @@ public class HelloApplication extends Application {
                 )
         );
 
+        
         Scene scene = new Scene(fxmlLoader.load(), 1000, 650);
 
         var css = HelloApplication.class.getResource(
