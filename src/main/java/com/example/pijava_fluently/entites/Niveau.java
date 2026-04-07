@@ -9,7 +9,7 @@ public class Niveau {
     private int ordre;
     private double seuilScoreMax;
     private double seuilScoreMin;
-    private int idLangueId; // FK → langue
+    private int idLangueId;
 
     // Constructeur vide
     public Niveau() {}

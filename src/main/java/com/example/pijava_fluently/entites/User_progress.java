@@ -7,10 +7,10 @@ public class User_progress {
     private int dernierNumeroCours;
     private boolean testNiveauComplete;
     private LocalDateTime dateDerniereActivite;
-    private int userId;              // FK → user
-    private int langueId;            // FK → langue
-    private int niveauActuelId;      // FK → niveau
-    private int dernierCoursCompleteId; // FK → cours
+    private int userId;
+    private int langueId;
+    private int niveauActuelId;
+    private int dernierCoursCompleteId;
 
     // Constructeur vide
     public User_progress() {}

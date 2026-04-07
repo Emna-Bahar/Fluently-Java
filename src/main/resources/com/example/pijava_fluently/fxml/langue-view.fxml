@@ -106,7 +106,13 @@
                                    style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
                         </VBox>
                     </HBox>
-
+                    <Label fx:id="labelErreur" text=""
+                           visible="false" managed="false"
+                           wrapText="true"
+                           style="-fx-font-size:12px;-fx-text-fill:#E11D48;
+              -fx-background-color:#FFF1F2;-fx-background-radius:8;
+              -fx-padding:10 14;-fx-border-color:#FECDD3;
+              -fx-border-radius:8;-fx-border-width:1;"/>
                     <HBox spacing="10" alignment="CENTER_RIGHT">
                         <Button text="Annuler"
                                 style="-fx-background-color:#F4F5FA;-fx-text-fill:#4A4D6A;-fx-font-size:13px;-fx-background-radius:10;-fx-padding:10 22 10 22;-fx-cursor:hand;-fx-border-color:#E0E3F0;-fx-border-radius:10;"
