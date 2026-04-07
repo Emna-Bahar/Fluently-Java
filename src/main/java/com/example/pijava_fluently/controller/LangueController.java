@@ -13,7 +13,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
+import java.util.Arrays;
+import java.util.List;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,6 +41,7 @@ public class LangueController {
     @FXML private ImageView imagePreview;
     @FXML private Label imagePlaceholder;
     @FXML private Label countLabel;
+    @FXML private Label labelErreur;
 
     // ── Table ──────────────────────────────────────────────────────
     @FXML private TableView<Langue> tableLangues;
@@ -504,15 +506,105 @@ public class LangueController {
     }
 
     // ── Validation ─────────────────────────────────────────────────
+    // ── Validation complète du formulaire ─────────────────────────────
     private boolean validateForm() {
-        if (fieldNom.getText().trim().isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Champ requis",
-                    "⚠ Le nom de la langue est obligatoire.");
+        cacherErreur();
+
+        // 1. Validation du nom
+        String nom = fieldNom.getText().trim();
+        if (nom.isEmpty()) {
+            afficherErreur("Le nom de la langue est obligatoire.");
             fieldNom.requestFocus();
+            return false;
+        }
+        if (nom.length() < 2) {
+            afficherErreur("Le nom doit contenir au moins 2 caractères.");
+            fieldNom.requestFocus();
+            return false;
+        }
+        if (nom.length() > 50) {
+            afficherErreur("Le nom ne peut pas dépasser 50 caractères.");
+            fieldNom.requestFocus();
+            return false;
+        }
+        if (!nom.matches("^[a-zA-ZÀ-ÿ\\s\\'\\-]+$")) {
+            afficherErreur("Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes.");
+            fieldNom.requestFocus();
+            return false;
+        }
+
+        // 2. Validation de la description
+        String description = fieldDescription.getText().trim();
+        if (description.isEmpty()) {
+            afficherErreur("La description est obligatoire.");
+            fieldDescription.requestFocus();
+            return false;
+        }
+        if (description.length() < 5) {
+            afficherErreur("La description doit contenir au moins 5 caractères.");
+            fieldDescription.requestFocus();
+            return false;
+        }
+        if (description.length() > 500) {
+            afficherErreur("La description ne peut pas dépasser 500 caractères.");
+            fieldDescription.requestFocus();
+            return false;
+        }
+
+        // 3. Validation de la popularité
+        String popularite = comboPopularite.getValue();
+        if (popularite == null || popularite.isEmpty()) {
+            afficherErreur("Veuillez sélectionner une popularité.");
+            comboPopularite.requestFocus();
+            return false;
+        }
+        List<String> popularitesValides = Arrays.asList("très haute", "haute", "moyenne", "faible");
+        if (!popularitesValides.contains(popularite.toLowerCase())) {
+            afficherErreur("Veuillez sélectionner une popularité valide.");
+            comboPopularite.requestFocus();
+            return false;
+        }
+
+        // 4. Validation du statut (toujours défini)
+        // checkActive est une CheckBox, elle a toujours une valeur (true/false)
+
+        // 5. Validation de l'image (optionnelle mais vérification du fichier)
+        String imagePath = fieldDrapeau.getText().trim();
+        if (selectedImageFile != null && !imagePath.isEmpty()) {
+            if (!selectedImageFile.exists()) {
+                afficherErreur("Le fichier image est introuvable.");
+                return false;
+            }
+            String fileName = selectedImageFile.getName().toLowerCase();
+            if (!fileName.endsWith(".png") && !fileName.endsWith(".jpg") &&
+                    !fileName.endsWith(".jpeg") && !fileName.endsWith(".gif") &&
+                    !fileName.endsWith(".webp") && !fileName.endsWith(".svg")) {
+                afficherErreur("Format d'image non supporté. Utilisez PNG, JPG, JPEG, GIF, WEBP ou SVG.");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ── Vérification de l'unicité du nom (avant sauvegarde) ───────────
+    private boolean isNomUnique(String nom, Integer excludeId) {
+        try {
+            List<Langue> toutesLangues = service.recuperer();
+            for (Langue l : toutesLangues) {
+                if (l.getNom().equalsIgnoreCase(nom)) {
+                    if (excludeId == null || l.getId() != excludeId) {
+                        return false;
+                    }
+                }
+            }
+        } catch (SQLException e) {
             return false;
         }
         return true;
     }
+
+
 
     // ── Clear formulaire ───────────────────────────────────────────
     private void clearForm() {
@@ -531,5 +623,21 @@ public class LangueController {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.showAndWait();
+    }
+    private void afficherErreur(String message) {
+        if (labelErreur != null) {
+            labelErreur.setText("⚠ " + message);
+            labelErreur.setVisible(true);
+            labelErreur.setManaged(true);
+        } else {
+            showAlert(Alert.AlertType.WARNING, "Validation", message);
+        }
+    }
+
+    private void cacherErreur() {
+        if (labelErreur != null) {
+            labelErreur.setVisible(false);
+            labelErreur.setManaged(false);
+        }
     }
 }

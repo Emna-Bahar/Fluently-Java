@@ -15,7 +15,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
+import java.util.Arrays;
+import java.util.List;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,7 +39,7 @@ public class NiveauController {
     @FXML private TextField fieldOrdre;
     @FXML private TextField fieldImageCouverture;
     @FXML private ComboBox<Langue> comboLangue;
-
+    @FXML private Label labelErreur;
     // Image preview
     @FXML private ImageView imagePreview;
     @FXML private Label imagePlaceholder;
@@ -472,6 +473,13 @@ public class NiveauController {
             int ordre = Integer.parseInt(fieldOrdre.getText().trim());
             int idLangue = comboLangue.getValue().getId();
 
+            // Vérifier l'unicité du titre dans la langue
+            if (!isTitreUniqueDansLangue(fieldTitre.getText().trim(), idLangue,
+                    selectedNiveau != null ? selectedNiveau.getId() : null)) {
+                afficherErreur("Un niveau avec ce titre existe déjà pour cette langue.");
+                return;
+            }
+
             String imagePath = selectedNiveau != null ? selectedNiveau.getImageCouverture() : "";
             if (selectedImageFile != null) {
                 imagePath = saveImageToResources(selectedImageFile);
@@ -500,12 +508,11 @@ public class NiveauController {
             handleCancel();
             loadData();
         } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ L'ordre doit être un nombre.");
+            afficherErreur("L'ordre doit être un nombre.");
         } catch (SQLException | IOException e) {
-            showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
+            afficherErreur("Erreur : " + e.getMessage());
         }
     }
-
     private void handleDelete(Niveau n) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 "Supprimer le niveau \"" + n.getTitre() + "\" ?\nCette action est irréversible.",
@@ -534,28 +541,175 @@ public class NiveauController {
         selectedImageFile = null;
     }
 
+    // ── Validation complète du formulaire ─────────────────────────────
     private boolean validateForm() {
-        if (fieldTitre.getText().trim().isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ Le titre est obligatoire.");
+        cacherErreur();
+
+        // 1. Validation du titre
+        String titre = fieldTitre.getText().trim();
+        if (titre.isEmpty()) {
+            afficherErreur("Le titre du niveau est obligatoire.");
             fieldTitre.requestFocus();
             return false;
         }
-        if (comboDifficulte.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ Veuillez sélectionner une difficulté.");
+        if (titre.length() < 3) {
+            afficherErreur("Le titre doit contenir au moins 3 caractères.");
+            fieldTitre.requestFocus();
+            return false;
+        }
+        if (titre.length() > 50) {
+            afficherErreur("Le titre ne peut pas dépasser 50 caractères.");
+            fieldTitre.requestFocus();
+            return false;
+        }
+        if (!titre.matches("^[a-zA-ZÀ-ÿ0-9\\s\\'\\-]+$")) {
+            afficherErreur("Le titre ne peut contenir que des lettres, chiffres, espaces, tirets et apostrophes.");
+            fieldTitre.requestFocus();
+            return false;
+        }
+
+        // 2. Validation de la description
+        String description = fieldDescription.getText().trim();
+        if (description.isEmpty()) {
+            afficherErreur("La description est obligatoire.");
+            fieldDescription.requestFocus();
+            return false;
+        }
+        if (description.length() < 10) {
+            afficherErreur("La description doit contenir au moins 10 caractères.");
+            fieldDescription.requestFocus();
+            return false;
+        }
+        if (description.length() > 500) {
+            afficherErreur("La description ne peut pas dépasser 500 caractères.");
+            fieldDescription.requestFocus();
+            return false;
+        }
+
+        // 3. Validation de la difficulté
+        String difficulte = comboDifficulte.getValue();
+        if (difficulte == null || difficulte.isEmpty()) {
+            afficherErreur("Veuillez sélectionner une difficulté.");
             comboDifficulte.requestFocus();
             return false;
         }
-        if (comboLangue.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ Veuillez sélectionner une langue.");
-            comboLangue.requestFocus();
+        List<String> difficultesValides = Arrays.asList(
+                "A1 - Débutant", "A2 - Élémentaire", "B1 - Intermédiaire",
+                "B2 - Intermédiaire supérieur", "C1 - Avancé", "C2 - Maîtrise"
+        );
+        if (!difficultesValides.contains(difficulte)) {
+            afficherErreur("Veuillez sélectionner une difficulté valide.");
+            comboDifficulte.requestFocus();
             return false;
         }
-        if (fieldOrdre.getText().trim().isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ L'ordre est obligatoire.");
+
+        // 4. Validation de l'ordre
+        String ordreStr = fieldOrdre.getText().trim();
+        if (ordreStr.isEmpty()) {
+            afficherErreur("L'ordre est obligatoire.");
             fieldOrdre.requestFocus();
             return false;
         }
+        try {
+            int ordre = Integer.parseInt(ordreStr);
+            if (ordre < 1) {
+                afficherErreur("L'ordre doit être supérieur ou égal à 1.");
+                fieldOrdre.requestFocus();
+                return false;
+            }
+            if (ordre > 10) {
+                afficherErreur("L'ordre ne peut pas dépasser 10.");
+                fieldOrdre.requestFocus();
+                return false;
+            }
+            // Vérifier l'unicité de l'ordre dans la langue
+            if (!isOrdreUniqueDansLangue(ordre, comboLangue.getValue().getId(),
+                    selectedNiveau != null ? selectedNiveau.getId() : null)) {
+                afficherErreur("Un niveau avec cet ordre existe déjà pour cette langue.");
+                fieldOrdre.requestFocus();
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            afficherErreur("L'ordre doit être un nombre entier valide.");
+            fieldOrdre.requestFocus();
+            return false;
+        }
+
+        // 5. Validation de la langue
+        if (comboLangue.getValue() == null) {
+            afficherErreur("Veuillez sélectionner une langue.");
+            comboLangue.requestFocus();
+            return false;
+        }
+
+        // 6. Validation de l'image
+        if (selectedImageFile != null) {
+            String fileName = selectedImageFile.getName().toLowerCase();
+            if (!fileName.endsWith(".png") && !fileName.endsWith(".jpg") &&
+                    !fileName.endsWith(".jpeg") && !fileName.endsWith(".gif") &&
+                    !fileName.endsWith(".webp")) {
+                afficherErreur("Format d'image non supporté. Utilisez PNG, JPG, JPEG, GIF ou WEBP.");
+                return false;
+            }
+            if (!selectedImageFile.exists()) {
+                afficherErreur("Le fichier image est introuvable.");
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    // ── Vérifier l'unicité de l'ordre dans la langue ──────────────────
+    private boolean isOrdreUniqueDansLangue(int ordre, int langueId, Integer excludeId) {
+        try {
+            List<Niveau> tousNiveaux = niveauService.recuperer();
+            for (Niveau n : tousNiveaux) {
+                if (n.getIdLangueId() == langueId && n.getOrdre() == ordre) {
+                    if (excludeId == null || n.getId() != excludeId) {
+                        return false;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            return false;
+        }
+        return true;
+    }
+
+    // ── Vérifier que le titre est unique dans la langue ───────────────
+    private boolean isTitreUniqueDansLangue(String titre, int langueId, Integer excludeId) {
+        try {
+            List<Niveau> tousNiveaux = niveauService.recuperer();
+            for (Niveau n : tousNiveaux) {
+                if (n.getIdLangueId() == langueId && n.getTitre().equalsIgnoreCase(titre)) {
+                    if (excludeId == null || n.getId() != excludeId) {
+                        return false;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            return false;
+        }
+        return true;
+    }
+
+    // ── Afficher erreur ───────────────────────────────────────────────
+    private void afficherErreur(String message) {
+        if (labelErreur != null) {
+            labelErreur.setText("⚠ " + message);
+            labelErreur.setVisible(true);
+            labelErreur.setManaged(true);
+        } else {
+            showAlert(Alert.AlertType.WARNING, "Validation", message);
+        }
+    }
+
+    private void cacherErreur() {
+        if (labelErreur != null) {
+            labelErreur.setVisible(false);
+            labelErreur.setManaged(false);
+        }
     }
 
     private void clearForm() {

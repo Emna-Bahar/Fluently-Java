@@ -39,7 +39,7 @@ public class CoursController {
     @FXML private DatePicker fieldDate;
     @FXML private ComboBox<Niveau> comboNiveau;
     @FXML private ComboBox<Cours> comboPrecedent;
-
+    @FXML private Label labelErreur;
     // Ressources
     @FXML private ListView<String> ressourcesList;
 
@@ -552,6 +552,7 @@ public class CoursController {
     @FXML
     private void handleSave() {
         if (!validateForm()) return;
+        if (!validateRessources()) return;
 
         try {
             int numero = Integer.parseInt(fieldNumero.getText().trim());
@@ -583,12 +584,11 @@ public class CoursController {
             handleCancel();
             loadData();
         } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ Le numéro doit être un entier.");
+            afficherErreur("Le numéro doit être un entier.");
         } catch (SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
+            afficherErreur("Erreur base de données : " + e.getMessage());
         }
     }
-
     private void handleDelete(Cours c) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 "Supprimer le cours N°" + c.getNumero() + " ?\nCette action est irréversible.",
@@ -616,23 +616,139 @@ public class CoursController {
         selectedCours = null;
     }
 
+    // ── Validation complète du formulaire ─────────────────────────────
     private boolean validateForm() {
-        if (fieldNumero.getText().trim().isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ Le numéro est obligatoire.");
+        cacherErreur();
+
+        // 1. Validation du numéro
+        String numeroStr = fieldNumero.getText().trim();
+        if (numeroStr.isEmpty()) {
+            afficherErreur("Le numéro du cours est obligatoire.");
             fieldNumero.requestFocus();
             return false;
         }
+        try {
+            int numero = Integer.parseInt(numeroStr);
+            if (numero <= 0) {
+                afficherErreur("Le numéro doit être un nombre positif.");
+                fieldNumero.requestFocus();
+                return false;
+            }
+            if (numero > 999) {
+                afficherErreur("Le numéro ne peut pas dépasser 999.");
+                fieldNumero.requestFocus();
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            afficherErreur("Le numéro doit être un nombre entier valide.");
+            fieldNumero.requestFocus();
+            return false;
+        }
+
+        // 2. Validation du niveau
         if (comboNiveau.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ Veuillez sélectionner un niveau.");
+            afficherErreur("Veuillez sélectionner un niveau.");
             comboNiveau.requestFocus();
             return false;
         }
+
+        // 3. Validation de la date
         if (fieldDate.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Validation", "⚠ Veuillez sélectionner une date.");
+            afficherErreur("Veuillez sélectionner une date de création.");
             fieldDate.requestFocus();
             return false;
         }
+        LocalDate today = LocalDate.now();
+        if (fieldDate.getValue().isAfter(today)) {
+            afficherErreur("La date de création ne peut pas être dans le futur.");
+            fieldDate.requestFocus();
+            return false;
+        }
+
+        // 4. Validation du cours précédent (auto-référence)
+        if (comboPrecedent.getValue() != null && selectedCours != null) {
+            Cours precedent = comboPrecedent.getValue();
+            if (precedent.getId() != 0 && precedent.getId() == selectedCours.getId()) {
+                afficherErreur("Un cours ne peut pas être son propre prédécesseur.");
+                comboPrecedent.requestFocus();
+                return false;
+            }
+        }
+
+        // 5. Vérification du numéro unique dans le niveau
+        if (!isNumeroUniqueDansNiveau(fieldNumero.getText().trim(),
+                comboNiveau.getValue().getId(),
+                selectedCours != null ? selectedCours.getId() : null)) {
+            afficherErreur("Un cours avec ce numéro existe déjà dans ce niveau.");
+            fieldNumero.requestFocus();
+            return false;
+        }
+
         return true;
+    }
+
+    // ── Vérifier l'unicité du numéro dans le niveau ───────────────────
+    private boolean isNumeroUniqueDansNiveau(String numeroStr, int niveauId, Integer excludeId) {
+        try {
+            int numero = Integer.parseInt(numeroStr);
+            List<Cours> tousLesCours = coursService.recuperer();
+
+            for (Cours c : tousLesCours) {
+                if (c.getIdNiveauId() == niveauId && c.getNumero() == numero) {
+                    if (excludeId == null || c.getId() != excludeId) {
+                        return false;
+                    }
+                }
+            }
+        } catch (SQLException | NumberFormatException e) {
+            return false;
+        }
+        return true;
+    }
+
+    // ── Validation des ressources ─────────────────────────────────────
+    private boolean validateRessources() {
+        if (ressources.isEmpty()) {
+            afficherErreur("Veuillez ajouter au moins une ressource (fichier ou lien YouTube).");
+            return false;
+        }
+
+        for (String res : ressources) {
+            // Vérifier les liens YouTube
+            if (res.contains("youtube.com") || res.contains("youtu.be")) {
+                if (!res.matches(".*(youtube\\.com/watch\\?v=|youtu\\.be/)[a-zA-Z0-9_-]+.*")) {
+                    afficherErreur("Format de lien YouTube invalide : " + res);
+                    return false;
+                }
+            }
+            // Vérifier les fichiers
+            else if (!res.startsWith("src/main/resources/")) {
+                File file = new File(res);
+                if (!file.exists()) {
+                    afficherErreur("Fichier introuvable : " + res);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // ── Afficher erreur ───────────────────────────────────────────────
+    private void afficherErreur(String message) {
+        if (labelErreur != null) {
+            labelErreur.setText("⚠ " + message);
+            labelErreur.setVisible(true);
+            labelErreur.setManaged(true);
+        } else {
+            showAlert(Alert.AlertType.WARNING, "Validation", message);
+        }
+    }
+
+    private void cacherErreur() {
+        if (labelErreur != null) {
+            labelErreur.setVisible(false);
+            labelErreur.setManaged(false);
+        }
     }
 
     private void clearForm() {

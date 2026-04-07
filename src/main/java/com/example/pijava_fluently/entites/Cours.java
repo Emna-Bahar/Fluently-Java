@@ -7,8 +7,8 @@ public class Cours {
     private int numero;
     private String ressource;
     private LocalDate dateCreation;
-    private int coursPrecedentIdId; // FK auto-référence
-    private int idNiveauId;         // FK → niveau
+    private int coursPrecedentIdId;
+    private int idNiveauId;
 
     // Constructeur vide
     public Cours() {}
