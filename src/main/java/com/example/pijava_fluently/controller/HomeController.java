@@ -111,7 +111,7 @@ public class HomeController implements Initializable {
 
     @FXML
     public void showObjectifs() {
-        loadView("objectifs.fxml");
+        loadView("Objectif-view.fxml");
         setActiveButton(btnObjectifs);
     }
 
