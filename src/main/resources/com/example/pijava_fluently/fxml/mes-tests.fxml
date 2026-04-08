@@ -10,61 +10,43 @@
 
     <!-- EN-TÊTE -->
     <VBox style="-fx-background-color:white;
-                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.08),12,0,0,3);
-                 -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
-        <padding><Insets top="28" left="40" right="40" bottom="20"/></padding>
+                 -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;
+                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.07),10,0,0,3);">
+        <padding><Insets top="26" left="40" right="40" bottom="20"/></padding>
         <Label text="📝 Mes Tests"
                style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
-        <Label text="Choisissez un test QCM à passer et évaluez votre niveau"
+        <Label text="Parcourez les tests disponibles par langue et par niveau"
                style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;-fx-padding:4 0 0 0;"/>
     </VBox>
 
-    <!-- BARRE DE FILTRES -->
+    <!-- BARRE DE RECHERCHE -->
     <HBox spacing="16" alignment="CENTER_LEFT"
           style="-fx-background-color:white;
                  -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
-        <padding><Insets top="14" left="40" right="40" bottom="14"/></padding>
-
-        <!-- Recherche -->
+        <padding><Insets top="12" left="40" right="40" bottom="12"/></padding>
         <HBox alignment="CENTER_LEFT" spacing="8" HBox.hgrow="ALWAYS"
               style="-fx-background-color:#F4F5FA;-fx-background-radius:30;
                      -fx-padding:9 16;-fx-border-color:#E0E3F0;
                      -fx-border-radius:30;-fx-border-width:1;">
             <Label text="🔍" style="-fx-font-size:14px;-fx-text-fill:#8A8FA8;"/>
-            <TextField fx:id="searchField" promptText="Rechercher un test…"
+            <TextField fx:id="searchField" promptText="Rechercher un test par titre ou type…"
                        HBox.hgrow="ALWAYS"
                        style="-fx-background-color:transparent;
                               -fx-border-color:transparent;
                               -fx-font-size:13px;-fx-padding:0;"/>
         </HBox>
-
-        <!-- Filtre Langue -->
-        <ComboBox fx:id="comboLangueFiltre" prefWidth="200"
-                  style="-fx-background-color:#F4F5FA;-fx-background-radius:30;
-                         -fx-border-color:#E0E3F0;-fx-border-radius:30;
-                         -fx-border-width:1;-fx-padding:0 8;-fx-font-size:13px;"/>
-
-        <!-- Filtre Niveau -->
-        <ComboBox fx:id="comboNiveauFiltre" prefWidth="220"
-                  style="-fx-background-color:#F4F5FA;-fx-background-radius:30;
-                         -fx-border-color:#E0E3F0;-fx-border-radius:30;
-                         -fx-border-width:1;-fx-padding:0 8;-fx-font-size:13px;"/>
-
         <Label fx:id="labelResultat" text=""
                style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;
-                      -fx-background-color:#F4F5FA;-fx-background-radius:20;
-                      -fx-padding:6 14;"/>
+                      -fx-background-color:#F0EEFF;-fx-background-radius:20;
+                      -fx-padding:6 14;-fx-text-fill:#6C63FF;-fx-font-weight:bold;"/>
     </HBox>
 
-    <!-- GRILLE DES TESTS -->
+    <!-- CONTENU HIÉRARCHIQUE -->
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
                 style="-fx-background:transparent;-fx-background-color:transparent;
                        -fx-border-color:transparent;">
-        <VBox>
+        <VBox fx:id="vboxContenu" spacing="24">
             <padding><Insets top="28" left="40" right="40" bottom="40"/></padding>
-            <FlowPane fx:id="flowTests" hgap="22" vgap="22"
-                      alignment="TOP_LEFT" prefWrapLength="1100"
-                      style="-fx-background-color:transparent;"/>
         </VBox>
     </ScrollPane>
 </VBox>
