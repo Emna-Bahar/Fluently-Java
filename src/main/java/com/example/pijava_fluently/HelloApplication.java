@@ -21,7 +21,11 @@ public class HelloApplication extends Application {
 
 
         Scene scene = new Scene(fxmlLoader.load(), 1000, 650);
-
+        scene.getStylesheets().add(
+                getClass().getResource(
+                        "/com/example/pijava_fluently/css/fluently-admin.css"
+                ).toExternalForm()
+        );
         var css = HelloApplication.class.getResource(
                 "/com/example/pijava_fluently/css/fluently.css"
         );

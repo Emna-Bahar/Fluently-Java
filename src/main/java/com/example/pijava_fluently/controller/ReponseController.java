@@ -47,6 +47,25 @@ public class ReponseController {
         try {
             List<Question> questions = questionService.recuperer();
             comboQuestion.setItems(FXCollections.observableArrayList(questions));
+            comboQuestion.setCellFactory(lv -> new ListCell<>() {
+                @Override protected void updateItem(Question q, boolean empty) {
+                    super.updateItem(q, empty);
+                    if (empty || q == null) { setText(null); return; }
+                    String txt = q.getEnonce().length() > 50
+                            ? q.getEnonce().substring(0, 47) + "…"
+                            : q.getEnonce();
+                    setText("Q" + q.getId() + " — " + txt);
+                }
+            });
+            comboQuestion.setButtonCell(new ListCell<>() {
+                @Override protected void updateItem(Question q, boolean empty) {
+                    super.updateItem(q, empty);
+                    if (empty || q == null) { setText("— Sélectionner une question —"); return; }
+                    String txt = q.getEnonce().length() > 40
+                            ? q.getEnonce().substring(0, 37) + "…" : q.getEnonce();
+                    setText(txt);
+                }
+            });
         } catch (SQLException e) { e.printStackTrace(); }
         setupColumns();
         loadData();
@@ -107,7 +126,18 @@ public class ReponseController {
             @Override protected void updateItem(Integer item, boolean empty) {
                 super.updateItem(item, empty);
                 setAlignment(javafx.geometry.Pos.CENTER);
-                setText(empty || item == null ? "—" : "Q#" + item);
+                if (empty || item == null) { setText("—"); setGraphic(null); return; }
+                String enonce = comboQuestion.getItems().stream()
+                        .filter(q -> q.getId() == item)
+                        .map(q -> q.getEnonce().length() > 30
+                                ? q.getEnonce().substring(0, 27) + "…"
+                                : q.getEnonce())
+                        .findFirst().orElse("Q#" + item);
+                Label lbl = new Label(enonce);
+                lbl.setStyle(
+                        "-fx-font-size:11px;-fx-text-fill:#4A4D6A;" +
+                                "-fx-background-color:#F4F5FA;-fx-background-radius:8;-fx-padding:3 8;");
+                setGraphic(lbl); setText(null);
             }
         });
 

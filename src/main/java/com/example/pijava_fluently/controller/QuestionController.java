@@ -46,6 +46,21 @@ public class QuestionController {
         try {
             List<Test> tests = testService.recuperer();
             comboTest.setItems(FXCollections.observableArrayList(tests));
+            // Afficher le titre dans le ComboBox
+            comboTest.setCellFactory(lv -> new ListCell<>() {
+                @Override protected void updateItem(Test t, boolean empty) {
+                    super.updateItem(t, empty);
+                    setText(empty || t == null ? null
+                            : t.getTitre() + " [" + t.getType() + "]");
+                }
+            });
+            comboTest.setButtonCell(new ListCell<>() {
+                @Override protected void updateItem(Test t, boolean empty) {
+                    super.updateItem(t, empty);
+                    setText(empty || t == null ? "— Sélectionner un test —"
+                            : t.getTitre());
+                }
+            });
         } catch (SQLException e) { e.printStackTrace(); }
         setupColumns();
         loadData();
@@ -104,10 +119,17 @@ public class QuestionController {
             @Override protected void updateItem(Integer item, boolean empty) {
                 super.updateItem(item, empty);
                 setAlignment(javafx.geometry.Pos.CENTER);
-                if (empty || item == null) { setText("—"); return; }
-                Label lbl = new Label("Test #" + item);
-                lbl.setStyle("-fx-font-size:11px;-fx-text-fill:#6B7280;" +
-                        "-fx-background-color:#F4F5FA;-fx-background-radius:8;-fx-padding:3 8;");
+                if (empty || item == null) { setText("—"); setGraphic(null); return; }
+                // Retrouver le titre du test via le service
+                // On utilise les items déjà chargés dans comboTest
+                String titre = comboTest.getItems().stream()
+                        .filter(t -> t.getId() == item)
+                        .map(Test::getTitre)
+                        .findFirst().orElse("Test #" + item);
+                Label lbl = new Label(titre);
+                lbl.setStyle(
+                        "-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#6B7280;" +
+                                "-fx-background-color:#F4F5FA;-fx-background-radius:8;-fx-padding:3 8;");
                 setGraphic(lbl); setText(null);
             }
         });
