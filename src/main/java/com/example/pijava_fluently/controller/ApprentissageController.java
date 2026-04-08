@@ -3,10 +3,13 @@ package com.example.pijava_fluently.controller;
 import com.example.pijava_fluently.entites.Cours;
 import com.example.pijava_fluently.entites.Langue;
 import com.example.pijava_fluently.entites.Niveau;
+import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.services.CoursService;
 import com.example.pijava_fluently.services.NiveauService;
+import com.example.pijava_fluently.services.TestService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -17,6 +20,7 @@ import javafx.stage.Stage;
 import javafx.scene.layout.Priority;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
+import javafx.scene.Node;
 import javafx.geometry.Pos;
 
 import java.awt.Desktop;
@@ -31,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javafx.scene.layout.StackPane;
+import java.sql.SQLException;
 public class ApprentissageController {
 
     @FXML private Label langueNom;
@@ -67,8 +72,40 @@ public class ApprentissageController {
 
     @FXML
     private void handleTest() {
-        showAlert("Test de niveau", "Cette fonctionnalité sera bientôt disponible !");
+        // Charger les tests de type "Test de niveau" pour cette langue
+        try {
+            TestService testService = new TestService();
+            List<Test> tests = testService.recuperer();
+            List<Test> testsNiveau = tests.stream()
+                    .filter(t -> t.getLangueId() == langue.getId()
+                            && t.getType().equals("Test de niveau"))
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (testsNiveau.isEmpty()) {
+                showAlert("Information",
+                        "Aucun test de niveau disponible pour " + langue.getNom() + ".");
+                return;
+            }
+
+            // Si plusieurs tests disponibles, prendre le premier
+            // (ou afficher un choix — ici on prend le premier par ordre)
+            Test testChoisi = testsNiveau.get(0);
+
+            // Charger l'interface de passage du test
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/test-passage.fxml"));
+            Node vue = loader.load();
+            TestPassageEtudiantController ctrl = loader.getController();
+            ctrl.initTest(testChoisi, 7); // userId — à remplacer par SessionUtilisateur
+
+            if (homeController != null) {
+                homeController.setContent(vue);
+            }
+        } catch (SQLException | java.io.IOException e) {
+            showAlert("Erreur", "Impossible de charger le test : " + e.getMessage());
+        }
     }
+
 
     private void chargerCours() {
         new Thread(() -> {
