@@ -8,6 +8,7 @@ import com.example.pijava_fluently.services.NiveauService;
 import com.example.pijava_fluently.services.TestService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -19,11 +20,9 @@ import java.util.stream.Collectors;
 
 public class MesTestsController {
 
-    @FXML private FlowPane      flowTests;
-    @FXML private ComboBox<Langue>  comboLangueFiltre;
-    @FXML private ComboBox<Niveau>  comboNiveauFiltre;
-    @FXML private Label         labelResultat;
-    @FXML private TextField     searchField;
+    @FXML private VBox      vboxContenu;
+    @FXML private TextField searchField;
+    @FXML private Label     labelResultat;
 
     private final TestService   testService   = new TestService();
     private final LangueService langueService = new LangueService();
@@ -36,147 +35,300 @@ public class MesTestsController {
 
     @FXML
     public void initialize() {
-        chargerFiltres();
-        chargerTests();
-    }
-
-    private void chargerFiltres() {
-        try {
-            langues = langueService.recuperer();
-            comboLangueFiltre.getItems().add(null); // "Toutes"
-            comboLangueFiltre.getItems().addAll(langues);
-            comboLangueFiltre.setCellFactory(lv -> new ListCell<>() {
-                @Override protected void updateItem(Langue l, boolean empty) {
-                    super.updateItem(l, empty);
-                    setText(empty ? null : l == null ? "🌍 Toutes les langues" : l.getNom());
-                }
-            });
-            comboLangueFiltre.setButtonCell(new ListCell<>() {
-                @Override protected void updateItem(Langue l, boolean empty) {
-                    super.updateItem(l, empty);
-                    setText(empty ? null : l == null ? "🌍 Toutes les langues" : l.getNom());
-                }
-            });
-            comboLangueFiltre.setValue(null);
-            comboLangueFiltre.valueProperty().addListener((obs, old, newL) -> {
-                filtrerNiveaux(newL);
-                appliquerFiltres();
-            });
-        } catch (SQLException e) { e.printStackTrace(); }
-
-        try {
-            niveaux = niveauService.recuperer();
-            configurerComboNiveau(niveaux);
-            comboNiveauFiltre.valueProperty().addListener((obs, old, newN) ->
-                    appliquerFiltres());
-        } catch (SQLException e) { e.printStackTrace(); }
-
+        chargerDonnees();
         if (searchField != null)
-            searchField.textProperty().addListener((obs, old, newV) -> appliquerFiltres());
+            searchField.textProperty().addListener((obs, old, nv) -> afficherHierarchie(nv.trim()));
     }
 
-    private void filtrerNiveaux(Langue langue) {
-        comboNiveauFiltre.setValue(null);
-        List<Niveau> liste = langue == null ? niveaux :
-                niveaux.stream().filter(n -> n.getIdLangueId() == langue.getId())
-                        .collect(Collectors.toList());
-        configurerComboNiveau(liste);
+    private void chargerDonnees() {
+        try { langues   = langueService.recuperer(); } catch (SQLException e) { langues  = List.of(); }
+        try { niveaux   = niveauService.recuperer(); } catch (SQLException e) { niveaux  = List.of(); }
+        try { tousTests = testService.recuperer();   } catch (SQLException e) { tousTests = List.of(); }
+        afficherHierarchie("");
     }
 
-    private void configurerComboNiveau(List<Niveau> liste) {
-        comboNiveauFiltre.getItems().clear();
-        comboNiveauFiltre.getItems().add(null);
-        comboNiveauFiltre.getItems().addAll(liste);
-        comboNiveauFiltre.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(Niveau n, boolean empty) {
-                super.updateItem(n, empty);
-                setText(empty ? null : n == null ? "🎯 Tous les niveaux"
-                        : n.getTitre() + " (" + n.getDifficulte() + ")");
-            }
-        });
-        comboNiveauFiltre.setButtonCell(new ListCell<>() {
-            @Override protected void updateItem(Niveau n, boolean empty) {
-                super.updateItem(n, empty);
-                setText(empty ? null : n == null ? "🎯 Tous les niveaux"
-                        : n.getTitre() + " (" + n.getDifficulte() + ")");
-            }
-        });
-    }
+    // ── Affichage principal ────────────────────────────────────────────
+    private void afficherHierarchie(String recherche) {
+        vboxContenu.getChildren().clear();
+        String q = recherche.toLowerCase();
 
-    private void chargerTests() {
-        try {
-            tousTests = testService.recuperer();
-            appliquerFiltres();
-        } catch (SQLException e) { e.printStackTrace(); }
-    }
+        int totalAffiches = 0;
 
-    private void appliquerFiltres() {
-        if (tousTests == null) return;
+        for (Langue langue : langues) {
+            // Trouver les niveaux de cette langue
+            List<Niveau> niveauxLangue = niveaux.stream()
+                    .filter(n -> n.getIdLangueId() == langue.getId())
+                    .sorted((a, b) -> Integer.compare(a.getOrdre(), b.getOrdre()))
+                    .collect(Collectors.toList());
 
-        Langue langueFiltre  = comboLangueFiltre.getValue();
-        Niveau niveauFiltre  = comboNiveauFiltre.getValue();
-        String recherche     = searchField != null
-                ? searchField.getText().toLowerCase().trim() : "";
+            // Trouver les tests de cette langue
+            List<Test> testsLangue = tousTests.stream()
+                    .filter(t -> t.getLangueId() == langue.getId())
+                    .filter(t -> q.isEmpty()
+                            || t.getTitre().toLowerCase().contains(q)
+                            || t.getType().toLowerCase().contains(q))
+                    .collect(Collectors.toList());
 
-        List<Test> filtres = tousTests.stream()
-                .filter(t -> langueFiltre == null || t.getLangueId() == langueFiltre.getId())
-                .filter(t -> niveauFiltre == null || t.getNiveauId() == niveauFiltre.getId())
-                .filter(t -> recherche.isEmpty()
-                        || t.getTitre().toLowerCase().contains(recherche)
-                        || t.getType().toLowerCase().contains(recherche))
-                .collect(Collectors.toList());
+            if (testsLangue.isEmpty()) continue;
 
-        afficherTests(filtres);
-        if (labelResultat != null)
-            labelResultat.setText(filtres.size() + " test(s) disponible(s)");
-    }
-
-    private void afficherTests(List<Test> tests) {
-        flowTests.getChildren().clear();
-        if (tests.isEmpty()) {
-            VBox vide = new VBox(12);
-            vide.setAlignment(javafx.geometry.Pos.CENTER);
-            vide.setPrefWidth(flowTests.getPrefWrapLength());
-            Label ico = new Label("📭");
-            ico.setStyle("-fx-font-size:52px;");
-            Label txt = new Label("Aucun test disponible pour ces filtres");
-            txt.setStyle("-fx-font-size:15px;-fx-text-fill:#8A8FA8;-fx-font-weight:bold;");
-            Label sub = new Label("Essayez de modifier vos filtres");
-            sub.setStyle("-fx-font-size:12px;-fx-text-fill:#C0C4D8;");
-            vide.getChildren().addAll(ico, txt, sub);
-            flowTests.getChildren().add(vide);
-            return;
+            // Bloc langue
+            VBox blocLangue = creerBlocLangue(langue, niveauxLangue, testsLangue, q);
+            vboxContenu.getChildren().add(blocLangue);
+            totalAffiches += testsLangue.size();
         }
-        for (Test test : tests)
-            flowTests.getChildren().add(creerCarteTest(test));
+
+        // Tests sans langue assignée
+        List<Test> sansLangue = tousTests.stream()
+                .filter(t -> t.getLangueId() == 0
+                        || langues.stream().noneMatch(l -> l.getId() == t.getLangueId()))
+                .filter(t -> q.isEmpty()
+                        || t.getTitre().toLowerCase().contains(q)
+                        || t.getType().toLowerCase().contains(q))
+                .collect(Collectors.toList());
+        if (!sansLangue.isEmpty()) {
+            vboxContenu.getChildren().add(creerBlocSansCategorie(sansLangue));
+            totalAffiches += sansLangue.size();
+        }
+
+        if (totalAffiches == 0) afficherVide();
+
+        if (labelResultat != null)
+            labelResultat.setText(totalAffiches + " test(s)");
     }
 
-    private VBox creerCarteTest(Test test) {
-        // Retrouver les noms
-        String nomLangue = langues == null ? "" :
-                langues.stream().filter(l -> l.getId() == test.getLangueId())
-                        .map(Langue::getNom).findFirst().orElse("");
-        String nomNiveau = niveaux == null ? "" :
-                niveaux.stream().filter(n -> n.getId() == test.getNiveauId())
-                        .map(n -> n.getTitre() + " · " + n.getDifficulte())
-                        .findFirst().orElse("");
+    // ── Bloc d'une langue ──────────────────────────────────────────────
+    private VBox creerBlocLangue(Langue langue, List<Niveau> niveauxLangue,
+                                 List<Test> testsLangue, String q) {
+        VBox bloc = new VBox(16);
 
-        VBox card = new VBox(14);
-        card.setPrefWidth(290);
-        card.setMinHeight(220);
-        card.setStyle(
+        // ── Header langue ──
+        HBox headerLangue = new HBox(14);
+        headerLangue.setAlignment(Pos.CENTER_LEFT);
+        headerLangue.setStyle(
+                "-fx-background-color:linear-gradient(to right,#6C63FF,#8B7CF6);" +
+                        "-fx-background-radius:16;-fx-padding:18 24;");
+
+        Label nomLangue = new Label(langue.getNom());
+        nomLangue.setStyle(
+                "-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:white;");
+
+        Label nbTests = new Label(testsLangue.size() + " test(s)");
+        nbTests.setStyle(
+                "-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:white;" +
+                        "-fx-background-color:rgba(255,255,255,0.2);" +
+                        "-fx-background-radius:20;-fx-padding:4 12;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        headerLangue.getChildren().addAll(new Label("🌍") {{
+            setStyle("-fx-font-size:22px;");
+        }}, nomLangue, spacer, nbTests);
+
+        bloc.getChildren().add(headerLangue);
+
+        // ── Tests groupés par niveau ──
+        if (niveauxLangue.isEmpty()) {
+            // Pas de niveaux définis → afficher les tests directement
+            FlowPane fp = creerFlowPaneTests(testsLangue);
+            bloc.getChildren().add(fp);
+        } else {
+            for (Niveau niveau : niveauxLangue) {
+                List<Test> testsNiveau = testsLangue.stream()
+                        .filter(t -> t.getNiveauId() == niveau.getId())
+                        .collect(Collectors.toList());
+                if (testsNiveau.isEmpty()) continue;
+
+                VBox blocNiveau = creerBlocNiveau(niveau, testsNiveau);
+                bloc.getChildren().add(blocNiveau);
+            }
+            // Tests du langage sans niveau assigné
+            List<Test> sansNiveau = testsLangue.stream()
+                    .filter(t -> t.getNiveauId() == 0
+                            || niveauxLangue.stream().noneMatch(n -> n.getId() == t.getNiveauId()))
+                    .collect(Collectors.toList());
+            if (!sansNiveau.isEmpty()) {
+                VBox blocAutres = creerBlocAutres(sansNiveau);
+                bloc.getChildren().add(blocAutres);
+            }
+        }
+
+        // Conteneur avec fond blanc
+        VBox wrapper = new VBox(0);
+        wrapper.setStyle(
                 "-fx-background-color:white;-fx-background-radius:18;" +
-                        "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);" +
-                        "-fx-padding:22;-fx-cursor:hand;");
+                        "-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),18,0,0,5);");
+        VBox inner = new VBox(20);
+        inner.getChildren().add(headerLangue);
 
-        // Icône + badge type
+        // Reconstruire proprement
+        VBox container = new VBox(0);
+        container.setStyle(
+                "-fx-background-color:white;-fx-background-radius:18;" +
+                        "-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),18,0,0,5);");
+
+        VBox content = new VBox(20);
+        content.getChildren().add(headerLangue);
+
+        if (niveauxLangue.isEmpty()) {
+            VBox padded = new VBox(creerFlowPaneTests(testsLangue));
+            padded.setPadding(new javafx.geometry.Insets(0, 20, 20, 20));
+            content.getChildren().add(padded);
+        } else {
+            VBox niveauxBox = new VBox(12);
+            niveauxBox.setPadding(new javafx.geometry.Insets(0, 20, 20, 20));
+            for (Niveau niveau : niveauxLangue) {
+                List<Test> testsNiveau = testsLangue.stream()
+                        .filter(t -> t.getNiveauId() == niveau.getId())
+                        .collect(Collectors.toList());
+                if (testsNiveau.isEmpty()) continue;
+                niveauxBox.getChildren().add(creerBlocNiveau(niveau, testsNiveau));
+            }
+            List<Test> sansNiveau = testsLangue.stream()
+                    .filter(t -> t.getNiveauId() == 0
+                            || niveauxLangue.stream().noneMatch(n -> n.getId() == t.getNiveauId()))
+                    .collect(Collectors.toList());
+            if (!sansNiveau.isEmpty())
+                niveauxBox.getChildren().add(creerBlocAutres(sansNiveau));
+            content.getChildren().add(niveauxBox);
+        }
+
+        container.getChildren().add(content);
+        return container;
+    }
+
+    // ── Bloc d'un niveau ──────────────────────────────────────────────
+    private VBox creerBlocNiveau(Niveau niveau, List<Test> tests) {
+        VBox bloc = new VBox(12);
+
+        // Badge niveau
+        String couleur = switch (niveau.getDifficulte() != null
+                ? niveau.getDifficulte().substring(0, Math.min(2, niveau.getDifficulte().length()))
+                : "") {
+            case "A1" -> "#6C63FF";
+            case "A2" -> "#8B7CF6";
+            case "B1" -> "#F59E0B";
+            case "B2" -> "#EF4444";
+            case "C1" -> "#EC4899";
+            case "C2" -> "#14B8A6";
+            default   -> "#6B7280";
+        };
+
+        HBox headerNiveau = new HBox(12);
+        headerNiveau.setAlignment(Pos.CENTER_LEFT);
+        headerNiveau.setStyle(
+                "-fx-background-color:" + couleur + "15;" +
+                        "-fx-background-radius:12;-fx-padding:12 16;");
+
+        Label badgeNiveau = new Label(niveau.getDifficulte() != null
+                ? niveau.getDifficulte().substring(0, Math.min(2, niveau.getDifficulte().length()))
+                : "?");
+        badgeNiveau.setStyle(
+                "-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:" + couleur + ";" +
+                        "-fx-background-color:" + couleur + "20;" +
+                        "-fx-background-radius:10;-fx-padding:4 12;");
+
+        Label titrNiveau = new Label(niveau.getTitre());
+        titrNiveau.setStyle(
+                "-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;");
+
+        Label descNiveau = new Label(niveau.getDifficulte() != null
+                ? " — " + niveau.getDifficulte() : "");
+        descNiveau.setStyle("-fx-font-size:12px;-fx-text-fill:#8A8FA8;");
+
+        Label nbTests = new Label(tests.size() + " test(s)");
+        nbTests.setStyle(
+                "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:" + couleur + ";" +
+                        "-fx-background-color:" + couleur + "15;" +
+                        "-fx-background-radius:20;-fx-padding:3 10;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        headerNiveau.getChildren().addAll(badgeNiveau, titrNiveau, descNiveau, spacer, nbTests);
+
+        bloc.getChildren().add(headerNiveau);
+        bloc.getChildren().add(creerFlowPaneTests(tests));
+        return bloc;
+    }
+
+    // ── FlowPane de cartes de tests ────────────────────────────────────
+    private FlowPane creerFlowPaneTests(List<Test> tests) {
+        FlowPane fp = new FlowPane();
+        fp.setHgap(16);
+        fp.setVgap(16);
+        fp.setPrefWrapLength(1000);
+        for (Test t : tests)
+            fp.getChildren().add(creerCarteTest(t));
+        return fp;
+    }
+
+    // ── Bloc "Autres" (tests sans niveau) ─────────────────────────────
+    private VBox creerBlocAutres(List<Test> tests) {
+        VBox bloc = new VBox(12);
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setStyle(
+                "-fx-background-color:#F4F5FA;-fx-background-radius:12;-fx-padding:10 16;");
+        Label lbl = new Label("📌 Autres tests");
+        lbl.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#6B7280;");
+        header.getChildren().add(lbl);
+        bloc.getChildren().addAll(header, creerFlowPaneTests(tests));
+        return bloc;
+    }
+
+    // ── Bloc sans langue ──────────────────────────────────────────────
+    private VBox creerBlocSansCategorie(List<Test> tests) {
+        VBox container = new VBox(16);
+        container.setStyle(
+                "-fx-background-color:white;-fx-background-radius:18;" +
+                        "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),16,0,0,4);");
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setStyle(
+                "-fx-background-color:#F4F5FA;-fx-background-radius:18 18 0 0;-fx-padding:18 24;");
+        Label lbl = new Label("📝 Tests généraux");
+        lbl.setStyle("-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;");
+        header.getChildren().add(lbl);
+        VBox content = new VBox(12);
+        content.setPadding(new javafx.geometry.Insets(16, 20, 20, 20));
+        content.getChildren().add(creerFlowPaneTests(tests));
+        container.getChildren().addAll(header, content);
+        return container;
+    }
+
+    // ── Carte d'un test ───────────────────────────────────────────────
+    private VBox creerCarteTest(Test test) {
+        String nomLangue = langues.stream()
+                .filter(l -> l.getId() == test.getLangueId())
+                .map(Langue::getNom).findFirst().orElse("");
+        String nomNiveau = niveaux.stream()
+                .filter(n -> n.getId() == test.getNiveauId())
+                .map(n -> n.getDifficulte() != null
+                        ? n.getDifficulte().substring(0, Math.min(2, n.getDifficulte().length()))
+                        : n.getTitre())
+                .findFirst().orElse("");
+
+        VBox card = new VBox(10);
+        card.setPrefWidth(260);
+        card.setMinHeight(160);
+        String cardNormal =
+                "-fx-background-color:#FAFBFF;-fx-background-radius:14;" +
+                        "-fx-border-color:#E8EAF0;-fx-border-radius:14;-fx-border-width:1.5;" +
+                        "-fx-padding:18;-fx-cursor:hand;";
+        String cardHover =
+                "-fx-background-color:white;-fx-background-radius:14;" +
+                        "-fx-border-color:#6C63FF;-fx-border-radius:14;-fx-border-width:1.5;" +
+                        "-fx-padding:18;-fx-cursor:hand;" +
+                        "-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.18),14,0,0,4);";
+        card.setStyle(cardNormal);
+
+        // Icône + badge
         String icone = switch (test.getType()) {
             case "Test de niveau"        -> "🎯";
             case "Test de fin de niveau" -> "🏆";
             case "quiz_debutant"         -> "🌱";
-            default                      -> "📝";
+            default -> "📝";
         };
-        String badgeColor = switch (test.getType()) {
+        String badgeC = switch (test.getType()) {
             case "Test de niveau"        ->
                     "-fx-background-color:#EFF6FF;-fx-text-fill:#3B82F6;";
             case "Test de fin de niveau" ->
@@ -185,84 +337,70 @@ public class MesTestsController {
                     "-fx-background-color:#FEF9C3;-fx-text-fill:#CA8A04;";
         };
 
-        HBox topRow = new HBox(8);
-        topRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        Label iconeLbl = new Label(icone);
-        iconeLbl.setStyle("-fx-font-size:22px;");
-        Label badgeType = new Label(test.getType());
-        badgeType.setStyle(badgeColor +
-                "-fx-font-size:10px;-fx-font-weight:bold;" +
-                "-fx-background-radius:20;-fx-padding:4 10;");
-        topRow.getChildren().addAll(iconeLbl, badgeType);
+        HBox top = new HBox(8);
+        top.setAlignment(Pos.CENTER_LEFT);
+        Label ico = new Label(icone);
+        ico.setStyle("-fx-font-size:18px;");
+        Label badge = new Label(test.getType());
+        badge.setStyle(badgeC +
+                "-fx-font-size:9px;-fx-font-weight:bold;" +
+                "-fx-background-radius:20;-fx-padding:3 8;");
+        top.getChildren().addAll(ico, badge);
 
         // Titre
         Label titre = new Label(test.getTitre());
         titre.setWrapText(true);
         titre.setStyle(
-                "-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;");
-
-        // Langue + Niveau
-        HBox tags = new HBox(8);
-        tags.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        if (!nomLangue.isEmpty()) {
-            Label lTag = new Label("🌍 " + nomLangue);
-            lTag.setStyle(
-                    "-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#3B82F6;" +
-                            "-fx-background-color:#EFF6FF;-fx-background-radius:8;-fx-padding:3 8;");
-            tags.getChildren().add(lTag);
-        }
-        if (!nomNiveau.isEmpty()) {
-            Label nTag = new Label("📶 " + nomNiveau);
-            nTag.setStyle(
-                    "-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#7C3AED;" +
-                            "-fx-background-color:#F5F3FF;-fx-background-radius:8;-fx-padding:3 8;");
-            tags.getChildren().add(nTag);
-        }
+                "-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;");
 
         // Durée
         Label duree = new Label("⏱ " + (test.getDureeEstimee() > 0
-                ? test.getDureeEstimee() + " min" : "Sans limite"));
-        duree.setStyle("-fx-font-size:12px;-fx-text-fill:#6B7280;");
+                ? test.getDureeEstimee() + " min" : "Libre"));
+        duree.setStyle("-fx-font-size:11px;-fx-text-fill:#8A8FA8;");
 
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
         // Bouton
-        Button btnStart = new Button("Commencer le test  →");
-        btnStart.setMaxWidth(Double.MAX_VALUE);
-        String btnBase =
+        Button btn = new Button("▶  Commencer");
+        btn.setMaxWidth(Double.MAX_VALUE);
+        String btnN =
                 "-fx-background-color:#6C63FF;-fx-text-fill:white;" +
-                        "-fx-font-size:13px;-fx-font-weight:bold;" +
-                        "-fx-background-radius:12;-fx-padding:11 20;-fx-cursor:hand;" +
-                        "-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.3),8,0,0,2);";
-        String btnHover =
+                        "-fx-font-size:12px;-fx-font-weight:bold;" +
+                        "-fx-background-radius:10;-fx-padding:9 16;-fx-cursor:hand;";
+        String btnH =
                 "-fx-background-color:#5B52E0;-fx-text-fill:white;" +
-                        "-fx-font-size:13px;-fx-font-weight:bold;" +
-                        "-fx-background-radius:12;-fx-padding:11 20;-fx-cursor:hand;" +
-                        "-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.45),10,0,0,3);";
-        btnStart.setStyle(btnBase);
-        btnStart.setOnMouseEntered(e -> btnStart.setStyle(btnHover));
-        btnStart.setOnMouseExited(e  -> btnStart.setStyle(btnBase));
-        btnStart.setOnAction(e -> lancerTest(test));
+                        "-fx-font-size:12px;-fx-font-weight:bold;" +
+                        "-fx-background-radius:10;-fx-padding:9 16;-fx-cursor:hand;";
+        btn.setStyle(btnN);
+        btn.setOnMouseEntered(e -> btn.setStyle(btnH));
+        btn.setOnMouseExited(e  -> btn.setStyle(btnN));
+        btn.setOnAction(e -> lancerTest(test));
 
-        card.getChildren().addAll(topRow, titre, tags, duree, spacer, btnStart);
-
-        // Hover carte
-        String cardNormal =
-                "-fx-background-color:white;-fx-background-radius:18;" +
-                        "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,4);" +
-                        "-fx-padding:22;-fx-cursor:hand;";
-        String cardHover =
-                "-fx-background-color:white;-fx-background-radius:18;" +
-                        "-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.18),22,0,0,6);" +
-                        "-fx-padding:22;-fx-cursor:hand;" +
-                        "-fx-border-color:#DDD6FE;-fx-border-radius:18;-fx-border-width:2;";
-        card.setOnMouseEntered(e -> { card.setStyle(cardHover); card.setTranslateY(-3); });
+        card.getChildren().addAll(top, titre, duree, spacer, btn);
+        card.setOnMouseEntered(e -> { card.setStyle(cardHover); card.setTranslateY(-2); });
         card.setOnMouseExited(e  -> { card.setStyle(cardNormal); card.setTranslateY(0); });
-
+        card.setOnMouseClicked(e -> lancerTest(test));
         return card;
     }
 
+    // ── Vide ──────────────────────────────────────────────────────────
+    private void afficherVide() {
+        VBox vide = new VBox(14);
+        vide.setAlignment(Pos.CENTER);
+        vide.setStyle("-fx-padding:60;");
+        Label ico = new Label("📭");
+        ico.setStyle("-fx-font-size:56px;");
+        Label txt = new Label("Aucun test disponible");
+        txt.setStyle(
+                "-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;");
+        Label sub = new Label("Aucun test ne correspond à votre recherche");
+        sub.setStyle("-fx-font-size:12px;-fx-text-fill:#C0C4D8;");
+        vide.getChildren().addAll(ico, txt, sub);
+        vboxContenu.getChildren().add(vide);
+    }
+
+    // ── Lancer le test ────────────────────────────────────────────────
     private void lancerTest(Test test) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
@@ -271,7 +409,7 @@ public class MesTestsController {
             TestPassageEtudiantController ctrl = loader.getController();
             ctrl.initTest(test, userId);
             StackPane contentArea = (StackPane)
-                    flowTests.getScene().lookup("#contentArea");
+                    vboxContenu.getScene().lookup("#contentArea");
             if (contentArea != null)
                 contentArea.getChildren().setAll(vue);
         } catch (IOException e) { e.printStackTrace(); }
