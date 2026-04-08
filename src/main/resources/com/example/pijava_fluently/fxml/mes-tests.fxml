@@ -6,27 +6,65 @@
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.pijava_fluently.controller.MesTestsController"
-      spacing="0" style="-fx-background-color:#F8F9FD;">
+      spacing="0" style="-fx-background-color:#F0F2FF;">
 
-    <HBox alignment="CENTER_LEFT" spacing="16"
-          style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
-        <padding><Insets top="24" left="32" right="32" bottom="24"/></padding>
-        <VBox HBox.hgrow="ALWAYS" spacing="4">
-            <Label text="📝 Mes Tests"
-                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
-            <Label text="Choisissez un test QCM à passer"
-                   style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;"/>
-        </VBox>
+    <!-- EN-TÊTE -->
+    <VBox style="-fx-background-color:white;
+                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.08),12,0,0,3);
+                 -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+        <padding><Insets top="28" left="40" right="40" bottom="20"/></padding>
+        <Label text="📝 Mes Tests"
+               style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+        <Label text="Choisissez un test QCM à passer et évaluez votre niveau"
+               style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;-fx-padding:4 0 0 0;"/>
+    </VBox>
+
+    <!-- BARRE DE FILTRES -->
+    <HBox spacing="16" alignment="CENTER_LEFT"
+          style="-fx-background-color:white;
+                 -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+        <padding><Insets top="14" left="40" right="40" bottom="14"/></padding>
+
+        <!-- Recherche -->
+        <HBox alignment="CENTER_LEFT" spacing="8" HBox.hgrow="ALWAYS"
+              style="-fx-background-color:#F4F5FA;-fx-background-radius:30;
+                     -fx-padding:9 16;-fx-border-color:#E0E3F0;
+                     -fx-border-radius:30;-fx-border-width:1;">
+            <Label text="🔍" style="-fx-font-size:14px;-fx-text-fill:#8A8FA8;"/>
+            <TextField fx:id="searchField" promptText="Rechercher un test…"
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-background-color:transparent;
+                              -fx-border-color:transparent;
+                              -fx-font-size:13px;-fx-padding:0;"/>
+        </HBox>
+
+        <!-- Filtre Langue -->
+        <ComboBox fx:id="comboLangueFiltre" prefWidth="200"
+                  style="-fx-background-color:#F4F5FA;-fx-background-radius:30;
+                         -fx-border-color:#E0E3F0;-fx-border-radius:30;
+                         -fx-border-width:1;-fx-padding:0 8;-fx-font-size:13px;"/>
+
+        <!-- Filtre Niveau -->
+        <ComboBox fx:id="comboNiveauFiltre" prefWidth="220"
+                  style="-fx-background-color:#F4F5FA;-fx-background-radius:30;
+                         -fx-border-color:#E0E3F0;-fx-border-radius:30;
+                         -fx-border-width:1;-fx-padding:0 8;-fx-font-size:13px;"/>
+
+        <Label fx:id="labelResultat" text=""
+               style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;
+                      -fx-background-color:#F4F5FA;-fx-background-radius:20;
+                      -fx-padding:6 14;"/>
     </HBox>
 
+    <!-- GRILLE DES TESTS -->
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
-                style="-fx-background:transparent;-fx-background-color:transparent;">
-        <VBox spacing="16">
-            <padding><Insets top="32" left="48" right="48" bottom="32"/></padding>
-
-            <!-- Grille des tests -->
-            <FlowPane fx:id="flowTests" hgap="20" vgap="20"
-                      prefWrapLength="900"/>
+                style="-fx-background:transparent;-fx-background-color:transparent;
+                       -fx-border-color:transparent;">
+        <VBox>
+            <padding><Insets top="28" left="40" right="40" bottom="40"/></padding>
+            <FlowPane fx:id="flowTests" hgap="22" vgap="22"
+                      alignment="TOP_LEFT" prefWrapLength="1100"
+                      style="-fx-background-color:transparent;"/>
         </VBox>
     </ScrollPane>
 </VBox>
