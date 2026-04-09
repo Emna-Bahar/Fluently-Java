@@ -107,7 +107,8 @@
                         <TableColumn fx:id="colType"    text="Type"    prefWidth="120" style="-fx-alignment:CENTER;"/>
                         <TableColumn fx:id="colScore"   text="Score"   prefWidth="90"  style="-fx-alignment:CENTER;"/>
                         <TableColumn fx:id="colTest"    text="Test"    prefWidth="100" style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colActions" text="Actions" prefWidth="220" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActions" text="Actions" prefWidth="310"
+                                     style="-fx-alignment:CENTER;"/>
                     </columns>
                     <placeholder>
                         <VBox alignment="CENTER" spacing="10">
