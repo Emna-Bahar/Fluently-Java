@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
@@ -13,7 +12,7 @@
     <VBox spacing="24" style="-fx-padding:30 36 30 36;-fx-background-color:#F1F5F9;">
 
         <!-- ══ En-tête ══════════════════════════════════════════════ -->
-        <HBox alignment="CENTER_LEFT" spacing="0"
+        <HBox alignment="CENTER_LEFT"
               style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B5CF6);
                      -fx-background-radius:18;-fx-padding:28 32 28 32;
                      -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.35),24,0,0,8);">
@@ -51,70 +50,88 @@
                            -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.4),12,0,0,4);"/>
         </HBox>
 
-        <!-- ══ Formulaire (caché par défaut) ════════════════════════ -->
-        <VBox fx:id="formCard" spacing="20" visible="false" managed="false"
-              style="-fx-background-color:#FFFFFF;-fx-background-radius:18;
-                     -fx-border-color:#E2E8F0;-fx-border-radius:18;-fx-border-width:1.5;
-                     -fx-padding:28;
-                     -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),20,0,0,6);">
+        <!-- ══ Formulaire ════════════════════════════════════════════ -->
+        <VBox fx:id="formCard" spacing="18" visible="false" managed="false"
+              style="-fx-background-color:#FFFFFF;-fx-background-radius:20;
+                     -fx-border-color:#E2E8F0;-fx-border-radius:20;-fx-border-width:1.5;
+                     -fx-padding:30;
+                     -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.12),24,0,0,8);">
 
+            <!-- Titre du formulaire -->
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <Label fx:id="formTitleIcon" text="✚"
-                       style="-fx-font-size:20px;-fx-text-fill:#6C63FF;"/>
+                       style="-fx-font-size:22px;-fx-text-fill:#6C63FF;"/>
                 <Label fx:id="formTitle" text="Nouvel Objectif"
-                       style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+                       style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
             </HBox>
 
             <Separator style="-fx-background-color:#F1F5F9;"/>
 
-            <!-- Titre + Statut -->
+            <!-- ── Ligne 1 : Titre + Statut ── -->
             <HBox spacing="18">
-                <VBox spacing="8" HBox.hgrow="ALWAYS">
-                    <Label text="Titre *  (max 50 caractères)"
+                <!-- Titre -->
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Titre *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                     <TextField fx:id="fieldTitre"
                                promptText="Ex : Maîtriser le présent de l'indicatif"
                                style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
                                       -fx-border-radius:10;-fx-background-radius:10;
+                                      -fx-border-width:1.5;
                                       -fx-padding:11 14 11 14;-fx-font-size:13px;-fx-text-fill:#1E293B;"/>
+                    <Label fx:id="errTitre" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <VBox spacing="8" prefWidth="210">
+                <!-- Statut -->
+                <VBox spacing="4" prefWidth="210">
                     <Label text="Statut *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                     <ComboBox fx:id="comboStatut" promptText="Choisir un statut…" maxWidth="Infinity"
                               style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
-                                     -fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;"/>
+                                     -fx-border-radius:10;-fx-background-radius:10;
+                                     -fx-border-width:1.5;-fx-font-size:13px;"/>
+                    <Label fx:id="errStatut" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
             </HBox>
 
-            <!-- Dates + ID User -->
+            <!-- ── Ligne 2 : Dates + Utilisateur ── -->
             <HBox spacing="18">
-                <VBox spacing="8" HBox.hgrow="ALWAYS">
+                <!-- Date début -->
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
                     <Label text="Date de début *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                     <DatePicker fx:id="fieldDateDeb" maxWidth="Infinity"
                                 style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
-                                       -fx-border-radius:10;-fx-background-radius:10;"/>
+                                       -fx-border-radius:10;-fx-background-radius:10;-fx-border-width:1.5;"/>
+                    <Label fx:id="errDateDeb" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <VBox spacing="8" HBox.hgrow="ALWAYS">
+                <!-- Date fin -->
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
                     <Label text="Date de fin *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                     <DatePicker fx:id="fieldDateFin" maxWidth="Infinity"
                                 style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
-                                       -fx-border-radius:10;-fx-background-radius:10;"/>
+                                       -fx-border-radius:10;-fx-background-radius:10;-fx-border-width:1.5;"/>
+                    <Label fx:id="errDateFin" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <VBox spacing="8" prefWidth="160">
-                    <Label text="ID Utilisateur *"
+                <!-- ✅ ComboBox Utilisateur (remplace le TextField ID) -->
+                <VBox spacing="4" prefWidth="220">
+                    <Label text="Utilisateur *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
-                    <TextField fx:id="fieldIdUser" promptText="Ex : 1"
-                               style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
-                                      -fx-border-radius:10;-fx-background-radius:10;
-                                      -fx-padding:11 14 11 14;-fx-font-size:13px;-fx-text-fill:#1E293B;"/>
+                    <ComboBox fx:id="comboUser" maxWidth="Infinity"
+                              style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                                     -fx-border-radius:10;-fx-background-radius:10;
+                                     -fx-border-width:1.5;-fx-font-size:13px;"/>
+                    <Label fx:id="errUser" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
             </HBox>
 
-            <!-- Description -->
-            <VBox spacing="8">
+            <!-- ── Ligne 3 : Description ── -->
+            <VBox spacing="4">
                 <Label text="Description *  (max 255 caractères)"
                        style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                 <TextArea fx:id="fieldDescription"
@@ -122,12 +139,15 @@
                           prefRowCount="3" wrapText="true"
                           style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
                                  -fx-border-radius:10;-fx-background-radius:10;
+                                 -fx-border-width:1.5;
                                  -fx-padding:11 14 11 14;-fx-font-size:13px;-fx-text-fill:#1E293B;"/>
+                <Label fx:id="errDescription" text="" visible="false" managed="false"
+                       style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
             </VBox>
 
-            <!-- Boutons -->
+            <!-- ── Boutons ── -->
             <HBox spacing="12" alignment="CENTER_RIGHT">
-                <Button text="Annuler" onAction="#handleCancel"
+                <Button text="✕  Annuler" onAction="#handleCancel"
                         style="-fx-background-color:#F8FAFC;-fx-text-fill:#64748B;-fx-font-size:13px;
                                -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:11 22 11 22;
                                -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
