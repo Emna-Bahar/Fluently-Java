@@ -93,7 +93,7 @@ public class ApprentissageController {
                     "/com/example/pijava_fluently/fxml/test-passage.fxml"));
             Node vue = loader.load();
             TestPassageEtudiantController ctrl = loader.getController();
-            ctrl.initTest(testChoisi, 2); // ← CHANGER ICI : userId = 2
+            ctrl.initTest(testChoisi, 7); // ← CHANGER ICI : userId = 2
 
             if (homeController != null) {
                 homeController.setContent(vue);
@@ -111,7 +111,7 @@ public class ApprentissageController {
 
             // Filtrer les passages terminés pour cette langue et cet utilisateur (userId = 2)
             List<TestPassage> passagesLangue = passages.stream()
-                    .filter(p -> p.getUserId() == 2) // User statique ID 2
+                    .filter(p -> p.getUserId() == 7) // User statique ID 2
                     .filter(p -> "termine".equals(p.getStatut()))
                     .collect(Collectors.toList());
 
