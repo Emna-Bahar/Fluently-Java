@@ -58,7 +58,7 @@
                            -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.4),12,0,0,4);"/>
         </HBox>
 
-        <!-- ══ Formulaire (caché par défaut) ════════════════════════ -->
+        <!-- ══ Formulaire ════════════════════════════════════════════ -->
         <VBox fx:id="formCard" spacing="18" visible="false" managed="false"
               style="-fx-background-color:#FFFFFF;-fx-background-radius:18;
                      -fx-border-color:#E2E8F0;-fx-border-radius:18;-fx-border-width:1.5;
@@ -76,53 +76,63 @@
 
             <!-- Titre + Priorité + Statut -->
             <HBox spacing="16">
-                <VBox spacing="7" HBox.hgrow="ALWAYS">
-                    <Label text="Titre *  (3 à 50 caractères)"
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Titre * (3 à 50 caractères)"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                     <TextField fx:id="fieldTitre" promptText="Ex : Lire le chapitre 3"
                                style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
                                       -fx-border-radius:10;-fx-background-radius:10;
                                       -fx-padding:10 13 10 13;-fx-font-size:13px;-fx-text-fill:#1E293B;"/>
+                    <Label fx:id="errTitre" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <VBox spacing="7" prefWidth="175">
+                <VBox spacing="4" prefWidth="175">
                     <Label text="Priorité *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                     <ComboBox fx:id="comboPriorite" promptText="Choisir…" maxWidth="Infinity"
                               style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
                                      -fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;"/>
+                    <Label fx:id="errPriorite" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <VBox spacing="7" prefWidth="175">
+                <VBox spacing="4" prefWidth="175">
                     <Label text="Statut *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                     <ComboBox fx:id="comboStatut" promptText="Choisir…" maxWidth="Infinity"
                               style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
                                      -fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;"/>
+                    <Label fx:id="errStatut" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
             </HBox>
 
             <!-- Date limite -->
-            <VBox spacing="7" maxWidth="280">
+            <VBox spacing="4" maxWidth="280">
                 <Label text="Date limite *"
                        style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                 <DatePicker fx:id="fieldDateLimite" maxWidth="Infinity"
                             style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
                                    -fx-border-radius:10;-fx-background-radius:10;"/>
+                <Label fx:id="errDateLimite" text="" visible="false" managed="false"
+                       style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
             </VBox>
 
             <!-- Description -->
-            <VBox spacing="7">
-                <Label text="Description *  (max 100 caractères)"
+            <VBox spacing="4">
+                <Label text="Description * (max 100 caractères)"
                        style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
                 <TextArea fx:id="fieldDescription" promptText="Décrivez la tâche…"
                           prefRowCount="3" wrapText="true"
                           style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
                                  -fx-border-radius:10;-fx-background-radius:10;
                                  -fx-padding:10 13 10 13;-fx-font-size:13px;-fx-text-fill:#1E293B;"/>
+                <Label fx:id="errDescription" text="" visible="false" managed="false"
+                       style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
             </VBox>
 
             <!-- Boutons -->
             <HBox spacing="12" alignment="CENTER_RIGHT">
-                <Button text="Annuler" onAction="#handleCancel"
+                <Button text="✕  Annuler" onAction="#handleCancel"
                         style="-fx-background-color:#F8FAFC;-fx-text-fill:#64748B;-fx-font-size:13px;
                                -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;
                                -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
