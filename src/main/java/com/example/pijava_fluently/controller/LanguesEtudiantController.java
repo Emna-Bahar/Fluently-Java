@@ -33,6 +33,13 @@ public class LanguesEtudiantController {
     private List<Langue> allLangues;
     private HomeController homeController;
 
+    // Couleurs par popularité
+    private static final String COLOR_TRES_HAUTE = "#F59E0B";
+    private static final String COLOR_HAUTE = "#10B981";
+    private static final String COLOR_MOYENNE = "#3B82F6";
+    private static final String COLOR_FAIBLE = "#8B5CF6";
+    private static final String COLOR_DEFAULT = "#6C63FF";
+
     @FXML
     public void initialize() {
         setupFilters();
@@ -46,8 +53,9 @@ public class LanguesEtudiantController {
 
     private void setupFilters() {
         filterPopularite.setItems(javafx.collections.FXCollections.observableArrayList(
-                "très haute", "haute", "moyenne", "faible"
+                " Toutes", " Très haute", " Haute", " Moyenne", " Faible"
         ));
+        filterPopularite.setValue(" Toutes");
         filterPopularite.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> applyFilters());
     }
 
@@ -94,7 +102,15 @@ public class LanguesEtudiantController {
         List<Langue> filtered = allLangues.stream()
                 .filter(Langue::isActive)
                 .filter(l -> searchText.isEmpty() || l.getNom().toLowerCase().contains(searchText))
-                .filter(l -> selectedPopularite == null || selectedPopularite.equals(l.getPopularite()))
+                .filter(l -> {
+                    if (selectedPopularite == null || selectedPopularite.equals(" Toutes")) return true;
+                    String pop = l.getPopularite() != null ? l.getPopularite().toLowerCase() : "";
+                    if (selectedPopularite.equals(" Très haute")) return pop.contains("très haute");
+                    if (selectedPopularite.equals(" Haute")) return pop.contains("haute");
+                    if (selectedPopularite.equals(" Moyenne")) return pop.contains("moyenne");
+                    if (selectedPopularite.equals(" Faible")) return pop.contains("faible");
+                    return true;
+                })
                 .collect(Collectors.toList());
 
         displayCards(filtered);
@@ -118,53 +134,74 @@ public class LanguesEtudiantController {
         }
     }
 
+    private String getPopulariteColor(String popularite) {
+        if (popularite == null) return COLOR_DEFAULT;
+        if (popularite.toLowerCase().contains("très haute")) return COLOR_TRES_HAUTE;
+        if (popularite.toLowerCase().contains("haute")) return COLOR_HAUTE;
+        if (popularite.toLowerCase().contains("moyenne")) return COLOR_MOYENNE;
+        if (popularite.toLowerCase().contains("faible")) return COLOR_FAIBLE;
+        return COLOR_DEFAULT;
+    }
+
+
+
     private VBox createLanguageCard(Langue langue) {
         VBox card = new VBox();
         card.setAlignment(Pos.TOP_CENTER);
-        card.setSpacing(12);
-        card.setPrefWidth(280);
-        card.setPrefHeight(320);
+        card.setSpacing(14);
+        card.setPrefWidth(300);
+        card.setPrefHeight(380);
+
+        String popColor = getPopulariteColor(langue.getPopularite());
+
         card.setStyle(
                 "-fx-background-color: white;" +
-                        "-fx-background-radius: 20;" +
+                        "-fx-background-radius: 24;" +
                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);" +
                         "-fx-cursor: hand;" +
-                        "-fx-border-color: #F0F1F7;" +
-                        "-fx-border-radius: 20;"
+                        "-fx-border-color: rgba(108,99,255,0.1);" +
+                        "-fx-border-radius: 24;"
         );
 
         // Hover effect
         card.setOnMouseEntered(e -> {
             card.setStyle(
                     "-fx-background-color: white;" +
-                            "-fx-background-radius: 20;" +
-                            "-fx-effect: dropshadow(gaussian, rgba(108,99,255,0.25), 20, 0, 0, 8);" +
+                            "-fx-background-radius: 24;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(108,99,255,0.3), 20, 0, 0, 10);" +
                             "-fx-cursor: hand;" +
-                            "-fx-border-color: #6C63FF;" +
-                            "-fx-border-radius: 20;"
+                            "-fx-border-color: " + popColor + ";" +
+                            "-fx-border-radius: 24;" +
+                            "-fx-border-width: 2;"
             );
-            card.setTranslateY(-5);
+            card.setTranslateY(-8);
         });
         card.setOnMouseExited(e -> {
             card.setStyle(
                     "-fx-background-color: white;" +
-                            "-fx-background-radius: 20;" +
+                            "-fx-background-radius: 24;" +
                             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);" +
                             "-fx-cursor: hand;" +
-                            "-fx-border-color: #F0F1F7;" +
-                            "-fx-border-radius: 20;"
+                            "-fx-border-color: rgba(108,99,255,0.1);" +
+                            "-fx-border-radius: 24;"
             );
             card.setTranslateY(0);
         });
 
-        // Image container
+        // Bandeau coloré en haut
+        HBox topBar = new HBox();
+        topBar.setPrefHeight(120);
+        topBar.setStyle("-fx-background-color: " + popColor + "; -fx-background-radius: 24 24 0 0;");
+        topBar.setAlignment(Pos.CENTER);
+
+        // Conteneur image drapeau
         StackPane imageContainer = new StackPane();
-        imageContainer.setPrefHeight(160);
-        imageContainer.setStyle("-fx-background-color: #F8F9FD;-fx-background-radius: 20 20 0 0;");
+        imageContainer.setPrefSize(90, 90);
+        imageContainer.setStyle("-fx-background-color: white; -fx-background-radius: 45; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 2);");
 
         ImageView flagView = new ImageView();
-        flagView.setFitWidth(100);
-        flagView.setFitHeight(70);
+        flagView.setFitWidth(65);
+        flagView.setFitHeight(50);
         flagView.setPreserveRatio(true);
 
         String imagePath = langue.getDrapeau();
@@ -179,16 +216,22 @@ public class LanguesEtudiantController {
 
         if (flagView.getImage() == null) {
             Label flagPlaceholder = new Label("🏳️");
-            flagPlaceholder.setStyle("-fx-font-size: 48px;");
+            flagPlaceholder.setStyle("-fx-font-size: 42px;");
             imageContainer.getChildren().add(flagPlaceholder);
         } else {
             imageContainer.getChildren().add(flagView);
         }
 
+        topBar.getChildren().add(imageContainer);
+
+        // Contenu
+        VBox contentBox = new VBox(10);
+        contentBox.setAlignment(Pos.CENTER);
+        contentBox.setPadding(new Insets(18, 16, 16, 16));
+
         // Nom
         Label nameLabel = new Label(langue.getNom());
-        nameLabel.setStyle("-fx-font-size: 18px;-fx-font-weight: bold;-fx-text-fill: #1A1D2E;");
-        nameLabel.setTextAlignment(TextAlignment.CENTER);
+        nameLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;");
         nameLabel.setMaxWidth(260);
 
         // Description tronquée
@@ -197,67 +240,63 @@ public class LanguesEtudiantController {
             desc = desc.substring(0, 77) + "...";
         }
         Label descLabel = new Label(desc != null ? desc : "");
-        descLabel.setStyle("-fx-font-size: 12px;-fx-text-fill: #8A8FA8;-fx-wrap-text: true;");
-        descLabel.setMaxWidth(250);
+        descLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #8A8FA8; -fx-wrap-text: true;");
+        descLabel.setMaxWidth(260);
         descLabel.setAlignment(Pos.CENTER);
-        descLabel.setTextAlignment(TextAlignment.CENTER);
 
         // Badge popularité
-        Label popBadge = new Label(langue.getPopularite() != null ? langue.getPopularite() : "");
+
+        String popText = langue.getPopularite() != null ? langue.getPopularite() : "";
+        Label popBadge = new Label( " " + popText);
         popBadge.setStyle(
-                "-fx-background-color: #EEF0FF;" +
-                        "-fx-text-fill: #6C63FF;" +
-                        "-fx-font-size: 11px;" +
+                "-fx-background-color: " + popColor + "20;" +
+                        "-fx-text-fill: " + popColor + ";" +
+                        "-fx-font-size: 12px;" +
                         "-fx-font-weight: bold;" +
                         "-fx-background-radius: 20;" +
-                        "-fx-padding: 4 12 4 12;"
+                        "-fx-padding: 6 16 6 16;"
         );
 
         // Bouton Commencer
         Button startBtn = new Button("Commencer →");
         startBtn.setStyle(
-                "-fx-background-color: #6C63FF;" +
+                "-fx-background-color: " + popColor + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-size: 13px;" +
                         "-fx-font-weight: bold;" +
                         "-fx-background-radius: 30;" +
-                        "-fx-padding: 10 20 10 20;" +
+                        "-fx-padding: 12 28 12 28;" +
                         "-fx-cursor: hand;"
         );
         startBtn.setOnMouseEntered(e -> startBtn.setStyle(
-                "-fx-background-color: #5849C4;" +
+                "-fx-background-color: " + popColor + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-size: 13px;" +
                         "-fx-font-weight: bold;" +
                         "-fx-background-radius: 30;" +
-                        "-fx-padding: 10 20 10 20;" +
+                        "-fx-padding: 12 32 12 32;" +
                         "-fx-cursor: hand;"
         ));
         startBtn.setOnMouseExited(e -> startBtn.setStyle(
-                "-fx-background-color: #6C63FF;" +
+                "-fx-background-color: " + popColor + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-size: 13px;" +
                         "-fx-font-weight: bold;" +
                         "-fx-background-radius: 30;" +
-                        "-fx-padding: 10 20 10 20;" +
+                        "-fx-padding: 12 28 12 28;" +
                         "-fx-cursor: hand;"
         ));
 
-        startBtn.setOnAction(e -> {
-            ouvrirApprentissage(langue);
-        });
+        startBtn.setOnAction(e -> ouvrirApprentissage(langue));
 
-        card.getChildren().addAll(imageContainer, nameLabel, descLabel, popBadge, startBtn);
-        VBox.setMargin(startBtn, new Insets(0, 0, 16, 0));
-        VBox.setMargin(nameLabel, new Insets(12, 0, 0, 0));
-        VBox.setMargin(descLabel, new Insets(0, 12, 0, 12));
-        VBox.setMargin(popBadge, new Insets(4, 0, 8, 0));
+        contentBox.getChildren().addAll(nameLabel, descLabel, popBadge);
+        card.getChildren().addAll(topBar, contentBox, startBtn);
+
+        VBox.setMargin(startBtn, new Insets(0, 16, 20, 16));
 
         return card;
     }
 
-    // Méthode pour ouvrir la page d'apprentissage
-    // Méthode pour ouvrir la page d'apprentissage
     private void ouvrirApprentissage(Langue langue) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/fxml/apprentissage.fxml"));
@@ -267,9 +306,7 @@ public class LanguesEtudiantController {
             controller.setLangue(langue);
             controller.setHomeController(homeController);
 
-            // Utiliser le HomeController pour changer le contenu
             if (homeController != null) {
-                // Assure-toi que HomeController a une méthode setContent
                 homeController.setContent(apprentissageView);
             }
 

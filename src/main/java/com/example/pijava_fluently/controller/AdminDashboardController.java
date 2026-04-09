@@ -7,11 +7,12 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AdminDashboardController {
 
-    
+
     // ── Labels topbar ──────────────────────────────────────────────
     @FXML private Button navEtudiants;
     @FXML private Button navLangues;
@@ -27,6 +28,7 @@ public class AdminDashboardController {
     @FXML private Button navObjectifsToggle;
     @FXML private Button navObjectifsList;
     @FXML private Button navTaches;
+    @FXML private Button navUserProgress;
 
     @FXML private Label pageTitle;
     @FXML private Label pageBreadcrumb;
@@ -62,18 +64,30 @@ public class AdminDashboardController {
     @FXML private VBox reservationsView;
     @FXML private VBox objectifsView;
     @FXML private VBox tachesView;
+    @FXML private VBox userProgressView;
 
     // Liste de toutes les vues pour le hideAll()
-    private List<VBox> allViews;
+    private List<VBox> allViews = new ArrayList<>();
 
     @FXML
     public void initialize() {
-        allViews = List.of(
-                dashboardView, languesView, niveauxView, coursView,
-                etudiantsView, testsView, questionsView, reponsesView,
-                passagesView, groupesView, sessionsView, reservationsView,
-                objectifsView, tachesView
-        );
+        // Initialisation sécurisée de la liste des vues
+        if (dashboardView != null) allViews.add(dashboardView);
+        if (languesView != null) allViews.add(languesView);
+        if (niveauxView != null) allViews.add(niveauxView);
+        if (coursView != null) allViews.add(coursView);
+        if (etudiantsView != null) allViews.add(etudiantsView);
+        if (testsView != null) allViews.add(testsView);
+        if (questionsView != null) allViews.add(questionsView);
+        if (reponsesView != null) allViews.add(reponsesView);
+        if (passagesView != null) allViews.add(passagesView);
+        if (userProgressView != null) allViews.add(userProgressView);
+        if (groupesView != null) allViews.add(groupesView);
+        if (sessionsView != null) allViews.add(sessionsView);
+        if (reservationsView != null) allViews.add(reservationsView);
+        if (objectifsView != null) allViews.add(objectifsView);
+        if (tachesView != null) allViews.add(tachesView);
+
         // Dashboard affiché par défaut
         showDashboard();
     }
@@ -103,10 +117,12 @@ public class AdminDashboardController {
     }
 
     private void toggle(VBox submenu) {
+        if (submenu == null) return;
         boolean nowVisible = !submenu.isVisible();
         submenu.setVisible(nowVisible);
         submenu.setManaged(nowVisible);
     }
+
     private void showView(VBox view, String title, String breadcrumb) {
         VBox[] all = { dashboardView, testsView, questionsView, reponsesView,
                 passagesView, etudiantsView, languesView, groupesView,
@@ -118,6 +134,7 @@ public class AdminDashboardController {
         if (pageTitle != null)      pageTitle.setText(title);
         if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
     }
+
     private void setActive(Button active) {
         Button[] all = { navEtudiants, navLangues, navTests, navQuestions, navReponses,
                 navPassages, navGroupes, navSessionsList, navReservations,
@@ -129,6 +146,7 @@ public class AdminDashboardController {
     }
 
     private void loadModuleInto(VBox container, String fxmlName) {
+        if (container == null) return;
         try {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/example/pijava_fluently/fxml/" + fxmlName)
@@ -140,6 +158,7 @@ public class AdminDashboardController {
             e.printStackTrace();
         }
     }
+
     // ══════════════════════════════════════════════════════════════
     //  NAVIGATION — afficher les vues
     // ══════════════════════════════════════════════════════════════
@@ -147,17 +166,20 @@ public class AdminDashboardController {
     @FXML
     private void showDashboard() {
         hideAll();
-        dashboardView.setVisible(true);
-        dashboardView.setManaged(true);
+        if (dashboardView != null) {
+            dashboardView.setVisible(true);
+            dashboardView.setManaged(true);
+        }
         setTitle("Dashboard", "Administration › Dashboard");
     }
-
 
     @FXML
     private void showEtudiants() {
         hideAll();
-        etudiantsView.setVisible(true);
-        etudiantsView.setManaged(true);
+        if (etudiantsView != null) {
+            etudiantsView.setVisible(true);
+            etudiantsView.setManaged(true);
+        }
         setTitle("Utilisateurs", "Administration › Utilisateurs");
     }
 
@@ -182,6 +204,13 @@ public class AdminDashboardController {
         hideAll();
         loadPage(coursView, "/com/example/pijava_fluently/fxml/cours-view.fxml");
         setTitle("Cours", "Administration › Langues › Cours");
+    }
+
+    @FXML
+    private void showUserProgress() {
+        hideAll();
+        loadPage(userProgressView, "/com/example/pijava_fluently/fxml/user-progress.fxml");
+        setTitle("Progression des Étudiants", "Administration › Langues › Progression");
     }
 
     // ── Tests ──────────────────────────────────────────────────────
@@ -215,40 +244,50 @@ public class AdminDashboardController {
     @FXML
     private void showGroupes() {
         hideAll();
-        groupesView.setVisible(true);
-        groupesView.setManaged(true);
+        if (groupesView != null) {
+            groupesView.setVisible(true);
+            groupesView.setManaged(true);
+        }
         setTitle("Groupes", "Administration › Groupes");
     }
 
     @FXML
     private void showSessions() {
         hideAll();
-        sessionsView.setVisible(true);
-        sessionsView.setManaged(true);
+        if (sessionsView != null) {
+            sessionsView.setVisible(true);
+            sessionsView.setManaged(true);
+        }
         setTitle("Sessions", "Administration › Sessions");
     }
 
     @FXML
     private void showReservations() {
         hideAll();
-        reservationsView.setVisible(true);
-        reservationsView.setManaged(true);
+        if (reservationsView != null) {
+            reservationsView.setVisible(true);
+            reservationsView.setManaged(true);
+        }
         setTitle("Réservations", "Administration › Sessions › Réservations");
     }
 
     @FXML
     private void showObjectifs() {
         hideAll();
-        objectifsView.setVisible(true);
-        objectifsView.setManaged(true);
+        if (objectifsView != null) {
+            objectifsView.setVisible(true);
+            objectifsView.setManaged(true);
+        }
         setTitle("Objectifs", "Administration › Objectifs");
     }
 
     @FXML
     private void showTaches() {
         hideAll();
-        tachesView.setVisible(true);
-        tachesView.setManaged(true);
+        if (tachesView != null) {
+            tachesView.setVisible(true);
+            tachesView.setManaged(true);
+        }
         setTitle("Tâches", "Administration › Objectifs › Tâches");
     }
 
@@ -265,15 +304,17 @@ public class AdminDashboardController {
     /** Cache toutes les vues */
     private void hideAll() {
         for (VBox v : allViews) {
-            v.setVisible(false);
-            v.setManaged(false);
+            if (v != null) {
+                v.setVisible(false);
+                v.setManaged(false);
+            }
         }
     }
 
     /** Met à jour le titre et le fil d'Ariane */
     private void setTitle(String title, String breadcrumb) {
-        pageTitle.setText(title);
-        pageBreadcrumb.setText(breadcrumb);
+        if (pageTitle != null) pageTitle.setText(title);
+        if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
     }
 
     /**
@@ -282,6 +323,7 @@ public class AdminDashboardController {
      * qui ont leur propre contrôleur.
      */
     private void loadPage(VBox container, String fxmlPath) {
+        if (container == null) return;
         try {
             // On recharge seulement si le conteneur est vide
             if (container.getChildren().isEmpty()) {
