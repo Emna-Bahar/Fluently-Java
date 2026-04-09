@@ -154,7 +154,7 @@
                                      style="-fx-alignment:CENTER;"/>
                         <TableColumn fx:id="colNiveau"  text="Niveau"  prefWidth="170"
                                      style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colActions" text="Actions" prefWidth="210"
+                        <TableColumn fx:id="colActions" text="Actions" prefWidth="310"
                                      style="-fx-alignment:CENTER;"/>
                     </columns>
                     <placeholder>

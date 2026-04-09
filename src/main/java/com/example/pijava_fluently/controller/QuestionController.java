@@ -137,18 +137,18 @@ public class QuestionController {
         });
 
         colActions.setCellFactory(col -> new TableCell<>() {
-            private final Button btnDetails = bouton("🔍 Détails",
-                    "-fx-background-color:#EFF6FF;-fx-text-fill:#3B82F6;",
-                    "-fx-background-color:#DBEAFE;-fx-text-fill:#1D4ED8;");
-            private final Button btnEdit    = bouton("✎ Modifier",
-                    "-fx-background-color:#F5F3FF;-fx-text-fill:#7C3AED;",
-                    "-fx-background-color:#EDE9FE;-fx-text-fill:#5B21B6;");
-            private final Button btnDelete  = bouton("🗑 Supprimer",
-                    "-fx-background-color:#FFF1F2;-fx-text-fill:#E11D48;",
-                    "-fx-background-color:#FFE4E6;-fx-text-fill:#BE123C;");
+            private final Button btnDetails = bouton(
+                    "🔍 Détails",
+                    "#EFF6FF", "#3B82F6", "#DBEAFE", "#1D4ED8", "#BFDBFE");
+            private final Button btnEdit = bouton(
+                    "✎ Modifier",
+                    "#F5F3FF", "#7C3AED", "#EDE9FE", "#5B21B6", "#DDD6FE");
+            private final Button btnDelete = bouton(
+                    "🗑 Supprimer",
+                    "#FFF1F2", "#E11D48", "#FFE4E6", "#BE123C", "#FECDD3");
             private final HBox box = new HBox(6, btnDetails, btnEdit, btnDelete);
             {
-                box.setAlignment(Pos.CENTER);
+                box.setAlignment(javafx.geometry.Pos.CENTER);
                 btnDetails.setOnAction(e ->
                         afficherDetails(getTableView().getItems().get(getIndex())));
                 btnEdit.setOnAction(e ->
@@ -415,11 +415,19 @@ public class QuestionController {
         fieldScoreMax.clear(); comboTest.setValue(null);
     }
 
-    private Button bouton(String text, String normal, String hover) {
-        Button b = new Button(text);
+    private Button bouton(String texte, String bgNormal, String textNormal,
+                          String bgHover, String textHover, String borderColor) {
+        Button b = new Button(texte);
         String base =
                 "-fx-font-size:11px;-fx-font-weight:bold;" +
-                        "-fx-background-radius:8;-fx-padding:6 12;-fx-cursor:hand;";
+                        "-fx-background-radius:7;-fx-padding:5 12 5 12;-fx-cursor:hand;" +
+                        "-fx-border-radius:7;-fx-border-width:1;";
+        String normal = "-fx-background-color:" + bgNormal + ";" +
+                "-fx-text-fill:" + textNormal + ";" +
+                "-fx-border-color:" + borderColor + ";";
+        String hover  = "-fx-background-color:" + bgHover + ";" +
+                "-fx-text-fill:" + textHover + ";" +
+                "-fx-border-color:" + borderColor + ";";
         b.setStyle(normal + base);
         b.setOnMouseEntered(e -> b.setStyle(hover + base));
         b.setOnMouseExited(e  -> b.setStyle(normal + base));
