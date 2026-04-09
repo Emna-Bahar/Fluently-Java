@@ -62,7 +62,8 @@ public class UserProgressService implements IService<User_progress> {
             up.setId(rs.getInt("id"));
             up.setDernierNumeroCours(rs.getInt("dernier_numero_cours"));
             up.setTestNiveauComplete(rs.getBoolean("test_niveau_complete"));
-            up.setDateDerniereActivite(rs.getTimestamp("date_derniere_activite").toLocalDateTime());
+            Timestamp ts = rs.getTimestamp("date_derniere_activite");
+            up.setDateDerniereActivite(ts != null ? ts.toLocalDateTime() : java.time.LocalDateTime.now());
             up.setUserId(rs.getInt("user_id"));
             up.setLangueId(rs.getInt("langue_id"));
             up.setNiveauActuelId(rs.getInt("niveau_actuel_id"));

@@ -1,11 +1,9 @@
 package com.example.pijava_fluently.controller;
 
-import com.example.pijava_fluently.entites.Cours;
-import com.example.pijava_fluently.entites.Langue;
-import com.example.pijava_fluently.entites.Niveau;
-import com.example.pijava_fluently.entites.Test;
+import com.example.pijava_fluently.entites.*;
 import com.example.pijava_fluently.services.CoursService;
 import com.example.pijava_fluently.services.NiveauService;
+import com.example.pijava_fluently.services.TestPassageService;
 import com.example.pijava_fluently.services.TestService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -56,6 +54,7 @@ public class ApprentissageController {
         this.langue = langue;
         langueNom.setText(langue.getNom());
         langueDescription.setText(langue.getDescription());
+        chargerNiveauActuel();  // ← AJOUTE CETTE LIGNE
         chargerCours();
     }
 
@@ -79,7 +78,7 @@ public class ApprentissageController {
             List<Test> testsNiveau = tests.stream()
                     .filter(t -> t.getLangueId() == langue.getId()
                             && t.getType().equals("Test de niveau"))
-                    .collect(java.util.stream.Collectors.toList());
+                    .collect(Collectors.toList());
 
             if (testsNiveau.isEmpty()) {
                 showAlert("Information",
@@ -87,8 +86,6 @@ public class ApprentissageController {
                 return;
             }
 
-            // Si plusieurs tests disponibles, prendre le premier
-            // (ou afficher un choix — ici on prend le premier par ordre)
             Test testChoisi = testsNiveau.get(0);
 
             // Charger l'interface de passage du test
@@ -96,7 +93,7 @@ public class ApprentissageController {
                     "/com/example/pijava_fluently/fxml/test-passage.fxml"));
             Node vue = loader.load();
             TestPassageEtudiantController ctrl = loader.getController();
-            ctrl.initTest(testChoisi, 7); // userId — à remplacer par SessionUtilisateur
+            ctrl.initTest(testChoisi, 2); // ← CHANGER ICI : userId = 2
 
             if (homeController != null) {
                 homeController.setContent(vue);
@@ -107,6 +104,50 @@ public class ApprentissageController {
     }
 
 
+    private void chargerNiveauActuel() {
+        try {
+            TestPassageService testPassageService = new TestPassageService();
+            List<TestPassage> passages = testPassageService.recuperer();
+
+            // Filtrer les passages terminés pour cette langue et cet utilisateur (userId = 2)
+            List<TestPassage> passagesLangue = passages.stream()
+                    .filter(p -> p.getUserId() == 2) // User statique ID 2
+                    .filter(p -> "termine".equals(p.getStatut()))
+                    .collect(Collectors.toList());
+
+            if (passagesLangue.isEmpty()) {
+                niveauActuelValue.setText("Non défini");
+                return;
+            }
+
+            // Récupérer le dernier passage (le plus récent)
+            TestPassage dernierPassage = passagesLangue.stream()
+                    .max((p1, p2) -> p1.getDateFin().compareTo(p2.getDateFin()))
+                    .orElse(null);
+
+            if (dernierPassage != null) {
+                double pourcentage = dernierPassage.getResultat();
+                String niveau = determinerNiveauParScore(pourcentage);
+                niveauActuelValue.setText(niveau);
+            } else {
+                niveauActuelValue.setText("Non défini");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors du chargement du niveau actuel: " + e.getMessage());
+            niveauActuelValue.setText("Non défini");
+        }
+    }
+
+    // Méthode pour déterminer le niveau selon le score
+    private String determinerNiveauParScore(double pourcentage) {
+        if (pourcentage >= 90) return "C2";
+        if (pourcentage >= 80) return "C1";
+        if (pourcentage >= 70) return "B2";
+        if (pourcentage >= 60) return "B1";
+        if (pourcentage >= 50) return "A2";
+        return "A1";
+    }
     private void chargerCours() {
         new Thread(() -> {
             try {
@@ -195,45 +236,73 @@ public class ApprentissageController {
     private VBox createCercleCours(Cours cours, int numero, boolean estComplete) {
         VBox cercle = new VBox();
         cercle.setAlignment(Pos.CENTER);
-        cercle.setSpacing(8);
-        cercle.setPrefWidth(80);
-        cercle.setPrefHeight(100);
+        cercle.setSpacing(10);
+        cercle.setPrefWidth(90);
+        cercle.setPrefHeight(110);
         cercle.setStyle("-fx-cursor: hand;");
 
         // Le cercle lui-même
         StackPane circle = new StackPane();
-        circle.setPrefSize(60, 60);
+        circle.setPrefSize(65, 65);
 
-        Label numberLabel = new Label(String.valueOf(numero));
-        numberLabel.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:white;");
+        // Effet d'ombre
+        DropShadow shadow = new DropShadow();
+        shadow.setRadius(8);
+        shadow.setColor(Color.rgb(108, 99, 255, 0.3));
+        shadow.setOffsetY(2);
+        circle.setEffect(shadow);
 
         if (estComplete) {
-            circle.setStyle("-fx-background-color:#10B981;-fx-background-radius:30;-fx-effect:dropshadow(gaussian,rgba(16,185,129,0.3),8,0,0,2);");
+            // Syntaxe JavaFX pour dégradé
+            circle.setStyle("-fx-background-color: radial-gradient(radius 100%, #10B981, #059669); -fx-background-radius: 35;");
             Label checkLabel = new Label("✓");
-            checkLabel.setStyle("-fx-font-size:24px;-fx-font-weight:bold;-fx-text-fill:white;");
+            checkLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
             circle.getChildren().add(checkLabel);
         } else {
-            circle.setStyle("-fx-background-color:#6C63FF;-fx-background-radius:30;-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.3),8,0,0,2);");
+            // Syntaxe JavaFX pour dégradé
+            circle.setStyle("-fx-background-color: radial-gradient(radius 100%, #6C63FF, #8B5CF6); -fx-background-radius: 35;");
+            Label numberLabel = new Label(String.valueOf(numero));
+            numberLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;");
             circle.getChildren().add(numberLabel);
         }
 
         // Label du cours
         Label coursLabel = new Label("Cours " + numero);
-        coursLabel.setStyle("-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;");
+        coursLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #4A4D6A;");
 
-        cercle.getChildren().addAll(circle, coursLabel);
+        // Badge de statut
+        if (estComplete) {
+            Label completedBadge = new Label("✅ Complété");
+            completedBadge.setStyle("-fx-font-size: 9px; -fx-text-fill: #059669; -fx-font-weight: bold;");
+            cercle.getChildren().addAll(circle, coursLabel, completedBadge);
+        } else {
+            cercle.getChildren().addAll(circle, coursLabel);
+        }
 
         // Effet hover
         cercle.setOnMouseEntered(e -> {
             if (!estComplete) {
-                circle.setStyle("-fx-background-color:#5849C4;-fx-background-radius:30;-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.5),12,0,0,4);");
-                cercle.setTranslateY(-3);
+                circle.setEffect(new DropShadow(12, Color.rgb(108, 99, 255, 0.5)));
+                circle.setScaleX(1.05);
+                circle.setScaleY(1.05);
+                cercle.setTranslateY(-4);
+            } else {
+                circle.setEffect(new DropShadow(12, Color.rgb(16, 185, 129, 0.4)));
+                circle.setScaleX(1.03);
+                circle.setScaleY(1.03);
             }
         });
+
         cercle.setOnMouseExited(e -> {
             if (!estComplete) {
-                circle.setStyle("-fx-background-color:#6C63FF;-fx-background-radius:30;-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.3),8,0,0,2);");
+                circle.setEffect(new DropShadow(8, Color.rgb(108, 99, 255, 0.3)));
+                circle.setScaleX(1.0);
+                circle.setScaleY(1.0);
                 cercle.setTranslateY(0);
+            } else {
+                circle.setEffect(new DropShadow(8, Color.rgb(16, 185, 129, 0.2)));
+                circle.setScaleX(1.0);
+                circle.setScaleY(1.0);
             }
         });
 
