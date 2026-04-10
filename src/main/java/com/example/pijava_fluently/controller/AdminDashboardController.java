@@ -12,8 +12,7 @@ import java.util.List;
 
 public class AdminDashboardController {
 
-
-    // ── Labels topbar ──────────────────────────────────────────────
+    // ── Boutons navigation sidebar ─────────────────────────────────
     @FXML private Button navEtudiants;
     @FXML private Button navLangues;
     @FXML private Button navTestsToggle;
@@ -30,6 +29,7 @@ public class AdminDashboardController {
     @FXML private Button navTaches;
     @FXML private Button navUserProgress;
 
+    // ── Labels topbar ──────────────────────────────────────────────
     @FXML private Label pageTitle;
     @FXML private Label pageBreadcrumb;
     @FXML private Label adminName;
@@ -43,77 +43,87 @@ public class AdminDashboardController {
     @FXML private TableView<?> recentPassagesTable;
     @FXML private TableColumn<?,?> colEtudiant, colTest, colScore, colStatut, colDate;
 
-    // ── Sous-menus sidebar ─────────────────────────────────────────
+    // ── Sous-menus sidebar (accordéon) ─────────────────────────────
     @FXML private VBox languesSubmenu;
     @FXML private VBox testsSubmenu;
     @FXML private VBox sessionsSubmenu;
     @FXML private VBox objectifsSubmenu;
 
-    // ── Toutes les vues ────────────────────────────────────────────
+    // ── Conteneurs de vues (StackPane interne) ─────────────────────
     @FXML private VBox dashboardView;
+
+    // Langues / Cours / Niveau / UserProgress
     @FXML private VBox languesView;
     @FXML private VBox niveauxView;
     @FXML private VBox coursView;
+    @FXML private VBox userProgressView;
+
+    // Utilisateurs
     @FXML private VBox etudiantsView;
+
+    // Tests (module principal)
     @FXML private VBox testsView;
     @FXML private VBox questionsView;
     @FXML private VBox reponsesView;
     @FXML private VBox passagesView;
+
+    // Groupes / Sessions / Réservations
     @FXML private VBox groupesView;
     @FXML private VBox sessionsView;
     @FXML private VBox reservationsView;
+
+    // Objectifs / Tâches
     @FXML private VBox objectifsView;
     @FXML private VBox tachesView;
-    @FXML private VBox userProgressView;
 
-    // Liste de toutes les vues pour le hideAll()
-    private List<VBox> allViews = new ArrayList<>();
+    // Liste complète pour hideAll()
+    private final List<VBox> allViews = new ArrayList<>();
+
+    // ══════════════════════════════════════════════════════════════
+    //  INITIALISATION
+    // ══════════════════════════════════════════════════════════════
 
     @FXML
     public void initialize() {
-        // Initialisation sécurisée de la liste des vues
-        if (dashboardView != null) allViews.add(dashboardView);
-        if (languesView != null) allViews.add(languesView);
-        if (niveauxView != null) allViews.add(niveauxView);
-        if (coursView != null) allViews.add(coursView);
-        if (etudiantsView != null) allViews.add(etudiantsView);
-        if (testsView != null) allViews.add(testsView);
-        if (questionsView != null) allViews.add(questionsView);
-        if (reponsesView != null) allViews.add(reponsesView);
-        if (passagesView != null) allViews.add(passagesView);
-        if (userProgressView != null) allViews.add(userProgressView);
-        if (groupesView != null) allViews.add(groupesView);
-        if (sessionsView != null) allViews.add(sessionsView);
-        if (reservationsView != null) allViews.add(reservationsView);
-        if (objectifsView != null) allViews.add(objectifsView);
-        if (tachesView != null) allViews.add(tachesView);
+        // Enregistrement sécurisé de toutes les vues
+        addIfNotNull(dashboardView);
+        addIfNotNull(languesView);
+        addIfNotNull(niveauxView);
+        addIfNotNull(coursView);
+        addIfNotNull(userProgressView);
+        addIfNotNull(etudiantsView);
+        addIfNotNull(testsView);
+        addIfNotNull(questionsView);
+        addIfNotNull(reponsesView);
+        addIfNotNull(passagesView);
+        addIfNotNull(groupesView);
+        addIfNotNull(sessionsView);
+        addIfNotNull(reservationsView);
+        addIfNotNull(objectifsView);
+        addIfNotNull(tachesView);
 
         // Dashboard affiché par défaut
         showDashboard();
     }
 
+    private void addIfNotNull(VBox v) {
+        if (v != null) allViews.add(v);
+    }
+
     // ══════════════════════════════════════════════════════════════
-    //  TOGGLE SOUS-MENUS
+    //  TOGGLE SOUS-MENUS (accordéon sidebar)
     // ══════════════════════════════════════════════════════════════
 
-    @FXML
-    private void toggleLangues() {
-        toggle(languesSubmenu);
-    }
-
-    @FXML
-    private void toggleTests() {
-        toggle(testsSubmenu);
-    }
-
-    @FXML
-    private void toggleSessions() {
-        toggle(sessionsSubmenu);
-    }
+    @FXML private void toggleLangues()  { toggle(languesSubmenu);  }
+    @FXML private void toggleTests()    { toggle(testsSubmenu);    }
+    @FXML private void toggleSessions() { toggle(sessionsSubmenu); }
 
     @FXML
     private void toggleObjectifs() {
+        boolean wasVisible = objectifsSubmenu != null && objectifsSubmenu.isVisible();
         toggle(objectifsSubmenu);
+        // Ouvre la page objectifs automatiquement au premier clic
+        if (!wasVisible) showObjectifs();
     }
 
     private void toggle(VBox submenu) {
@@ -123,73 +133,45 @@ public class AdminDashboardController {
         submenu.setManaged(nowVisible);
     }
 
-    private void showView(VBox view, String title, String breadcrumb) {
-        VBox[] all = { dashboardView, testsView, questionsView, reponsesView,
-                passagesView, etudiantsView, languesView, groupesView,
-                sessionsView, reservationsView, objectifsView, tachesView };
-        for (VBox v : all) {
-            if (v != null) { v.setVisible(false); v.setManaged(false); }
-        }
-        if (view != null) { view.setVisible(true); view.setManaged(true); }
-        if (pageTitle != null)      pageTitle.setText(title);
-        if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
-    }
-
-    private void setActive(Button active) {
-        Button[] all = { navEtudiants, navLangues, navTests, navQuestions, navReponses,
-                navPassages, navGroupes, navSessionsList, navReservations,
-                navObjectifsList, navTaches };
-        for (Button b : all) {
-            if (b != null) b.getStyleClass().remove("nav-active");
-        }
-        if (active != null) active.getStyleClass().add("nav-active");
-    }
-
-    private void loadModuleInto(VBox container, String fxmlName) {
-        if (container == null) return;
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/fxml/" + fxmlName)
-            );
-            Node content = loader.load();
-            container.getChildren().setAll(content);
-            VBox.setVgrow(content, javafx.scene.layout.Priority.ALWAYS);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     // ══════════════════════════════════════════════════════════════
-    //  NAVIGATION — afficher les vues
+    //  NAVIGATION — DASHBOARD
     // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void showDashboard() {
         hideAll();
-        if (dashboardView != null) {
-            dashboardView.setVisible(true);
-            dashboardView.setManaged(true);
-        }
+        show(dashboardView);
         setTitle("Dashboard", "Administration › Dashboard");
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  NAVIGATION — UTILISATEURS / ÉTUDIANTS
+    // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void showEtudiants() {
         hideAll();
-        if (etudiantsView != null) {
-            etudiantsView.setVisible(true);
-            etudiantsView.setManaged(true);
+        // Si une vue statique est déclarée dans le FXML principal, on l'affiche.
+        // Sinon on charge le FXML dédié.
+        if (etudiantsView != null && !etudiantsView.getChildren().isEmpty()) {
+            show(etudiantsView);
+        } else {
+            loadPage(etudiantsView, "/com/example/pijava_fluently/fxml/etudiants-view.fxml");
         }
         setTitle("Utilisateurs", "Administration › Utilisateurs");
+        setActive(navEtudiants);
     }
 
-    // ── Langues ────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+    //  NAVIGATION — LANGUES / NIVEAUX / COURS / USER PROGRESS
+    // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void showLangues() {
         hideAll();
         loadPage(languesView, "/com/example/pijava_fluently/fxml/langue-view.fxml");
         setTitle("Langues", "Administration › Langues");
+        setActive(navLangues);
     }
 
     @FXML
@@ -211,97 +193,119 @@ public class AdminDashboardController {
         hideAll();
         loadPage(userProgressView, "/com/example/pijava_fluently/fxml/user-progress.fxml");
         setTitle("Progression des Étudiants", "Administration › Langues › Progression");
+        setActive(navUserProgress);
     }
 
-    // ── Tests ──────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+    //  NAVIGATION — TESTS / QUESTIONS / RÉPONSES / PASSAGES
+    // ══════════════════════════════════════════════════════════════
 
-    @FXML private void showTests() {
-        showView(testsView, "Gestion des Tests", "Administration › Tests › Tests");
-        loadModuleInto(testsView, "tests.fxml");
+    @FXML
+    private void showTests() {
+        hideAll();
+        loadPage(testsView, "/com/example/pijava_fluently/fxml/tests.fxml");
+        setTitle("Gestion des Tests", "Administration › Tests › Tests");
         setActive(navTests);
     }
 
-    @FXML private void showQuestions() {
-        showView(questionsView, "Gestion des Questions", "Administration › Tests › Questions");
-        loadModuleInto(questionsView, "questions.fxml");
+    @FXML
+    private void showQuestions() {
+        hideAll();
+        loadPage(questionsView, "/com/example/pijava_fluently/fxml/questions.fxml");
+        setTitle("Gestion des Questions", "Administration › Tests › Questions");
         setActive(navQuestions);
     }
 
-    @FXML private void showReponses() {
-        showView(reponsesView, "Gestion des Réponses", "Administration › Tests › Réponses");
-        loadModuleInto(reponsesView, "reponses.fxml");
+    @FXML
+    private void showReponses() {
+        hideAll();
+        loadPage(reponsesView, "/com/example/pijava_fluently/fxml/reponses.fxml");
+        setTitle("Gestion des Réponses", "Administration › Tests › Réponses");
         setActive(navReponses);
     }
 
-    @FXML private void showPassages() {
-        showView(passagesView, "Passages de Tests", "Administration › Tests › Passages");
-        loadModuleInto(passagesView, "passages.fxml");
+    @FXML
+    private void showPassages() {
+        hideAll();
+        loadPage(passagesView, "/com/example/pijava_fluently/fxml/passages.fxml");
+        setTitle("Passages de Tests", "Administration › Tests › Passages");
         setActive(navPassages);
     }
 
-    // ── Groupes / Sessions / Objectifs ─────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+    //  NAVIGATION — GROUPES / SESSIONS / RÉSERVATIONS
+    // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void showGroupes() {
         hideAll();
-        if (groupesView != null) {
-            groupesView.setVisible(true);
-            groupesView.setManaged(true);
-        }
+        show(groupesView);
         setTitle("Groupes", "Administration › Groupes");
+        setActive(navGroupes);
     }
 
     @FXML
     private void showSessions() {
         hideAll();
-        if (sessionsView != null) {
-            sessionsView.setVisible(true);
-            sessionsView.setManaged(true);
-        }
+        show(sessionsView);
         setTitle("Sessions", "Administration › Sessions");
+        setActive(navSessionsList);
     }
 
     @FXML
     private void showReservations() {
         hideAll();
-        if (reservationsView != null) {
-            reservationsView.setVisible(true);
-            reservationsView.setManaged(true);
-        }
+        show(reservationsView);
         setTitle("Réservations", "Administration › Sessions › Réservations");
+        setActive(navReservations);
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  NAVIGATION — OBJECTIFS / TÂCHES
+    // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void showObjectifs() {
         hideAll();
-        if (objectifsView != null) {
-            objectifsView.setVisible(true);
-            objectifsView.setManaged(true);
-        }
+        loadPage(objectifsView, "/com/example/pijava_fluently/fxml/ObjectifAdmin-view.fxml");
         setTitle("Objectifs", "Administration › Objectifs");
+        setActive(navObjectifsList);
     }
 
     @FXML
     private void showTaches() {
         hideAll();
-        if (tachesView != null) {
-            tachesView.setVisible(true);
-            tachesView.setManaged(true);
-        }
+        loadPage(tachesView, "/com/example/pijava_fluently/fxml/TacheAdmin-view.fxml");
         setTitle("Tâches", "Administration › Objectifs › Tâches");
+        setActive(navTaches);
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  DÉCONNEXION
+    // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void handleLogout() {
-        // TODO : revenir à la page de login
-        System.out.println("Déconnexion...");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/login-view.fxml")
+            );
+            Node loginPage = loader.load();
+            // Récupérer la scène depuis n'importe quel nœud visible
+            if (dashboardView != null && dashboardView.getScene() != null) {
+                dashboardView.getScene().setRoot((javafx.scene.Parent) loginPage);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Déconnexion — retour login impossible : " + e.getMessage());
+        }
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  UTILITAIRES
+    //  UTILITAIRES PRIVÉS
     // ══════════════════════════════════════════════════════════════
 
-    /** Cache toutes les vues */
+    /** Cache toutes les vues enregistrées. */
     private void hideAll() {
         for (VBox v : allViews) {
             if (v != null) {
@@ -311,39 +315,94 @@ public class AdminDashboardController {
         }
     }
 
-    /** Met à jour le titre et le fil d'Ariane */
+    /** Rend visible et géré un VBox. */
+    private void show(VBox view) {
+        if (view != null) {
+            view.setVisible(true);
+            view.setManaged(true);
+        }
+    }
+
+    /** Met à jour le titre et le fil d'Ariane. */
     private void setTitle(String title, String breadcrumb) {
-        if (pageTitle != null) pageTitle.setText(title);
+        if (pageTitle != null)      pageTitle.setText(title);
         if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
     }
 
     /**
-     * Charge un FXML dans un VBox conteneur.
-     * Appelé uniquement pour les pages Langue / Niveau / Cours
-     * qui ont leur propre contrôleur.
+     * Met en surbrillance le bouton actif dans la sidebar.
+     * Retire la classe CSS "nav-active" de tous les boutons, puis l'ajoute au bouton actif.
+     */
+    private void setActive(Button active) {
+        Button[] all = {
+                navEtudiants, navLangues, navTests, navQuestions,
+                navReponses, navPassages, navGroupes, navSessionsList,
+                navReservations, navObjectifsList, navTaches, navUserProgress
+        };
+        for (Button b : all) {
+            if (b != null) b.getStyleClass().remove("nav-active");
+        }
+        if (active != null) active.getStyleClass().add("nav-active");
+    }
+
+    /**
+     * Charge un FXML dans un conteneur VBox.
+     * Utilise un cache par chemin pour éviter de recharger inutilement.
+     * Si le FXML est introuvable, affiche un message d'erreur inline.
+     *
+     * @param container  Le VBox cible déclaré dans le FXML principal.
+     * @param fxmlPath   Chemin absolu de la ressource FXML à charger.
      */
     private void loadPage(VBox container, String fxmlPath) {
         if (container == null) return;
+
         try {
-            // On recharge seulement si le conteneur est vide
-            if (container.getChildren().isEmpty()) {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource(fxmlPath)
-                );
+            // Cache : on ne recharge pas si le même FXML est déjà chargé
+            String loadedPath = (String) container.getProperties().get("loadedFxmlPath");
+            if (!fxmlPath.equals(loadedPath)) {
+                var resource = getClass().getResource(fxmlPath);
+                if (resource == null) {
+                    throw new IOException("Ressource FXML introuvable : " + fxmlPath);
+                }
+                FXMLLoader loader = new FXMLLoader(resource);
                 Node page = loader.load();
                 VBox.setVgrow(page, Priority.ALWAYS);
-                container.getChildren().add(page);
+                container.getChildren().setAll(page);
+                container.getProperties().put("loadedFxmlPath", fxmlPath);
             }
             container.setVisible(true);
             container.setManaged(true);
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             e.printStackTrace();
-            showError("Impossible de charger la page : " + fxmlPath);
+            showErrorInContainer(container,
+                    "Impossible de charger : " + fxmlPath + "\n" + e.getMessage());
         }
     }
 
-    private void showError(String msg) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
-        alert.showAndWait();
+    /**
+     * Affiche un message d'erreur stylisé directement dans le conteneur,
+     * sans bloquer l'UI avec une boîte de dialogue.
+     */
+    private void showErrorInContainer(VBox container, String msg) {
+        Label title = new Label("⚠ Erreur de chargement");
+        title.setStyle("-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#991B1B;");
+
+        Label detail = new Label(msg);
+        detail.setWrapText(true);
+        detail.setStyle("-fx-font-size:12px;-fx-text-fill:#B91C1C;");
+
+        VBox errorBox = new VBox(8, title, detail);
+        errorBox.setStyle(
+                "-fx-background-color:#FEF2F2;" +
+                        "-fx-border-color:#FECACA;" +
+                        "-fx-border-radius:10;" +
+                        "-fx-background-radius:10;" +
+                        "-fx-padding:20;"
+        );
+
+        container.getChildren().setAll(errorBox);
+        container.setVisible(true);
+        container.setManaged(true);
     }
 }
