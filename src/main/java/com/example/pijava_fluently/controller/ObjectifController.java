@@ -1,6 +1,7 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.Objectif;
+import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.ObjectifService;
 import com.example.pijava_fluently.services.TacheService;
 import com.example.pijava_fluently.utils.MyDatabase;
@@ -38,7 +39,6 @@ public class ObjectifController {
     @FXML private ComboBox<String> comboStatut;
     @FXML private ComboBox<String> comboUser;
 
-    // Labels d'erreur inline
     @FXML private Label errTitre;
     @FXML private Label errDescription;
     @FXML private Label errDateDeb;
@@ -55,6 +55,7 @@ public class ObjectifController {
     private ObservableList<Objectif> allData   = FXCollections.observableArrayList();
     private Objectif selectedObjectif          = null;
     private HomeController homeController;
+    private User currentUser;
 
     private final Map<String, Integer> userMap = new LinkedHashMap<>();
 
@@ -68,45 +69,37 @@ public class ObjectifController {
 
     public void setHomeController(HomeController hc) { this.homeController = hc; }
 
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        if (user != null) {
+            loadUsersForCurrentUser();
+            loadData();
+        }
+    }
+
     @FXML
     public void initialize() {
         comboStatut.setItems(FXCollections.observableArrayList(STATUTS));
-        loadUsers();
-        loadData();
-
-        // Ajout des listeners pour validation en temps réel
         setupLiveValidation();
     }
 
     private void setupLiveValidation() {
-        // Validation titre en temps réel
         fieldTitre.textProperty().addListener((obs, old, val) -> {
-            if (val != null && !val.trim().isEmpty()) {
-                validateTitre(val.trim());
-            }
+            if (val != null && !val.trim().isEmpty()) validateTitre(val.trim());
         });
 
-        // Validation description en temps réel
         fieldDescription.textProperty().addListener((obs, old, val) -> {
-            if (val != null && !val.trim().isEmpty()) {
-                validateDescription(val.trim());
-            }
+            if (val != null && !val.trim().isEmpty()) validateDescription(val.trim());
         });
 
-        // Validation dates en temps réel
         fieldDateDeb.valueProperty().addListener((obs, old, val) -> {
-            if (val != null && fieldDateFin.getValue() != null) {
-                validateDates();
-            }
+            if (val != null && fieldDateFin.getValue() != null) validateDates();
         });
 
         fieldDateFin.valueProperty().addListener((obs, old, val) -> {
-            if (val != null && fieldDateDeb.getValue() != null) {
-                validateDates();
-            }
+            if (val != null && fieldDateDeb.getValue() != null) validateDates();
         });
 
-        // Validation statut en temps réel
         comboStatut.valueProperty().addListener((obs, old, val) -> {
             if (val != null && !val.isEmpty()) {
                 clearError(errStatut);
@@ -114,7 +107,6 @@ public class ObjectifController {
             }
         });
 
-        // Validation utilisateur en temps réel
         comboUser.valueProperty().addListener((obs, old, val) -> {
             if (val != null && !val.isEmpty()) {
                 clearError(errUser);
@@ -123,33 +115,34 @@ public class ObjectifController {
         });
     }
 
-    private void loadUsers() {
+    private void loadUsersForCurrentUser() {
         userMap.clear();
-        try {
-            Connection cnx = MyDatabase.getInstance().getConnection();
-            ResultSet rs = cnx.createStatement().executeQuery(
-                    "SELECT id, nom, prenom FROM user ORDER BY nom, prenom"
-            );
-            while (rs.next()) {
-                String label = rs.getString("nom") + " " + rs.getString("prenom");
-                userMap.put(label, rs.getInt("id"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        comboUser.setItems(FXCollections.observableArrayList(userMap.keySet()));
-        comboUser.setPromptText("Sélectionner un utilisateur…");
-        comboUser.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText("Sélectionner un utilisateur…");
-                } else {
-                    setText(item);
+
+        if (currentUser == null) {
+            try {
+                Connection cnx = MyDatabase.getInstance().getConnection();
+                ResultSet rs = cnx.createStatement().executeQuery(
+                        "SELECT id, nom, prenom FROM user ORDER BY nom, prenom"
+                );
+                while (rs.next()) {
+                    String label = rs.getString("nom") + " " + rs.getString("prenom");
+                    userMap.put(label, rs.getInt("id"));
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        });
+            comboUser.setItems(FXCollections.observableArrayList(userMap.keySet()));
+            comboUser.setPromptText("Sélectionner un utilisateur…");
+            comboUser.setDisable(false);
+            return;
+        }
+
+        String label = currentUser.getNom() + " " + currentUser.getPrenom();
+        userMap.put(label, currentUser.getId());
+        comboUser.setItems(FXCollections.observableArrayList(label));
+        comboUser.setValue(label);
+        comboUser.setDisable(true);
+        comboUser.setStyle("-fx-opacity:0.8;");
     }
 
     private void loadData() {
@@ -193,7 +186,6 @@ public class ObjectifController {
                 "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),20,0,0,5);" +
                 "-fx-cursor:hand;");
 
-        // Animation au hover
         card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.15),25,0,0,8);-fx-scale-x:1.02;-fx-scale-y:1.02;"));
         card.setOnMouseExited(e -> card.setStyle(card.getStyle().replace("-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.15),25,0,0,8);-fx-scale-x:1.02;-fx-scale-y:1.02;", "") + "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),20,0,0,5);"));
 
@@ -253,12 +245,23 @@ public class ObjectifController {
         Button btnEdit = makeBtn("✏ Modifier",c1+"22",c1);
         Button btnDel  = makeBtn("🗑 Supprimer","#FFF1F2","#E11D48");
 
-        HBox.setHgrow(btnVoir,Priority.ALWAYS);
-        btnVoir.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(btnEdit,Priority.ALWAYS);
-        btnEdit.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(btnDel, Priority.ALWAYS);
-        btnDel.setMaxWidth(Double.MAX_VALUE);
+        boolean isOwner = (currentUser != null && o.getIdUserId() == currentUser.getId());
+
+        if (!isOwner) {
+            btnEdit.setDisable(true);
+            btnEdit.setVisible(false);
+            btnDel.setDisable(true);
+            btnDel.setVisible(false);
+            HBox.setHgrow(btnVoir, Priority.ALWAYS);
+            btnVoir.setMaxWidth(Double.MAX_VALUE);
+        } else {
+            HBox.setHgrow(btnVoir, Priority.ALWAYS);
+            btnVoir.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(btnEdit, Priority.ALWAYS);
+            btnEdit.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(btnDel, Priority.ALWAYS);
+            btnDel.setMaxWidth(Double.MAX_VALUE);
+        }
 
         row1.getChildren().addAll(btnVoir, btnEdit, btnDel);
 
@@ -268,8 +271,10 @@ public class ObjectifController {
         btnTaches.setStyle("-fx-background-color:linear-gradient(to right,"+c1+","+c2+");-fx-text-fill:white;-fx-font-size:12px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:9 0 9 0;-fx-cursor:hand;");
 
         btnVoir.setOnAction(e  -> showDetails(o));
-        btnEdit.setOnAction(e  -> openEditForm(o));
-        btnDel.setOnAction(e   -> handleDelete(o));
+        if (isOwner) {
+            btnEdit.setOnAction(e  -> openEditForm(o));
+            btnDel.setOnAction(e   -> handleDelete(o));
+        }
         btnTaches.setOnAction(e-> ouvrirTaches(o));
 
         actionsBox.getChildren().addAll(row1, btnTaches);
@@ -300,6 +305,7 @@ public class ObjectifController {
             TacheController ctrl = loader.getController();
             ctrl.setObjectif(o);
             ctrl.setObjectifController(this);
+            ctrl.setCurrentUser(currentUser);
             homeController.setContent(view);
         } catch (IOException e) {
             e.printStackTrace();
@@ -384,7 +390,6 @@ public class ObjectifController {
         selectedObjectif = null;
     }
 
-    // ✅ Validation avec styles modernes
     private boolean validateTitre(String titre) {
         if (titre.isEmpty()) {
             setError(errTitre, "Le titre est obligatoire.", fieldTitre);
@@ -504,7 +509,6 @@ public class ObjectifController {
         currentStyle = currentStyle.replace(ERROR_STYLE, "").replace(NORMAL_STYLE, "");
         control.setStyle(currentStyle + VALID_STYLE);
 
-        // Reset après 2 secondes
         Timeline timeline = new Timeline(
                 new KeyFrame(Duration.seconds(2), e -> {
                     String style = control.getStyle().replace(VALID_STYLE, NORMAL_STYLE);
@@ -705,7 +709,12 @@ public class ObjectifController {
         fieldDateDeb.setValue(LocalDate.now());
         fieldDateFin.setValue(null);
         comboStatut.setValue(null);
-        comboUser.setValue(null);
+        if (currentUser != null) {
+            String label = currentUser.getNom() + " " + currentUser.getPrenom();
+            comboUser.setValue(label);
+        } else {
+            comboUser.setValue(null);
+        }
     }
 
     private void showAlert(Alert.AlertType type, String title, String msg) {
