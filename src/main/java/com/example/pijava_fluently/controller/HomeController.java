@@ -18,25 +18,16 @@ import java.util.ResourceBundle;
 
 public class HomeController implements Initializable {
 
-    @FXML
-    private StackPane contentArea;
-    @FXML
-    private Label navUsername;
-    @FXML
-    private HBox navUserPill;
+    @FXML private StackPane contentArea;
+    @FXML private Label     navUsername;
+    @FXML private HBox      navUserPill;
 
-    @FXML
-    private Button btnAccueil;
-    @FXML
-    private Button btnLangues;
-    @FXML
-    private Button btnTests;
-    @FXML
-    private Button btnGroupes;
-    @FXML
-    private Button btnSessions;
-    @FXML
-    private Button btnObjectifs;
+    @FXML private Button btnAccueil;
+    @FXML private Button btnLangues;
+    @FXML private Button btnTests;
+    @FXML private Button btnGroupes;
+    @FXML private Button btnSessions;
+    @FXML private Button btnObjectifs;
 
     private ContextMenu userMenu;
 
@@ -56,14 +47,14 @@ public class HomeController implements Initializable {
     private void createUserMenu() {
         userMenu = new ContextMenu();
 
-        MenuItem profile = new MenuItem("👤  Mon Profil");
+        MenuItem profile  = new MenuItem("👤  Mon Profil");
         MenuItem settings = new MenuItem("⚙️  Paramètres");
         SeparatorMenuItem separator = new SeparatorMenuItem();
-        MenuItem logout = new MenuItem("⏻  Déconnexion");
+        MenuItem logout   = new MenuItem("⏻  Déconnexion");
 
-        profile.setOnAction(e -> showProfile());
+        profile.setOnAction(e  -> showProfile());
         settings.setOnAction(e -> showSettings());
-        logout.setOnAction(e -> handleLogout());
+        logout.setOnAction(e   -> handleLogout());
 
         userMenu.getItems().addAll(profile, settings, separator, logout);
     }
@@ -75,10 +66,7 @@ public class HomeController implements Initializable {
         }
     }
 
-    public void setContent(Node node) {
-        contentArea.getChildren().clear();
-        contentArea.getChildren().add(node);
-    }
+
     // ========================
     // NAVIGATION
     // ========================
@@ -130,12 +118,42 @@ public class HomeController implements Initializable {
 
     @FXML
     public void showObjectifs() {
-        loadView("objectifs.fxml");
-        setActiveButton(btnObjectifs);
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/Objectif-view.fxml")
+            );
+            Node view = loader.load();
+
+            // ✅ On récupère le contrôleur et on lui passe la référence HomeController
+            ObjectifController ctrl = loader.getController();
+            ctrl.setHomeController(this);
+
+            setContent(view);
+            setActiveButton(btnObjectifs);
+
+        } catch (IOException e) {
+            System.err.println("❌ Impossible de charger : Objectif-view.fxml");
+            e.printStackTrace();
+        }
     }
 
     // ========================
-    // LOAD VIEW INTO CENTER
+    // SET CONTENT (public — utilisé par les sous-contrôleurs)
+    // ========================
+
+    /**
+     * Remplace le contenu central par le Node fourni.
+     * Appelé par ObjectifController, TacheController, etc.
+     */
+    public void setContent(Node view) {
+        if (contentArea != null) {
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(view);
+        }
+    }
+
+    // ========================
+    // HELPERS PRIVÉS
     // ========================
 
     private void loadView(String fxmlFile) {
@@ -144,10 +162,7 @@ public class HomeController implements Initializable {
                     getClass().getResource("/com/example/pijava_fluently/fxml/" + fxmlFile)
             );
             Node view = loader.load();
-            if (contentArea != null) {
-                contentArea.getChildren().clear();
-                contentArea.getChildren().add(view);
-            }
+            setContent(view);
         } catch (IOException e) {
             System.err.println("❌ Impossible de charger : " + fxmlFile + " (fichier manquant)");
         }

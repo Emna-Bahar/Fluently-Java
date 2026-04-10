@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane fitToWidth="true"
+            style="-fx-background:#F1F5F9;-fx-background-color:#F1F5F9;"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.ObjectifController">
+
+    <VBox spacing="24" style="-fx-padding:30 36 30 36;-fx-background-color:#F1F5F9;">
+
+        <!-- ══ En-tête ══════════════════════════════════════════════ -->
+        <HBox alignment="CENTER_LEFT"
+              style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B5CF6);
+                     -fx-background-radius:18;-fx-padding:28 32 28 32;
+                     -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.35),24,0,0,8);">
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="🎯  Mes Objectifs"
+                       style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                <Label text="Gérez et suivez vos objectifs d'apprentissage"
+                       style="-fx-font-size:13px;-fx-text-fill:rgba(255,255,255,0.75);"/>
+            </VBox>
+            <Label fx:id="countLabel" text="0 objectif(s)"
+                   style="-fx-background-color:rgba(255,255,255,0.2);-fx-text-fill:white;
+                          -fx-font-size:13px;-fx-font-weight:bold;
+                          -fx-background-radius:30;-fx-padding:8 18 8 18;"/>
+        </HBox>
+
+        <!-- ══ Barre recherche + Ajouter ════════════════════════════ -->
+        <HBox spacing="14" alignment="CENTER_LEFT">
+            <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="440"
+                  style="-fx-background-color:#FFFFFF;-fx-background-radius:12;
+                         -fx-border-color:#E2E8F0;-fx-border-radius:12;-fx-border-width:1.5;
+                         -fx-padding:10 16 10 16;
+                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);">
+                <Label text="🔍" style="-fx-font-size:14px;-fx-text-fill:#9CA3AF;"/>
+                <TextField fx:id="searchField"
+                           promptText="Rechercher par titre, description, statut…"
+                           onKeyReleased="#handleSearch"
+                           style="-fx-background-color:transparent;-fx-border-color:transparent;
+                                  -fx-font-size:13px;-fx-text-fill:#374151;"
+                           HBox.hgrow="ALWAYS"/>
+            </HBox>
+            <Button text="✚  Ajouter un objectif" onAction="#handleAjouter"
+                    style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B5CF6);
+                           -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+                           -fx-background-radius:12;-fx-padding:12 22 12 22;-fx-cursor:hand;
+                           -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.4),12,0,0,4);"/>
+        </HBox>
+
+        <!-- ══ Formulaire ════════════════════════════════════════════ -->
+        <VBox fx:id="formCard" spacing="18" visible="false" managed="false"
+              style="-fx-background-color:#FFFFFF;-fx-background-radius:20;
+                     -fx-border-color:#E2E8F0;-fx-border-radius:20;-fx-border-width:1.5;
+                     -fx-padding:30;
+                     -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.12),24,0,0,8);">
+
+            <!-- Titre du formulaire -->
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label fx:id="formTitleIcon" text="✚"
+                       style="-fx-font-size:22px;-fx-text-fill:#6C63FF;"/>
+                <Label fx:id="formTitle" text="Nouvel Objectif"
+                       style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+            </HBox>
+
+            <Separator style="-fx-background-color:#F1F5F9;"/>
+
+            <!-- ── Ligne 1 : Titre + Statut ── -->
+            <HBox spacing="18">
+                <!-- Titre -->
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Titre *"
+                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
+                    <TextField fx:id="fieldTitre"
+                               promptText="Ex : Maîtriser le présent de l'indicatif"
+                               style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                                      -fx-border-radius:10;-fx-background-radius:10;
+                                      -fx-border-width:1.5;
+                                      -fx-padding:11 14 11 14;-fx-font-size:13px;-fx-text-fill:#1E293B;"/>
+                    <Label fx:id="errTitre" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
+                </VBox>
+                <!-- Statut -->
+                <VBox spacing="4" prefWidth="210">
+                    <Label text="Statut *"
+                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
+                    <ComboBox fx:id="comboStatut" promptText="Choisir un statut…" maxWidth="Infinity"
+                              style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                                     -fx-border-radius:10;-fx-background-radius:10;
+                                     -fx-border-width:1.5;-fx-font-size:13px;"/>
+                    <Label fx:id="errStatut" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
+                </VBox>
+            </HBox>
+
+            <!-- ── Ligne 2 : Dates + Utilisateur ── -->
+            <HBox spacing="18">
+                <!-- Date début -->
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Date de début *"
+                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
+                    <DatePicker fx:id="fieldDateDeb" maxWidth="Infinity"
+                                style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                                       -fx-border-radius:10;-fx-background-radius:10;-fx-border-width:1.5;"/>
+                    <Label fx:id="errDateDeb" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
+                </VBox>
+                <!-- Date fin -->
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Date de fin *"
+                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
+                    <DatePicker fx:id="fieldDateFin" maxWidth="Infinity"
+                                style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                                       -fx-border-radius:10;-fx-background-radius:10;-fx-border-width:1.5;"/>
+                    <Label fx:id="errDateFin" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
+                </VBox>
+                <!-- ✅ ComboBox Utilisateur (remplace le TextField ID) -->
+                <VBox spacing="4" prefWidth="220">
+                    <Label text="Utilisateur *"
+                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
+                    <ComboBox fx:id="comboUser" maxWidth="Infinity"
+                              style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                                     -fx-border-radius:10;-fx-background-radius:10;
+                                     -fx-border-width:1.5;-fx-font-size:13px;"/>
+                    <Label fx:id="errUser" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
+                </VBox>
+            </HBox>
+
+            <!-- ── Ligne 3 : Description ── -->
+            <VBox spacing="4">
+                <Label text="Description *  (max 255 caractères)"
+                       style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
+                <TextArea fx:id="fieldDescription"
+                          promptText="Décrivez l'objectif en détail…"
+                          prefRowCount="3" wrapText="true"
+                          style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                                 -fx-border-radius:10;-fx-background-radius:10;
+                                 -fx-border-width:1.5;
+                                 -fx-padding:11 14 11 14;-fx-font-size:13px;-fx-text-fill:#1E293B;"/>
+                <Label fx:id="errDescription" text="" visible="false" managed="false"
+                       style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
+            </VBox>
+
+            <!-- ── Boutons ── -->
+            <HBox spacing="12" alignment="CENTER_RIGHT">
+                <Button text="✕  Annuler" onAction="#handleCancel"
+                        style="-fx-background-color:#F8FAFC;-fx-text-fill:#64748B;-fx-font-size:13px;
+                               -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:11 22 11 22;
+                               -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
+                <Button text="💾  Enregistrer" onAction="#handleSave"
+                        style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B5CF6);
+                               -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+                               -fx-background-radius:10;-fx-padding:11 22 11 22;-fx-cursor:hand;
+                               -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.4),10,0,0,3);"/>
+            </HBox>
+        </VBox>
+
+        <!-- ══ Grille de cartes ══════════════════════════════════════ -->
+        <FlowPane fx:id="cardsContainer"
+                  hgap="20" vgap="20"
+                  style="-fx-background-color:transparent;"
+                  prefWrapLength="900"/>
+
+    </VBox>
+</ScrollPane>
