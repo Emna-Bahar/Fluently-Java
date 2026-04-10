@@ -103,6 +103,7 @@ public class HomeController implements Initializable {
 
             LanguesEtudiantController controller = loader.getController();
             controller.setHomeController(this);
+            controller.setCurrentUser(currentUser);  // ← CRUCIAL : Passer l'utilisateur
 
             setContent(view);
             setActiveButton(btnLangues);

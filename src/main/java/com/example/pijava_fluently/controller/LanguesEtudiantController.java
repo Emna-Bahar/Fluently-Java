@@ -1,6 +1,7 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.Langue;
+import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.LangueService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -142,6 +143,13 @@ public class LanguesEtudiantController {
         if (popularite.toLowerCase().contains("faible")) return COLOR_FAIBLE;
         return COLOR_DEFAULT;
     }
+    // Dans LanguesEtudiantController.java
+    private User currentUser;
+
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+    }
+
 
 
 
@@ -305,6 +313,7 @@ public class LanguesEtudiantController {
             ApprentissageController controller = loader.getController();
             controller.setLangue(langue);
             controller.setHomeController(homeController);
+            controller.setCurrentUser(currentUser);
 
             if (homeController != null) {
                 homeController.setContent(apprentissageView);
