@@ -1,5 +1,7 @@
 package com.example.pijava_fluently.controller;
 
+import com.example.pijava_fluently.entites.User;
+import com.example.pijava_fluently.services.UserService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -14,13 +16,14 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 public class HomeController implements Initializable {
 
     @FXML private StackPane contentArea;
-    @FXML private Label     navUsername;
-    @FXML private HBox      navUserPill;
+    @FXML private Label navUsername;
+    @FXML private HBox navUserPill;
 
     @FXML private Button btnAccueil;
     @FXML private Button btnLangues;
@@ -30,31 +33,47 @@ public class HomeController implements Initializable {
     @FXML private Button btnObjectifs;
 
     private ContextMenu userMenu;
+    private User currentUser;
+    private final UserService userService = new UserService();
+
+    // ============================================================
+    // INITIALISATION
+    // ============================================================
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        if (navUsername != null) {
+        createUserMenu();
+
+        // Afficher un nom par défaut si aucun utilisateur n'est défini
+        if (navUsername != null && currentUser == null) {
             navUsername.setText("Emna");
         }
-        createUserMenu();
+
         loadView("home-content.fxml");
     }
 
-    // ========================
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        if (navUsername != null && user != null) {
+            navUsername.setText(user.getPrenom() + " " + user.getNom());
+        }
+    }
+
+    // ============================================================
     // USER MENU
-    // ========================
+    // ============================================================
 
     private void createUserMenu() {
         userMenu = new ContextMenu();
 
-        MenuItem profile  = new MenuItem("👤  Mon Profil");
-        MenuItem settings = new MenuItem("⚙️  Paramètres");
+        MenuItem profile = new MenuItem("👤 Mon Profil");
+        MenuItem settings = new MenuItem("⚙️ Paramètres");
         SeparatorMenuItem separator = new SeparatorMenuItem();
-        MenuItem logout   = new MenuItem("⏻  Déconnexion");
+        MenuItem logout = new MenuItem("⏻ Déconnexion");
 
-        profile.setOnAction(e  -> showProfile());
+        profile.setOnAction(e -> showProfile());
         settings.setOnAction(e -> showSettings());
-        logout.setOnAction(e   -> handleLogout());
+        logout.setOnAction(e -> handleLogout());
 
         userMenu.getItems().addAll(profile, settings, separator, logout);
     }
@@ -66,10 +85,9 @@ public class HomeController implements Initializable {
         }
     }
 
-
-    // ========================
+    // ============================================================
     // NAVIGATION
-    // ========================
+    // ============================================================
 
     @FXML
     public void showAccueil() {
@@ -83,14 +101,10 @@ public class HomeController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/fxml/langues_etudiant.fxml"));
             Node view = loader.load();
 
-            // Récupérer le contrôleur et lui passer homeController
             LanguesEtudiantController controller = loader.getController();
-            controller.setHomeController(this);  // ← AJOUTE CETTE LIGNE !
+            controller.setHomeController(this);
 
-            if (contentArea != null) {
-                contentArea.getChildren().clear();
-                contentArea.getChildren().add(view);
-            }
+            setContent(view);
             setActiveButton(btnLangues);
         } catch (IOException e) {
             System.err.println("❌ Impossible de charger : langues_etudiant.fxml");
@@ -124,7 +138,6 @@ public class HomeController implements Initializable {
             );
             Node view = loader.load();
 
-            // ✅ On récupère le contrôleur et on lui passe la référence HomeController
             ObjectifController ctrl = loader.getController();
             ctrl.setHomeController(this);
 
@@ -137,13 +150,13 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ========================
+    // ============================================================
     // SET CONTENT (public — utilisé par les sous-contrôleurs)
-    // ========================
+    // ============================================================
 
     /**
      * Remplace le contenu central par le Node fourni.
-     * Appelé par ObjectifController, TacheController, etc.
+     * Appelé par ObjectifController, TacheController, LanguesEtudiantController, etc.
      */
     public void setContent(Node view) {
         if (contentArea != null) {
@@ -152,9 +165,9 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ========================
+    // ============================================================
     // HELPERS PRIVÉS
-    // ========================
+    // ============================================================
 
     private void loadView(String fxmlFile) {
         try {
@@ -164,7 +177,7 @@ public class HomeController implements Initializable {
             Node view = loader.load();
             setContent(view);
         } catch (IOException e) {
-            System.err.println("❌ Impossible de charger : " + fxmlFile + " (fichier manquant)");
+            System.err.println("❌ Impossible de charger : " + fxmlFile);
         }
     }
 
@@ -177,19 +190,56 @@ public class HomeController implements Initializable {
         activeBtn.getStyleClass().add("nav-link-active");
     }
 
-    // ========================
+    // ============================================================
     // USER MENU ACTIONS
-    // ========================
+    // ============================================================
 
+    /**
+     * Ouvre la page de profil front-office
+     */
     private void showProfile() {
-        System.out.println("Profil ouvert");
+        if (currentUser == null) {
+            System.out.println("Aucun utilisateur connecté");
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/front-profile.fxml")
+            );
+            Parent root = loader.load();
+
+            FrontProfileController ctrl = loader.getController();
+            ctrl.setUser(currentUser);
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(
+                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
+            );
+            Stage stage = (Stage) navUsername.getScene().getWindow();
+            stage.setTitle("Fluently - Mon Profil");
+            stage.setScene(scene);
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void showSettings() {
         System.out.println("Paramètres ouverts");
     }
 
+    /**
+     * Déconnexion : met à jour le statut de l'utilisateur puis redirige vers login
+     */
     private void handleLogout() {
+        if (currentUser != null) {
+            try {
+                userService.updateStatut(currentUser.getId(), "offline");
+            } catch (SQLException e) {
+                System.err.println("Impossible de mettre à jour le statut : " + e.getMessage());
+            }
+        }
         navigateToLogin();
     }
 

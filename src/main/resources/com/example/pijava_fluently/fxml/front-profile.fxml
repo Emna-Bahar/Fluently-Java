@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.lang.String?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.FrontProfileController"
+            styleClass="fp-root"
+            prefWidth="1280" prefHeight="800">
+
+    <!-- ══ TOP NAVBAR (same as home.fxml) ══ -->
+    <top>
+        <HBox styleClass="navbar" alignment="CENTER_LEFT" prefHeight="65" spacing="0">
+            <padding><Insets top="0" left="24" right="24" bottom="0"/></padding>
+            <HBox spacing="8" alignment="CENTER_LEFT" prefWidth="160">
+                <Label text="🎓" styleClass="nav-logo-icon"/>
+                <Label text="Fluently"  styleClass="nav-logo-text"/>
+            </HBox>
+            <HBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4">
+                <Button text="Accueil"   styleClass="nav-link" onAction="#goHome"/>
+                <Button text="Langues"   styleClass="nav-link"/>
+                <Button text="Tests"     styleClass="nav-link"/>
+                <Button text="Groupes"   styleClass="nav-link"/>
+                <Button text="Sessions"  styleClass="nav-link"/>
+                <Button text="Objectifs" styleClass="nav-link"/>
+            </HBox>
+            <HBox styleClass="nav-user-pill" spacing="6" alignment="CENTER" prefWidth="160">
+                <Label text="👤" styleClass="nav-logo-icon"/>
+                <Label fx:id="navUsername" text="" styleClass="nav-user-name"/>
+            </HBox>
+        </HBox>
+    </top>
+
+    <!-- ══ BODY ══ -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="fp-scroll">
+            <VBox styleClass="fp-body" spacing="28">
+                <padding><Insets top="40" left="60" right="60" bottom="50"/></padding>
+
+                <!-- Page title row -->
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Button text="← Retour" styleClass="fp-back-btn" onAction="#goHome"/>
+                    <Label text="Mon Profil" styleClass="fp-page-title"/>
+                </HBox>
+
+                <!-- ══ PROFILE CARD ══ -->
+                <HBox spacing="28">
+
+                    <!-- LEFT: Avatar + summary -->
+                    <VBox styleClass="fp-avatar-card" spacing="20" alignment="TOP_CENTER" prefWidth="220">
+                        <padding><Insets top="32" left="24" right="24" bottom="32"/></padding>
+
+                        <StackPane styleClass="fp-avatar-circle">
+                            <Label fx:id="fpInitials" text="??" styleClass="fp-initials"/>
+                        </StackPane>
+
+                        <VBox spacing="6" alignment="CENTER">
+                            <Label fx:id="fpFullName"   text="Nom Prénom"      styleClass="fp-card-name"/>
+                            <Label fx:id="fpRoleBadge"  text="Étudiant"        styleClass="fp-role-badge"/>
+                            <Label fx:id="fpStatusBadge" text="actif"          styleClass="fp-status-badge fp-status-actif"/>
+                        </VBox>
+
+                        <Separator/>
+
+                        <VBox spacing="8">
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Label text="✉" styleClass="fp-meta-icon"/>
+                                <Label fx:id="fpEmailMeta" text="" styleClass="fp-meta-text" wrapText="true"/>
+                            </HBox>
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Label text="🪪" styleClass="fp-meta-icon"/>
+                                <Label fx:id="fpIdMeta" text="" styleClass="fp-meta-text"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+
+                    <!-- RIGHT: Edit form -->
+                    <VBox spacing="24" HBox.hgrow="ALWAYS">
+
+                        <!-- Personal info card -->
+                        <VBox styleClass="fp-form-card" spacing="18">
+                            <padding><Insets top="24" left="28" right="28" bottom="24"/></padding>
+                            <Label text="Informations personnelles" styleClass="fp-section-title"/>
+                            <Separator/>
+
+                            <HBox spacing="16">
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="Prénom" styleClass="fp-field-label"/>
+                                    <TextField fx:id="fpFieldPrenom" promptText="Prénom" styleClass="fp-field"/>
+                                    <Label fx:id="errPrenom" styleClass="fp-field-error" visible="false" managed="false"/>
+                                </VBox>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="Nom d'utilisateur" styleClass="fp-field-label"/>
+                                    <TextField fx:id="fpFieldNom" promptText="Nom" styleClass="fp-field"/>
+                                    <Label fx:id="errNom" styleClass="fp-field-error" visible="false" managed="false"/>
+                                </VBox>
+                            </HBox>
+
+                            <VBox spacing="6">
+                                <Label text="Email" styleClass="fp-field-label"/>
+                                <TextField fx:id="fpFieldEmail" promptText="email@exemple.com" styleClass="fp-field"/>
+                                <Label fx:id="errEmail" styleClass="fp-field-error" visible="false" managed="false"/>
+                            </VBox>
+                        </VBox>
+
+                        <!-- Password card -->
+                        <VBox styleClass="fp-form-card" spacing="18">
+                            <padding><Insets top="24" left="28" right="28" bottom="24"/></padding>
+                            <Label text="Changer le mot de passe" styleClass="fp-section-title"/>
+                            <Separator/>
+                            <Label text="Laissez vide pour conserver votre mot de passe actuel."
+                                   styleClass="fp-hint"/>
+                            <HBox spacing="16">
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="Nouveau mot de passe" styleClass="fp-field-label"/>
+                                    <PasswordField fx:id="fpNewPwd" promptText="Min. 8 caractères" styleClass="fp-field"/>
+                                </VBox>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="Confirmer" styleClass="fp-field-label"/>
+                                    <PasswordField fx:id="fpConfirmPwd" promptText="Confirmer" styleClass="fp-field"/>
+                                </VBox>
+                            </HBox>
+
+                            <!-- Strength bar -->
+                            <VBox fx:id="fpPwdStrengthBox" spacing="4" visible="false" managed="false">
+                                <Label fx:id="fpPwdStrengthLabel" text="" styleClass="fp-pwd-strength"/>
+                                <HBox spacing="4">
+                                    <Region fx:id="fpBar1" styleClass="pwd-bar" HBox.hgrow="ALWAYS" prefHeight="6"/>
+                                    <Region fx:id="fpBar2" styleClass="pwd-bar" HBox.hgrow="ALWAYS" prefHeight="6"/>
+                                    <Region fx:id="fpBar3" styleClass="pwd-bar" HBox.hgrow="ALWAYS" prefHeight="6"/>
+                                    <Region fx:id="fpBar4" styleClass="pwd-bar" HBox.hgrow="ALWAYS" prefHeight="6"/>
+                                </HBox>
+                            </VBox>
+                        </VBox>
+
+                        <!-- Message -->
+                        <Label fx:id="fpMessage" styleClass="fp-message"
+                               visible="false" managed="false" wrapText="true"/>
+
+                        <!-- Buttons -->
+                        <HBox spacing="12" alignment="CENTER_RIGHT">
+                            <Button text="Annuler" styleClass="fp-btn-cancel" onAction="#handleCancel"/>
+                            <Button text="💾  Enregistrer" styleClass="fp-btn-save" onAction="#handleSave"/>
+                        </HBox>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

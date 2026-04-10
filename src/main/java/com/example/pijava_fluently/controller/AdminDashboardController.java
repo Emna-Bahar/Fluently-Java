@@ -1,18 +1,35 @@
 package com.example.pijava_fluently.controller;
 
+import com.example.pijava_fluently.entites.User;
+import com.example.pijava_fluently.services.UserService;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
-public class AdminDashboardController {
+public class AdminDashboardController implements Initializable {
 
-    // ── Boutons navigation sidebar ─────────────────────────────────
+    // ============================================================
+    // 1. BOUTONS NAVIGATION SIDEBAR
+    // ============================================================
     @FXML private Button navEtudiants;
     @FXML private Button navLangues;
     @FXML private Button navTestsToggle;
@@ -29,13 +46,18 @@ public class AdminDashboardController {
     @FXML private Button navTaches;
     @FXML private Button navUserProgress;
 
-    // ── Labels topbar ──────────────────────────────────────────────
+    // ============================================================
+    // 2. LABELS TOPBAR
+    // ============================================================
     @FXML private Label pageTitle;
     @FXML private Label pageBreadcrumb;
     @FXML private Label adminName;
     @FXML private Label topbarUsername;
+    @FXML private HBox topbarUserPill;
 
-    // ── Stats dashboard ────────────────────────────────────────────
+    // ============================================================
+    // 3. STATS DASHBOARD
+    // ============================================================
     @FXML private Label statTests;
     @FXML private Label statPassages;
     @FXML private Label statEtudiants;
@@ -43,49 +65,74 @@ public class AdminDashboardController {
     @FXML private TableView<?> recentPassagesTable;
     @FXML private TableColumn<?,?> colEtudiant, colTest, colScore, colStatut, colDate;
 
-    // ── Sous-menus sidebar (accordéon) ─────────────────────────────
+    // ============================================================
+    // 4. SOUS-MENUS SIDEBAR (ACCORDÉON)
+    // ============================================================
     @FXML private VBox languesSubmenu;
     @FXML private VBox testsSubmenu;
     @FXML private VBox sessionsSubmenu;
     @FXML private VBox objectifsSubmenu;
 
-    // ── Conteneurs de vues (StackPane interne) ─────────────────────
+    // ============================================================
+    // 5. CONTENEURS DE VUES
+    // ============================================================
     @FXML private VBox dashboardView;
-
-    // Langues / Cours / Niveau / UserProgress
     @FXML private VBox languesView;
     @FXML private VBox niveauxView;
     @FXML private VBox coursView;
     @FXML private VBox userProgressView;
-
-    // Utilisateurs
     @FXML private VBox etudiantsView;
-
-    // Tests (module principal)
     @FXML private VBox testsView;
     @FXML private VBox questionsView;
     @FXML private VBox reponsesView;
     @FXML private VBox passagesView;
-
-    // Groupes / Sessions / Réservations
     @FXML private VBox groupesView;
     @FXML private VBox sessionsView;
     @FXML private VBox reservationsView;
-
-    // Objectifs / Tâches
     @FXML private VBox objectifsView;
     @FXML private VBox tachesView;
+    @FXML private VBox profileView;
 
-    // Liste complète pour hideAll()
+    // ============================================================
+    // 6. TABLEAU UTILISATEURS (module de l'autre personne)
+    // ============================================================
+    @FXML private TableView<User> usersTable;
+    @FXML private TableColumn<User, String> colUserAvatar, colUserEmail, colUserStatut, colUserRoles;
+    @FXML private TableColumn<User, Void> colUserActions;
+    @FXML private TextField fieldSearch;
+    @FXML private Label userCountLabel;
+
+    // ============================================================
+    // 7. PROFIL INLINE (module de l'autre personne)
+    // ============================================================
+    @FXML private Label heroInitials, heroFullName, heroRoleBadge, heroStatusBadge, heroEmail, heroId;
+    @FXML private TextField fieldPrenom, fieldNom, fieldEmail;
+    @FXML private ComboBox<String> comboStatut, comboRole;
+    @FXML private PasswordField fieldNewPassword, fieldConfirmPassword;
+    @FXML private HBox statusRoleRow;
+    @FXML private VBox pwdStrengthBox;
+    @FXML private Label pwdStrengthLabel, profileMessage;
+    @FXML private Region bar1, bar2, bar3, bar4;
+
+    // ============================================================
+    // 8. SERVICES & LISTES
+    // ============================================================
+    private final UserService userService = new UserService();
+    private final ObservableList<User> usersList = FXCollections.observableArrayList();
+    private User currentUser = null;
+    private User profiledUser = null;
+    private ContextMenu adminUserMenu;
+
+    // Liste complète des vues pour hideAll()
     private final List<VBox> allViews = new ArrayList<>();
 
-    // ══════════════════════════════════════════════════════════════
-    //  INITIALISATION
-    // ══════════════════════════════════════════════════════════════
+    // ============================================================
+    // 9. INITIALISATION
+    // ============================================================
 
-    @FXML
-    public void initialize() {
-        // Enregistrement sécurisé de toutes les vues
+    @Override
+    public void initialize(URL url, ResourceBundle rb) {
+        // Enregistrement des vues
         addIfNotNull(dashboardView);
         addIfNotNull(languesView);
         addIfNotNull(niveauxView);
@@ -101,8 +148,25 @@ public class AdminDashboardController {
         addIfNotNull(reservationsView);
         addIfNotNull(objectifsView);
         addIfNotNull(tachesView);
+        addIfNotNull(profileView);
 
-        // Dashboard affiché par défaut
+        // Initialisation du tableau utilisateurs
+        initUsersTable();
+        loadStats();
+        createAdminUserMenu();
+
+        // Setup profil
+        if (pwdStrengthBox != null) {
+            pwdStrengthBox.setVisible(false);
+            pwdStrengthBox.setManaged(false);
+        }
+        if (profileMessage != null) {
+            profileMessage.setVisible(false);
+            profileMessage.setManaged(false);
+        }
+        setupPasswordStrengthListener();
+
+        // Dashboard par défaut
         showDashboard();
     }
 
@@ -110,19 +174,415 @@ public class AdminDashboardController {
         if (v != null) allViews.add(v);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  TOGGLE SOUS-MENUS (accordéon sidebar)
-    // ══════════════════════════════════════════════════════════════
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        String name = user.getPrenom() + " " + user.getNom();
+        if (adminName != null) adminName.setText(name);
+        if (topbarUsername != null) topbarUsername.setText(name);
+    }
 
-    @FXML private void toggleLangues()  { toggle(languesSubmenu);  }
-    @FXML private void toggleTests()    { toggle(testsSubmenu);    }
+    public void showEtudiantsTab() {
+        showEtudiants();
+    }
+
+    // ============================================================
+    // 10. ADMIN TOPBAR MENU
+    // ============================================================
+
+    private void createAdminUserMenu() {
+        adminUserMenu = new ContextMenu();
+        MenuItem profile = new MenuItem("👤 Mon Profil");
+        SeparatorMenuItem sep = new SeparatorMenuItem();
+        MenuItem logout = new MenuItem("⏻ Déconnexion");
+        profile.setOnAction(e -> {
+            if (currentUser != null) openProfileView(currentUser);
+        });
+        logout.setOnAction(e -> handleLogout());
+        adminUserMenu.getItems().addAll(profile, sep, logout);
+    }
+
+    @FXML
+    private void showAdminUserMenu(MouseEvent event) {
+        if (adminUserMenu != null && topbarUserPill != null) {
+            adminUserMenu.show(topbarUserPill, event.getScreenX(), event.getScreenY() + 8);
+        }
+    }
+
+    // ============================================================
+    // 11. PROFIL INLINE
+    // ============================================================
+
+    private void openProfileView(User user) {
+        this.profiledUser = user;
+        populateProfileView(user);
+        showView(profileView, "Profil Utilisateur",
+                "Administration › Utilisateurs › " + user.getPrenom() + " " + user.getNom());
+    }
+
+    private void populateProfileView(User user) {
+        String initials = initials(user.getPrenom(), user.getNom());
+        if (heroInitials != null) heroInitials.setText(initials);
+        if (heroFullName != null) heroFullName.setText(user.getPrenom() + " " + user.getNom());
+        if (heroEmail != null) heroEmail.setText(user.getEmail() != null ? user.getEmail() : "");
+        if (heroId != null) heroId.setText("#" + user.getId());
+
+        boolean isAdmin = user.isAdmin();
+        if (heroRoleBadge != null) {
+            heroRoleBadge.setText(isAdmin ? "Administrateur" : "Utilisateur");
+            heroRoleBadge.getStyleClass().removeAll("hero-role-chip-admin", "hero-role-chip-user");
+            heroRoleBadge.getStyleClass().add(isAdmin ? "hero-role-chip-admin" : "hero-role-chip-user");
+        }
+
+        String statut = user.getStatut() != null ? user.getStatut() : "actif";
+        if (heroStatusBadge != null) {
+            heroStatusBadge.setText(statut);
+            heroStatusBadge.getStyleClass().removeAll("hero-status-actif", "hero-status-other");
+            heroStatusBadge.getStyleClass().add("actif".equalsIgnoreCase(statut) ? "hero-status-actif" : "hero-status-other");
+        }
+
+        if (fieldPrenom != null) fieldPrenom.setText(nvl(user.getPrenom()));
+        if (fieldNom != null) fieldNom.setText(nvl(user.getNom()));
+        if (fieldEmail != null) fieldEmail.setText(nvl(user.getEmail()));
+        if (comboStatut != null) comboStatut.setValue(statut);
+        if (comboRole != null) comboRole.setValue(isAdmin ? "Administrateur" : "Utilisateur");
+        if (fieldNewPassword != null) fieldNewPassword.clear();
+        if (fieldConfirmPassword != null) fieldConfirmPassword.clear();
+        if (pwdStrengthBox != null) {
+            pwdStrengthBox.setVisible(false);
+            pwdStrengthBox.setManaged(false);
+        }
+        if (profileMessage != null) {
+            profileMessage.setVisible(false);
+            profileMessage.setManaged(false);
+        }
+    }
+
+    private void setupPasswordStrengthListener() {
+        if (fieldNewPassword == null) return;
+        fieldNewPassword.textProperty().addListener((obs, old, val) -> {
+            boolean show = !val.isEmpty();
+            if (pwdStrengthBox != null) {
+                pwdStrengthBox.setVisible(show);
+                pwdStrengthBox.setManaged(show);
+            }
+            if (show) updateStrength(val);
+        });
+    }
+
+    private void updateStrength(String pwd) {
+        int score = 0;
+        if (pwd.length() >= 8) score++;
+        if (pwd.matches(".*[A-Z].*")) score++;
+        if (pwd.matches(".*[0-9].*")) score++;
+        if (pwd.matches(".*[^a-zA-Z0-9].*")) score++;
+
+        Region[] bars = {bar1, bar2, bar3, bar4};
+        String[] colors = {"#EF4444", "#F97316", "#EAB308", "#22C55E"};
+        String[] labels = {"Très faible", "Faible", "Moyen", "Fort"};
+        int idx = Math.max(0, score - 1);
+
+        for (int i = 0; i < 4; i++) {
+            if (bars[i] == null) continue;
+            bars[i].setStyle(i < score
+                    ? "-fx-background-color:" + colors[idx] + ";-fx-background-radius:4;"
+                    : "-fx-background-color:#E2E8F0;-fx-background-radius:4;");
+            bars[i].setPrefHeight(6);
+        }
+        if (pwdStrengthLabel != null) {
+            pwdStrengthLabel.setText("Force : " + labels[idx]);
+            pwdStrengthLabel.setStyle("-fx-text-fill:" + colors[idx] + ";-fx-font-weight:bold;");
+        }
+    }
+
+    @FXML
+    private void handleProfileSave() {
+        if (profiledUser == null) return;
+        String prenom = fieldPrenom.getText().trim();
+        String nom = fieldNom.getText().trim();
+        String email = fieldEmail.getText().trim();
+        String statut = comboStatut.getValue();
+        String roleVal = comboRole.getValue();
+        String newPwd = fieldNewPassword.getText();
+        String confirm = fieldConfirmPassword.getText();
+
+        // Validations
+        if (prenom.isEmpty()) {
+            showProfileMsg("Le prénom est obligatoire.", false);
+            return;
+        }
+        if (!prenom.matches("[\\p{L} '\\-]+")) {
+            showProfileMsg("Le prénom ne doit pas contenir de chiffres ou caractères spéciaux.", false);
+            return;
+        }
+        if (nom.isEmpty()) {
+            showProfileMsg("Le nom est obligatoire.", false);
+            return;
+        }
+        if (!nom.matches("[\\p{L} '\\-]+")) {
+            showProfileMsg("Le nom ne doit pas contenir de chiffres ou caractères spéciaux.", false);
+            return;
+        }
+        if (email.isEmpty() || !email.contains("@") || !email.contains(".")) {
+            showProfileMsg("Adresse email invalide.", false);
+            return;
+        }
+        if (!newPwd.isEmpty()) {
+            if (newPwd.length() < 8) {
+                showProfileMsg("Mot de passe : 8 caractères minimum.", false);
+                return;
+            }
+            if (!newPwd.equals(confirm)) {
+                showProfileMsg("Les mots de passe ne correspondent pas.", false);
+                return;
+            }
+        }
+
+        try {
+            User existing = userService.findByEmail(email);
+            if (existing != null && existing.getId() != profiledUser.getId()) {
+                showProfileMsg("Cet email est déjà utilisé par un autre compte.", false);
+                return;
+            }
+
+            profiledUser.setPrenom(prenom);
+            profiledUser.setNom(nom);
+            profiledUser.setEmail(email);
+            profiledUser.setStatut(statut != null ? statut : "actif");
+            profiledUser.setRoles("Administrateur".equals(roleVal) ? "[\"ROLE_ADMIN\"]" : "[\"ROLE_USER\"]");
+            if (!newPwd.isEmpty()) profiledUser.setPassword(newPwd);
+
+            userService.modifier(profiledUser);
+
+            if (heroInitials != null) heroInitials.setText(initials(prenom, nom));
+            if (heroFullName != null) heroFullName.setText(prenom + " " + nom);
+            if (heroEmail != null) heroEmail.setText(email);
+            if (fieldNewPassword != null) fieldNewPassword.clear();
+            if (fieldConfirmPassword != null) fieldConfirmPassword.clear();
+            if (pwdStrengthBox != null) {
+                pwdStrengthBox.setVisible(false);
+                pwdStrengthBox.setManaged(false);
+            }
+
+            showProfileMsg("Modifications enregistrées avec succès ✓", true);
+            loadUsers();
+
+        } catch (SQLException e) {
+            showProfileMsg("Erreur SQL : " + e.getMessage(), false);
+        }
+    }
+
+    @FXML
+    private void handleProfileCancel() {
+        if (profiledUser != null) populateProfileView(profiledUser);
+    }
+
+    private void showProfileMsg(String msg, boolean ok) {
+        if (profileMessage == null) return;
+        profileMessage.setText(msg);
+        profileMessage.getStyleClass().removeAll("pf-msg-error", "pf-msg-success");
+        profileMessage.getStyleClass().add(ok ? "pf-msg-success" : "pf-msg-error");
+        profileMessage.setVisible(true);
+        profileMessage.setManaged(true);
+    }
+
+    // ============================================================
+    // 12. TABLEAU UTILISATEURS
+    // ============================================================
+
+    private void initUsersTable() {
+        if (usersTable == null) return;
+
+        colUserAvatar.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setGraphic(null);
+                    return;
+                }
+                User u = (User) getTableRow().getItem();
+                StackPane av = new StackPane();
+                av.getStyleClass().add("row-avatar");
+                av.setPrefSize(36, 36);
+                Label lbl = new Label(initials(u.getPrenom(), u.getNom()));
+                lbl.getStyleClass().add("row-avatar-text");
+                av.getChildren().add(lbl);
+                Label name = new Label(u.getPrenom() + " " + u.getNom());
+                name.getStyleClass().add("row-name");
+                HBox cell = new HBox(12, av, name);
+                cell.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(cell);
+                setText(null);
+            }
+        });
+
+        colUserEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+        colUserEmail.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                Label l = new Label(item);
+                l.getStyleClass().add("row-email");
+                setGraphic(l);
+                setText(null);
+            }
+        });
+
+        colUserStatut.setCellValueFactory(new PropertyValueFactory<>("statut"));
+        colUserStatut.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                Label b = new Label(item);
+                b.getStyleClass().addAll("status-badge",
+                        "actif".equalsIgnoreCase(item) ? "status-actif" : "status-inactif");
+                setGraphic(b);
+                setText(null);
+            }
+        });
+
+        colUserRoles.setCellValueFactory(new PropertyValueFactory<>("roles"));
+        colUserRoles.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                String label;
+                String css;
+                if (item.contains("ROLE_ADMIN")) {
+                    label = "Admin";
+                    css = "role-chip-admin";
+                } else {
+                    label = "Étudiant";
+                    css = "role-chip-user";
+                }
+                Label b = new Label(label);
+                b.getStyleClass().addAll("role-chip", css);
+                setGraphic(b);
+                setText(null);
+            }
+        });
+
+        colUserActions.setCellFactory(col -> new TableCell<>() {
+            private final Button btnProfile = new Button("👤 Profil");
+            private final Button btnDelete = new Button("🗑");
+            {
+                btnProfile.getStyleClass().add("btn-row-profile");
+                btnDelete.getStyleClass().add("btn-row-delete");
+                btnProfile.setOnAction(e -> openProfileView(getTableView().getItems().get(getIndex())));
+                btnDelete.setOnAction(e -> confirmAndDelete(getTableView().getItems().get(getIndex())));
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                    return;
+                }
+                HBox box = new HBox(8, btnProfile, btnDelete);
+                box.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(box);
+            }
+        });
+
+        usersTable.setItems(usersList);
+        loadUsers();
+    }
+
+    private void loadUsers() {
+        try {
+            List<User> all = userService.recuperer();
+            usersList.setAll(all);
+            if (userCountLabel != null) {
+                userCountLabel.setText(all.size() + " utilisateur" + (all.size() > 1 ? "s" : "") + " au total");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleSearchUser() {
+        String kw = fieldSearch != null ? fieldSearch.getText().trim() : "";
+        try {
+            List<User> res = kw.isEmpty() ? userService.recuperer() : userService.search(kw);
+            usersList.setAll(res);
+            if (userCountLabel != null) {
+                userCountLabel.setText(res.size() + " résultat" + (res.size() > 1 ? "s" : ""));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleNewUser() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/user-profile-new.fxml")
+            );
+            Parent root = loader.load();
+            UserNewController ctrl = loader.getController();
+            ctrl.setOnSavedCallback(() -> {
+                loadUsers();
+                loadStats();
+            });
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(
+                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
+            );
+            Stage stage = (Stage) pageTitle.getScene().getWindow();
+            stage.setTitle("Fluently - Nouvel utilisateur");
+            stage.setScene(scene);
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void confirmAndDelete(User u) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirmation");
+        confirm.setHeaderText("Supprimer " + u.getPrenom() + " " + u.getNom() + " ?");
+        confirm.setContentText("Cette action est irréversible.");
+        Optional<ButtonType> res = confirm.showAndWait();
+        if (res.isPresent() && res.get() == ButtonType.YES) {
+            try {
+                userService.supprimer(u.getId());
+                loadUsers();
+                loadStats();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // ============================================================
+    // 13. TOGGLE SOUS-MENUS
+    // ============================================================
+
+    @FXML private void toggleLangues() { toggle(languesSubmenu); }
+    @FXML private void toggleTests() { toggle(testsSubmenu); }
     @FXML private void toggleSessions() { toggle(sessionsSubmenu); }
 
     @FXML
     private void toggleObjectifs() {
         boolean wasVisible = objectifsSubmenu != null && objectifsSubmenu.isVisible();
         toggle(objectifsSubmenu);
-        // Ouvre la page objectifs automatiquement au premier clic
         if (!wasVisible) showObjectifs();
     }
 
@@ -133,9 +593,9 @@ public class AdminDashboardController {
         submenu.setManaged(nowVisible);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  NAVIGATION — DASHBOARD
-    // ══════════════════════════════════════════════════════════════
+    // ============================================================
+    // 14. NAVIGATION
+    // ============================================================
 
     @FXML
     private void showDashboard() {
@@ -144,15 +604,9 @@ public class AdminDashboardController {
         setTitle("Dashboard", "Administration › Dashboard");
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  NAVIGATION — UTILISATEURS / ÉTUDIANTS
-    // ══════════════════════════════════════════════════════════════
-
     @FXML
     private void showEtudiants() {
         hideAll();
-        // Si une vue statique est déclarée dans le FXML principal, on l'affiche.
-        // Sinon on charge le FXML dédié.
         if (etudiantsView != null && !etudiantsView.getChildren().isEmpty()) {
             show(etudiantsView);
         } else {
@@ -161,10 +615,6 @@ public class AdminDashboardController {
         setTitle("Utilisateurs", "Administration › Utilisateurs");
         setActive(navEtudiants);
     }
-
-    // ══════════════════════════════════════════════════════════════
-    //  NAVIGATION — LANGUES / NIVEAUX / COURS / USER PROGRESS
-    // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void showLangues() {
@@ -195,10 +645,6 @@ public class AdminDashboardController {
         setTitle("Progression des Étudiants", "Administration › Langues › Progression");
         setActive(navUserProgress);
     }
-
-    // ══════════════════════════════════════════════════════════════
-    //  NAVIGATION — TESTS / QUESTIONS / RÉPONSES / PASSAGES
-    // ══════════════════════════════════════════════════════════════
 
     @FXML
     private void showTests() {
@@ -232,10 +678,6 @@ public class AdminDashboardController {
         setActive(navPassages);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  NAVIGATION — GROUPES / SESSIONS / RÉSERVATIONS
-    // ══════════════════════════════════════════════════════════════
-
     @FXML
     private void showGroupes() {
         hideAll();
@@ -260,10 +702,6 @@ public class AdminDashboardController {
         setActive(navReservations);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  NAVIGATION — OBJECTIFS / TÂCHES
-    // ══════════════════════════════════════════════════════════════
-
     @FXML
     private void showObjectifs() {
         hideAll();
@@ -280,10 +718,6 @@ public class AdminDashboardController {
         setActive(navTaches);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  DÉCONNEXION
-    // ══════════════════════════════════════════════════════════════
-
     @FXML
     private void handleLogout() {
         try {
@@ -291,21 +725,18 @@ public class AdminDashboardController {
                     getClass().getResource("/com/example/pijava_fluently/fxml/login-view.fxml")
             );
             Node loginPage = loader.load();
-            // Récupérer la scène depuis n'importe quel nœud visible
             if (dashboardView != null && dashboardView.getScene() != null) {
                 dashboardView.getScene().setRoot((javafx.scene.Parent) loginPage);
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Déconnexion — retour login impossible : " + e.getMessage());
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  UTILITAIRES PRIVÉS
-    // ══════════════════════════════════════════════════════════════
+    // ============================================================
+    // 15. UTILITAIRES PRIVÉS
+    // ============================================================
 
-    /** Cache toutes les vues enregistrées. */
     private void hideAll() {
         for (VBox v : allViews) {
             if (v != null) {
@@ -315,7 +746,6 @@ public class AdminDashboardController {
         }
     }
 
-    /** Rend visible et géré un VBox. */
     private void show(VBox view) {
         if (view != null) {
             view.setVisible(true);
@@ -323,16 +753,21 @@ public class AdminDashboardController {
         }
     }
 
-    /** Met à jour le titre et le fil d'Ariane. */
-    private void setTitle(String title, String breadcrumb) {
-        if (pageTitle != null)      pageTitle.setText(title);
+    private void showView(VBox view, String title, String breadcrumb) {
+        hideAll();
+        if (view != null) {
+            view.setVisible(true);
+            view.setManaged(true);
+        }
+        if (pageTitle != null) pageTitle.setText(title);
         if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
     }
 
-    /**
-     * Met en surbrillance le bouton actif dans la sidebar.
-     * Retire la classe CSS "nav-active" de tous les boutons, puis l'ajoute au bouton actif.
-     */
+    private void setTitle(String title, String breadcrumb) {
+        if (pageTitle != null) pageTitle.setText(title);
+        if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
+    }
+
     private void setActive(Button active) {
         Button[] all = {
                 navEtudiants, navLangues, navTests, navQuestions,
@@ -345,19 +780,9 @@ public class AdminDashboardController {
         if (active != null) active.getStyleClass().add("nav-active");
     }
 
-    /**
-     * Charge un FXML dans un conteneur VBox.
-     * Utilise un cache par chemin pour éviter de recharger inutilement.
-     * Si le FXML est introuvable, affiche un message d'erreur inline.
-     *
-     * @param container  Le VBox cible déclaré dans le FXML principal.
-     * @param fxmlPath   Chemin absolu de la ressource FXML à charger.
-     */
     private void loadPage(VBox container, String fxmlPath) {
         if (container == null) return;
-
         try {
-            // Cache : on ne recharge pas si le même FXML est déjà chargé
             String loadedPath = (String) container.getProperties().get("loadedFxmlPath");
             if (!fxmlPath.equals(loadedPath)) {
                 var resource = getClass().getResource(fxmlPath);
@@ -372,26 +797,18 @@ public class AdminDashboardController {
             }
             container.setVisible(true);
             container.setManaged(true);
-
         } catch (Exception e) {
             e.printStackTrace();
-            showErrorInContainer(container,
-                    "Impossible de charger : " + fxmlPath + "\n" + e.getMessage());
+            showErrorInContainer(container, "Impossible de charger : " + fxmlPath + "\n" + e.getMessage());
         }
     }
 
-    /**
-     * Affiche un message d'erreur stylisé directement dans le conteneur,
-     * sans bloquer l'UI avec une boîte de dialogue.
-     */
     private void showErrorInContainer(VBox container, String msg) {
         Label title = new Label("⚠ Erreur de chargement");
         title.setStyle("-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#991B1B;");
-
         Label detail = new Label(msg);
         detail.setWrapText(true);
         detail.setStyle("-fx-font-size:12px;-fx-text-fill:#B91C1C;");
-
         VBox errorBox = new VBox(8, title, detail);
         errorBox.setStyle(
                 "-fx-background-color:#FEF2F2;" +
@@ -400,9 +817,29 @@ public class AdminDashboardController {
                         "-fx-background-radius:10;" +
                         "-fx-padding:20;"
         );
-
         container.getChildren().setAll(errorBox);
         container.setVisible(true);
         container.setManaged(true);
+    }
+
+    private void loadStats() {
+        try {
+            if (statEtudiants != null) statEtudiants.setText(String.valueOf(userService.count()));
+        } catch (SQLException e) {
+            if (statEtudiants != null) statEtudiants.setText("?");
+        }
+        if (statTests != null) statTests.setText("4");
+        if (statPassages != null) statPassages.setText("2");
+        if (statScore != null) statScore.setText("78%");
+    }
+
+    private static String initials(String p, String n) {
+        String a = (p != null && !p.isEmpty()) ? p.substring(0, 1).toUpperCase() : "?";
+        String b = (n != null && !n.isEmpty()) ? n.substring(0, 1).toUpperCase() : "?";
+        return a + b;
+    }
+
+    private static String nvl(String s) {
+        return s != null ? s : "";
     }
 }
