@@ -130,7 +130,6 @@
                        style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
             </VBox>
 
-            <!-- Boutons -->
             <HBox spacing="12" alignment="CENTER_RIGHT">
                 <Button text="✕  Annuler" onAction="#handleCancel"
                         style="-fx-background-color:#F8FAFC;-fx-text-fill:#64748B;-fx-font-size:13px;

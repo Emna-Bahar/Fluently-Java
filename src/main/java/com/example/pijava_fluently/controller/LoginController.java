@@ -99,7 +99,7 @@ public class LoginController {
 
             if (user.isAdmin()) {
                 FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/fxml/admin-dashboard.fxml")
+                        getClass().getResource("/com/example/pijava_fluently/fxml/admin-dashboard.fxml")
                 );
                 Parent root = loader.load();
                 AdminDashboardController ctrl = loader.getController();
@@ -111,7 +111,7 @@ public class LoginController {
             } else {
                 // Pass the real logged-in user to HomeController
                 FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
+                        getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
                 );
                 Parent root = loader.load();
                 HomeController homeCtrl = loader.getController();
@@ -177,7 +177,7 @@ public class LoginController {
 
             // After register, load home and pass user
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
+                    getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
             );
             Parent root = loader.load();
             HomeController homeCtrl = loader.getController();
@@ -205,7 +205,7 @@ public class LoginController {
     private Scene buildScene(Parent root) {
         Scene scene = new Scene(root);
         scene.getStylesheets().add(
-            getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
+                getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
         );
         return scene;
     }

@@ -131,7 +131,7 @@ public class HomeController implements Initializable {
         setActiveButton(btnSessions);
     }
 
-    @FXML
+   /* @FXML
     public void showObjectifs() {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -150,6 +150,27 @@ public class HomeController implements Initializable {
             e.printStackTrace();
         }
     }
+*/
+   @FXML
+   public void showObjectifs() {
+       try {
+           FXMLLoader loader = new FXMLLoader(
+                   getClass().getResource("/com/example/pijava_fluently/fxml/Objectif-view.fxml")
+           );
+           Node view = loader.load();
+
+           ObjectifController ctrl = loader.getController();
+           ctrl.setHomeController(this);
+           ctrl.setCurrentUser(currentUser);  // ← AJOUTER CETTE LIGNE
+
+           setContent(view);
+           setActiveButton(btnObjectifs);
+
+       } catch (IOException e) {
+           System.err.println("❌ Impossible de charger : Objectif-view.fxml");
+           e.printStackTrace();
+       }
+   }
 
     // ============================================================
     // SET CONTENT (public — utilisé par les sous-contrôleurs)

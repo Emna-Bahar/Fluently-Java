@@ -2,6 +2,7 @@ package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.Objectif;
 import com.example.pijava_fluently.entites.Tache;
+import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.TacheService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -36,7 +37,6 @@ public class TacheController {
     @FXML private TextField searchField;
     @FXML private Label     countLabel;
 
-    // Labels d'erreur inline (à ajouter dans le FXML)
     @FXML private Label errTitre;
     @FXML private Label errDescription;
     @FXML private Label errDateLimite;
@@ -48,6 +48,7 @@ public class TacheController {
     private Tache    selectedTache    = null;
     private Objectif currentObjectif  = null;
     private ObjectifController objectifController;
+    private User currentUser;
 
     private static final String[] STATUTS   = {"À faire", "En cours", "Terminée", "Annulée"};
     private static final String[] PRIORITES = {"Basse", "Normale", "Haute", "Urgente"};
@@ -64,7 +65,6 @@ public class TacheController {
             {"#EC4899", "#DB2777"},
     };
 
-    // Styles pour validation
     private static final String ERROR_STYLE = "-fx-border-color:#E11D48;-fx-border-width:2;-fx-border-radius:10;";
     private static final String VALID_STYLE = "-fx-border-color:#10B981;-fx-border-width:2;-fx-border-radius:10;";
     private static final String NORMAL_STYLE = "-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;";
@@ -83,6 +83,10 @@ public class TacheController {
         this.objectifController = oc;
     }
 
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+    }
+
     @FXML
     public void initialize() {
         comboStatut.setItems(FXCollections.observableArrayList(STATUTS));
@@ -91,7 +95,6 @@ public class TacheController {
     }
 
     private void setupLiveValidation() {
-        // Validation titre en temps réel
         fieldTitre.textProperty().addListener((obs, old, val) -> {
             if (val != null && !val.trim().isEmpty()) {
                 validateTitre(val.trim());
@@ -100,7 +103,6 @@ public class TacheController {
             }
         });
 
-        // Validation description en temps réel
         fieldDescription.textProperty().addListener((obs, old, val) -> {
             if (val != null && !val.trim().isEmpty()) {
                 validateDescription(val.trim());
@@ -109,7 +111,6 @@ public class TacheController {
             }
         });
 
-        // Validation date en temps réel
         fieldDateLimite.valueProperty().addListener((obs, old, val) -> {
             if (val != null) {
                 validateDate(val);
@@ -118,7 +119,6 @@ public class TacheController {
             }
         });
 
-        // Validation statut
         comboStatut.valueProperty().addListener((obs, old, val) -> {
             if (val != null && !val.isEmpty()) {
                 clearError(errStatut);
@@ -126,7 +126,6 @@ public class TacheController {
             }
         });
 
-        // Validation priorité
         comboPriorite.valueProperty().addListener((obs, old, val) -> {
             if (val != null && !val.isEmpty()) {
                 clearError(errPriorite);
@@ -217,7 +216,6 @@ public class TacheController {
             control.setStyle(currentStyle + VALID_STYLE);
         }
 
-        // Reset après 2 secondes
         Timeline timeline = new Timeline(
                 new KeyFrame(Duration.seconds(2), e -> {
                     String style = control.getStyle();
@@ -382,16 +380,30 @@ public class TacheController {
         btnDel.setOnMouseEntered(e -> btnDel.setStyle(btnDel.getStyle() + "-fx-opacity:0.85;"));
         btnDel.setOnMouseExited(e -> btnDel.setStyle(btnDel.getStyle().replace("-fx-opacity:0.85;", "")));
 
-        HBox.setHgrow(btnVoir, Priority.ALWAYS);
-        btnVoir.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(btnEdit, Priority.ALWAYS);
-        btnEdit.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(btnDel,  Priority.ALWAYS);
-        btnDel.setMaxWidth(Double.MAX_VALUE);
+        boolean isOwner = (currentUser != null && currentObjectif != null
+                && currentObjectif.getIdUserId() == currentUser.getId());
+
+        if (!isOwner) {
+            btnEdit.setDisable(true);
+            btnEdit.setVisible(false);
+            btnDel.setDisable(true);
+            btnDel.setVisible(false);
+            HBox.setHgrow(btnVoir, Priority.ALWAYS);
+            btnVoir.setMaxWidth(Double.MAX_VALUE);
+        } else {
+            HBox.setHgrow(btnVoir, Priority.ALWAYS);
+            btnVoir.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(btnEdit, Priority.ALWAYS);
+            btnEdit.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(btnDel, Priority.ALWAYS);
+            btnDel.setMaxWidth(Double.MAX_VALUE);
+        }
 
         btnVoir.setOnAction(e -> showDetailsTache(t));
-        btnEdit.setOnAction(e -> openEditForm(t));
-        btnDel.setOnAction(e  -> handleDelete(t));
+        if (isOwner) {
+            btnEdit.setOnAction(e -> openEditForm(t));
+            btnDel.setOnAction(e -> handleDelete(t));
+        }
 
         actions.getChildren().addAll(btnVoir, btnEdit, btnDel);
         card.getChildren().addAll(header, body, sep, actions);
@@ -543,7 +555,6 @@ public class TacheController {
         formCard.setVisible(true);
         formCard.setManaged(true);
 
-        // Animation d'apparition
         formCard.setStyle(formCard.getStyle() + "-fx-scale-x:0.95;-fx-scale-y:0.95;");
         Timeline timeline = new Timeline(
                 new KeyFrame(Duration.millis(100), e -> formCard.setStyle(formCard.getStyle().replace("-fx-scale-x:0.95;-fx-scale-y:0.95;", "")))
@@ -564,7 +575,6 @@ public class TacheController {
         formCard.setVisible(true);
         formCard.setManaged(true);
 
-        // Appliquer styles valides si champs remplis
         if (t.getTitre() != null && !t.getTitre().isEmpty()) setValidStyle(fieldTitre);
         if (t.getDescription() != null && !t.getDescription().isEmpty()) setValidStyle(fieldDescription);
         if (t.getDateLimite() != null) setValidStyle(fieldDateLimite);
@@ -687,7 +697,6 @@ public class TacheController {
         comboStatut.setValue(null);
         comboPriorite.setValue(null);
 
-        // Reset styles
         fieldTitre.setStyle(NORMAL_STYLE);
         fieldDescription.setStyle(AREA_NORMAL_STYLE);
         fieldDateLimite.setStyle(NORMAL_STYLE);

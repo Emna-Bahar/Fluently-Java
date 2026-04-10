@@ -57,7 +57,6 @@
                      -fx-padding:30;
                      -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.12),24,0,0,8);">
 
-            <!-- Titre du formulaire -->
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <Label fx:id="formTitleIcon" text="✚"
                        style="-fx-font-size:22px;-fx-text-fill:#6C63FF;"/>
@@ -69,7 +68,6 @@
 
             <!-- ── Ligne 1 : Titre + Statut ── -->
             <HBox spacing="18">
-                <!-- Titre -->
                 <VBox spacing="4" HBox.hgrow="ALWAYS">
                     <Label text="Titre *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
@@ -82,7 +80,6 @@
                     <Label fx:id="errTitre" text="" visible="false" managed="false"
                            style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <!-- Statut -->
                 <VBox spacing="4" prefWidth="210">
                     <Label text="Statut *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
@@ -97,7 +94,6 @@
 
             <!-- ── Ligne 2 : Dates + Utilisateur ── -->
             <HBox spacing="18">
-                <!-- Date début -->
                 <VBox spacing="4" HBox.hgrow="ALWAYS">
                     <Label text="Date de début *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
@@ -107,7 +103,6 @@
                     <Label fx:id="errDateDeb" text="" visible="false" managed="false"
                            style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <!-- Date fin -->
                 <VBox spacing="4" HBox.hgrow="ALWAYS">
                     <Label text="Date de fin *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
@@ -117,7 +112,6 @@
                     <Label fx:id="errDateFin" text="" visible="false" managed="false"
                            style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>
-                <!-- ✅ ComboBox Utilisateur (remplace le TextField ID) -->
                 <VBox spacing="4" prefWidth="220">
                     <Label text="Utilisateur *"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
@@ -145,7 +139,6 @@
                        style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
             </VBox>
 
-            <!-- ── Boutons ── -->
             <HBox spacing="12" alignment="CENTER_RIGHT">
                 <Button text="✕  Annuler" onAction="#handleCancel"
                         style="-fx-background-color:#F8FAFC;-fx-text-fill:#64748B;-fx-font-size:13px;
