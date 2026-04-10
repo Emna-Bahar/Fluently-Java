@@ -5,6 +5,7 @@ import com.example.pijava_fluently.services.CoursService;
 import com.example.pijava_fluently.services.NiveauService;
 import com.example.pijava_fluently.services.TestPassageService;
 import com.example.pijava_fluently.services.TestService;
+import com.example.pijava_fluently.services.UserProgressService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,13 +14,11 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.TextAlignment;
-import javafx.stage.Stage;
 import javafx.scene.layout.Priority;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.Node;
-import javafx.geometry.Pos;
+import javafx.scene.layout.StackPane;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -28,12 +27,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javafx.scene.layout.StackPane;
-import java.sql.SQLException;
+
 public class ApprentissageController {
 
     @FXML private Label langueNom;
@@ -49,12 +48,22 @@ public class ApprentissageController {
     private HomeController homeController;
     private Map<String, List<Cours>> coursParNiveau = new HashMap<>();
     private Map<String, Integer> progressionParNiveau = new HashMap<>();
+    private Map<String, Integer> coursCompleteParNiveau = new HashMap<>(); // Stocke les IDs des cours complétés
+    private Map<Integer, Niveau> niveauParDifficulte = new HashMap<>(); // Map niveauKey -> Niveau object
+
+    private User currentUser;
+    private UserProgressService userProgressService = new UserProgressService();
+
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        System.out.println("✅ Utilisateur connecté dans ApprentissageController : " + user.getEmail());
+        chargerNiveauActuel();
+    }
 
     public void setLangue(Langue langue) {
         this.langue = langue;
         langueNom.setText(langue.getNom());
         langueDescription.setText(langue.getDescription());
-        chargerNiveauActuel();  // ← AJOUTE CETTE LIGNE
         chargerCours();
     }
 
@@ -71,7 +80,11 @@ public class ApprentissageController {
 
     @FXML
     private void handleTest() {
-        // Charger les tests de type "Test de niveau" pour cette langue
+        if (currentUser == null) {
+            showAlert("Erreur", "Vous devez être connecté pour passer le test.");
+            return;
+        }
+
         try {
             TestService testService = new TestService();
             List<Test> tests = testService.recuperer();
@@ -88,12 +101,11 @@ public class ApprentissageController {
 
             Test testChoisi = testsNiveau.get(0);
 
-            // Charger l'interface de passage du test
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/test-passage.fxml"));
             Node vue = loader.load();
             TestPassageEtudiantController ctrl = loader.getController();
-            ctrl.initTest(testChoisi, 7); // ← CHANGER ICI : userId = 2
+            ctrl.initTest(testChoisi, currentUser.getId());
 
             if (homeController != null) {
                 homeController.setContent(vue);
@@ -103,29 +115,36 @@ public class ApprentissageController {
         }
     }
 
-
     private void chargerNiveauActuel() {
+        if (currentUser == null) {
+            niveauActuelValue.setText("Non défini");
+            return;
+        }
+
         try {
             TestPassageService testPassageService = new TestPassageService();
             List<TestPassage> passages = testPassageService.recuperer();
 
-            // Filtrer les passages terminés pour cette langue et cet utilisateur (userId = 2)
-            List<TestPassage> passagesLangue = passages.stream()
-                    .filter(p -> p.getUserId() == 7) // User statique ID 2
+            List<TestPassage> passagesUtilisateur = passages.stream()
+                    .filter(p -> p.getUserId() == currentUser.getId())
                     .filter(p -> "termine".equals(p.getStatut()))
                     .collect(Collectors.toList());
 
-            if (passagesLangue.isEmpty()) {
+            if (passagesUtilisateur.isEmpty()) {
                 niveauActuelValue.setText("Non défini");
                 return;
             }
 
-            // Récupérer le dernier passage (le plus récent)
-            TestPassage dernierPassage = passagesLangue.stream()
-                    .max((p1, p2) -> p1.getDateFin().compareTo(p2.getDateFin()))
+            TestPassage dernierPassage = passagesUtilisateur.stream()
+                    .max((p1, p2) -> {
+                        if (p1.getDateFin() == null && p2.getDateFin() == null) return 0;
+                        if (p1.getDateFin() == null) return -1;
+                        if (p2.getDateFin() == null) return 1;
+                        return p1.getDateFin().compareTo(p2.getDateFin());
+                    })
                     .orElse(null);
 
-            if (dernierPassage != null) {
+            if (dernierPassage != null && dernierPassage.getResultat() > 0) {
                 double pourcentage = dernierPassage.getResultat();
                 String niveau = determinerNiveauParScore(pourcentage);
                 niveauActuelValue.setText(niveau);
@@ -134,12 +153,11 @@ public class ApprentissageController {
             }
 
         } catch (SQLException e) {
-            System.err.println("Erreur lors du chargement du niveau actuel: " + e.getMessage());
+            System.err.println("Erreur SQL: " + e.getMessage());
             niveauActuelValue.setText("Non défini");
         }
     }
 
-    // Méthode pour déterminer le niveau selon le score
     private String determinerNiveauParScore(double pourcentage) {
         if (pourcentage >= 90) return "C2";
         if (pourcentage >= 80) return "C1";
@@ -148,16 +166,25 @@ public class ApprentissageController {
         if (pourcentage >= 50) return "A2";
         return "A1";
     }
+
     private void chargerCours() {
         new Thread(() -> {
             try {
                 NiveauService niveauService = new NiveauService();
                 List<Niveau> niveaux = niveauService.recuperer();
 
-                // Filtrer les niveaux par langue
                 List<Niveau> niveauxLangue = niveaux.stream()
                         .filter(n -> n.getIdLangueId() == langue.getId())
                         .collect(Collectors.toList());
+
+                // Stocker les niveaux par difficulté
+                for (Niveau niveau : niveauxLangue) {
+                    String difficulte = niveau.getDifficulte();
+                    String niveauKey = extractNiveauKey(difficulte);
+                    if (niveauKey != null) {
+                        niveauParDifficulte.put(niveauKey.hashCode(), niveau);
+                    }
+                }
 
                 CoursService coursService = new CoursService();
                 List<Cours> tousLesCours = coursService.recuperer();
@@ -172,12 +199,11 @@ public class ApprentissageController {
                                 .sorted((c1, c2) -> Integer.compare(c1.getNumero(), c2.getNumero()))
                                 .collect(Collectors.toList());
                         coursParNiveau.put(niveauKey, coursNiveau);
-
-                        // Compter les cours complétés (simulation pour l'instant)
-                        int completed = 0;
-                        progressionParNiveau.put(niveauKey, completed);
                     }
                 }
+
+                // Charger la progression depuis la base de données
+                chargerProgressionUtilisateur();
 
                 Platform.runLater(() -> afficherNiveaux());
 
@@ -185,6 +211,174 @@ public class ApprentissageController {
                 Platform.runLater(() -> showAlert("Erreur", "Impossible de charger les cours"));
             }
         }).start();
+    }
+
+    // Ajoutez ces maps pour stocker la progression par niveau
+    private Map<String, Map<Integer, Boolean>> progressionCoursParNiveau = new HashMap<>();
+
+    private void chargerProgressionUtilisateur() {
+        if (currentUser == null) return;
+
+        try {
+            List<User_progress> progresses = userProgressService.recuperer();
+
+            // Chercher la progression pour cet utilisateur et cette langue
+            User_progress progress = progresses.stream()
+                    .filter(p -> p.getUserId() == currentUser.getId() && p.getLangueId() == langue.getId())
+                    .findFirst()
+                    .orElse(null);
+
+            // Réinitialiser les maps
+            coursCompleteParNiveau.clear();
+            progressionParNiveau.clear();
+            progressionCoursParNiveau.clear();
+
+            if (progress != null) {
+                // Pour chaque niveau, récupérer les cours complétés
+                for (Map.Entry<String, List<Cours>> entry : coursParNiveau.entrySet()) {
+                    String niveauKey = entry.getKey();
+                    List<Cours> cours = entry.getValue();
+
+                    Map<Integer, Boolean> coursStatus = new HashMap<>();
+                    int completedCount = 0;
+
+                    for (Cours c : cours) {
+                        boolean estComplete = false;
+                        // Vérifier si ce cours est complété (stocké dans dernierNumeroCours)
+                        // Note: Ceci est une solution temporaire. Idéalement, chaque niveau devrait avoir son propre compteur
+                        if (c.getNumero() <= progress.getDernierNumeroCours()) {
+                            estComplete = true;
+                            completedCount++;
+                            coursCompleteParNiveau.put(niveauKey + "_" + c.getId(), c.getId());
+                        }
+                        coursStatus.put(c.getId(), estComplete);
+                    }
+                    progressionCoursParNiveau.put(niveauKey, coursStatus);
+                    progressionParNiveau.put(niveauKey, completedCount);
+                }
+            } else {
+                // Aucune progression, initialiser à 0
+                for (String niveauKey : coursParNiveau.keySet()) {
+                    progressionParNiveau.put(niveauKey, 0);
+                    progressionCoursParNiveau.put(niveauKey, new HashMap<>());
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors du chargement de la progression: " + e.getMessage());
+            for (String niveauKey : coursParNiveau.keySet()) {
+                progressionParNiveau.put(niveauKey, 0);
+                progressionCoursParNiveau.put(niveauKey, new HashMap<>());
+            }
+        }
+    }
+
+    private void marquerCoursComplete(Cours cours) {
+        if (currentUser == null) {
+            showAlert("Erreur", "Vous devez être connecté.");
+            return;
+        }
+
+        try {
+            // Déterminer le niveau du cours
+            String niveauKey = null;
+            for (Map.Entry<String, List<Cours>> entry : coursParNiveau.entrySet()) {
+                if (entry.getValue().contains(cours)) {
+                    niveauKey = entry.getKey();
+                    break;
+                }
+            }
+
+            if (niveauKey == null) {
+                showAlert("Erreur", "Niveau non trouvé pour ce cours.");
+                return;
+            }
+
+            // Vérifier si déjà complété dans ce niveau
+            Map<Integer, Boolean> coursStatus = progressionCoursParNiveau.getOrDefault(niveauKey, new HashMap<>());
+            if (coursStatus.getOrDefault(cours.getId(), false)) {
+                showAlert("Information", "Ce cours a déjà été complété !");
+                return;
+            }
+
+            // Mettre à jour la progression en mémoire
+            coursStatus.put(cours.getId(), true);
+            progressionCoursParNiveau.put(niveauKey, coursStatus);
+
+            // Compter les cours complétés dans ce niveau
+            int completedCount = 0;
+            for (Boolean status : coursStatus.values()) {
+                if (status) completedCount++;
+            }
+            progressionParNiveau.put(niveauKey, completedCount);
+
+            // Mettre à jour la clé coursCompleteParNiveau
+            coursCompleteParNiveau.put(niveauKey + "_" + cours.getId(), cours.getId());
+
+            // Mettre à jour la base de données (stockage global)
+            List<User_progress> progresses = userProgressService.recuperer();
+            User_progress existingProgress = progresses.stream()
+                    .filter(p -> p.getUserId() == currentUser.getId() && p.getLangueId() == langue.getId())
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingProgress == null) {
+                // Créer une nouvelle progression
+                User_progress newProgress = new User_progress();
+                newProgress.setUserId(currentUser.getId());
+                newProgress.setLangueId(langue.getId());
+                newProgress.setDernierNumeroCours(cours.getNumero()); // Stocke le dernier cours
+                newProgress.setDernierCoursCompleteId(cours.getId());
+                newProgress.setTestNiveauComplete(false);
+                newProgress.setDateDerniereActivite(LocalDateTime.now());
+
+                int niveauId = trouverNiveauId(niveauKey);
+                newProgress.setNiveauActuelId(niveauId);
+
+                userProgressService.ajouter(newProgress);
+            } else {
+                // Mettre à jour
+                existingProgress.setDernierCoursCompleteId(cours.getId());
+                existingProgress.setDateDerniereActivite(LocalDateTime.now());
+                userProgressService.modifier(existingProgress);
+            }
+
+            // Recharger l'affichage pour ce niveau uniquement
+            afficherNiveaux();
+
+            showAlert("Succès", "Félicitations ! Vous avez complété le cours " + cours.getNumero() + " du niveau " + niveauKey);
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la mise à jour: " + e.getMessage());
+            showAlert("Erreur", "Impossible d'enregistrer la progression.");
+        }
+    }
+
+    private void afficherCoursPourNiveau(String niveauKey, HBox container, Label progressLabel) {
+        container.getChildren().clear();
+
+        List<Cours> cours = coursParNiveau.get(niveauKey);
+        if (cours == null || cours.isEmpty()) {
+            Label emptyLabel = new Label("Aucun cours disponible");
+            emptyLabel.setStyle("-fx-text-fill:#8A8FA8;-fx-font-size:12px;");
+            container.getChildren().add(emptyLabel);
+            if (progressLabel != null) progressLabel.setText("0/0 cours");
+            return;
+        }
+
+        int completed = progressionParNiveau.getOrDefault(niveauKey, 0);
+        if (progressLabel != null) {
+            progressLabel.setText(completed + "/" + cours.size() + " cours");
+        }
+
+        int maxCours = Math.min(cours.size(), 6);
+        for (int i = 0; i < maxCours; i++) {
+            Cours c = cours.get(i);
+            // Vérifier si ce cours est complété dans SON niveau
+            Map<Integer, Boolean> coursStatus = progressionCoursParNiveau.getOrDefault(niveauKey, new HashMap<>());
+            boolean estComplete = coursStatus.getOrDefault(c.getId(), false);
+            VBox cercle = createCercleCours(c, i + 1, estComplete);
+            container.getChildren().add(cercle);
+        }
     }
 
     private String extractNiveauKey(String difficulte) {
@@ -207,31 +401,6 @@ public class ApprentissageController {
         afficherCoursPourNiveau("C2", coursC2, progressC2);
     }
 
-    private void afficherCoursPourNiveau(String niveauKey, HBox container, Label progressLabel) {
-        container.getChildren().clear();
-
-        List<Cours> cours = coursParNiveau.get(niveauKey);
-        if (cours == null || cours.isEmpty()) {
-            Label emptyLabel = new Label("Aucun cours disponible");
-            emptyLabel.setStyle("-fx-text-fill:#8A8FA8;-fx-font-size:12px;");
-            container.getChildren().add(emptyLabel);
-            if (progressLabel != null) progressLabel.setText("0/0 cours");
-            return;
-        }
-
-        int completed = progressionParNiveau.getOrDefault(niveauKey, 0);
-        if (progressLabel != null) {
-            progressLabel.setText(completed + "/" + cours.size() + " cours");
-        }
-
-        // Créer les cercles pour chaque cours (max 3 pour l'affichage)
-        int maxCours = Math.min(cours.size(), 6);
-        for (int i = 0; i < maxCours; i++) {
-            Cours c = cours.get(i);
-            VBox cercle = createCercleCours(c, i + 1, i < completed);
-            container.getChildren().add(cercle);
-        }
-    }
 
     private VBox createCercleCours(Cours cours, int numero, boolean estComplete) {
         VBox cercle = new VBox();
@@ -241,11 +410,9 @@ public class ApprentissageController {
         cercle.setPrefHeight(110);
         cercle.setStyle("-fx-cursor: hand;");
 
-        // Le cercle lui-même
         StackPane circle = new StackPane();
         circle.setPrefSize(65, 65);
 
-        // Effet d'ombre
         DropShadow shadow = new DropShadow();
         shadow.setRadius(8);
         shadow.setColor(Color.rgb(108, 99, 255, 0.3));
@@ -253,30 +420,32 @@ public class ApprentissageController {
         circle.setEffect(shadow);
 
         if (estComplete) {
-            // Syntaxe JavaFX pour dégradé
             circle.setStyle("-fx-background-color: radial-gradient(radius 100%, #10B981, #059669); -fx-background-radius: 35;");
             Label checkLabel = new Label("✓");
             checkLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
             circle.getChildren().add(checkLabel);
         } else {
-            // Syntaxe JavaFX pour dégradé
             circle.setStyle("-fx-background-color: radial-gradient(radius 100%, #6C63FF, #8B5CF6); -fx-background-radius: 35;");
             Label numberLabel = new Label(String.valueOf(numero));
             numberLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;");
             circle.getChildren().add(numberLabel);
         }
 
-        // Label du cours
         Label coursLabel = new Label("Cours " + numero);
         coursLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #4A4D6A;");
 
-        // Badge de statut
         if (estComplete) {
             Label completedBadge = new Label("✅ Complété");
             completedBadge.setStyle("-fx-font-size: 9px; -fx-text-fill: #059669; -fx-font-weight: bold;");
             cercle.getChildren().addAll(circle, coursLabel, completedBadge);
         } else {
-            cercle.getChildren().addAll(circle, coursLabel);
+            // Ajouter le bouton "Terminer" pour les cours non complétés
+            Button terminerBtn = new Button("Terminer");
+            terminerBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 5 12 5 12; -fx-cursor: hand;");
+            terminerBtn.setOnMouseEntered(e -> terminerBtn.setStyle("-fx-background-color: #5849C4; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 5 12 5 12; -fx-cursor: hand;"));
+            terminerBtn.setOnMouseExited(e -> terminerBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 5 12 5 12; -fx-cursor: hand;"));
+            terminerBtn.setOnAction(e -> marquerCoursComplete(cours));
+            cercle.getChildren().addAll(circle, coursLabel, terminerBtn);
         }
 
         // Effet hover
@@ -306,10 +475,24 @@ public class ApprentissageController {
             }
         });
 
-        // Action au clic
-        cercle.setOnMouseClicked(e -> ouvrirCours(cours));
+        // Action au clic sur TOUT le cercle (ouvre le cours)
+        cercle.setOnMouseClicked(e -> {
+            ouvrirCours(cours);  // ← TOUJOURS ouvrir le cours, qu'il soit complété ou non
+        });
 
         return cercle;
+    }
+
+
+
+    private int trouverNiveauId(String niveauKey) {
+        // Chercher le niveau par sa difficulté
+        for (Map.Entry<Integer, Niveau> entry : niveauParDifficulte.entrySet()) {
+            if (entry.getValue().getDifficulte().contains(niveauKey)) {
+                return entry.getValue().getId();
+            }
+        }
+        return 1; // Valeur par défaut
     }
 
     private void ouvrirCours(Cours cours) {
@@ -318,7 +501,6 @@ public class ApprentissageController {
             return;
         }
 
-        // Créer un dialogue moderne
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Cours N°" + cours.getNumero());
         dialog.setHeaderText(null);
@@ -328,7 +510,6 @@ public class ApprentissageController {
         content.setPrefWidth(600);
         content.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 20;");
 
-        // Titre avec icône
         HBox titleBox = new HBox(12);
         titleBox.setAlignment(Pos.CENTER_LEFT);
         titleBox.setStyle("-fx-background-color: #6C63FF; -fx-background-radius: 15; -fx-padding: 15 20 15 20;");
@@ -341,21 +522,16 @@ public class ApprentissageController {
 
         titleBox.getChildren().addAll(titleIcon, titleLabel);
 
-        // Séparateur
         Separator separator = new Separator();
         separator.setStyle("-fx-background-color: #E0E3F0;");
 
-        // Catégories de ressources
         Label categoriesTitle = new Label("📎 Ressources disponibles");
         categoriesTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E; -fx-padding: 0 0 10 0;");
 
-        // Conteneur principal pour les catégories
         VBox categoriesContainer = new VBox(15);
 
-        // Séparer les ressources par type
         String[] ressources = cours.getRessource().split("\n");
 
-        // Listes par catégorie
         List<String> youtubeLinks = new ArrayList<>();
         List<String> pdfFiles = new ArrayList<>();
         List<String> videoFiles = new ArrayList<>();
@@ -380,7 +556,6 @@ public class ApprentissageController {
             }
         }
 
-        // Ajouter les catégories non vides
         if (!youtubeLinks.isEmpty()) {
             categoriesContainer.getChildren().add(createCategoryBox("🎬 Vidéos YouTube", youtubeLinks, "#FF6B6B"));
         }
@@ -400,7 +575,6 @@ public class ApprentissageController {
             categoriesContainer.getChildren().add(createCategoryBox("📎 Autres fichiers", otherFiles, "#D4A5A5"));
         }
 
-        // Si aucune catégorie
         if (categoriesContainer.getChildren().isEmpty()) {
             Label emptyLabel = new Label("📭 Aucune ressource disponible");
             emptyLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #8A8FA8; -fx-padding: 20;");
@@ -408,7 +582,6 @@ public class ApprentissageController {
             categoriesContainer.getChildren().add(emptyLabel);
         }
 
-        // ScrollPane pour les ressources (si beaucoup)
         ScrollPane scrollRessources = new ScrollPane(categoriesContainer);
         scrollRessources.setFitToWidth(true);
         scrollRessources.setPrefHeight(400);
@@ -426,12 +599,10 @@ public class ApprentissageController {
         dialog.showAndWait();
     }
 
-    // Méthode pour créer une boîte de catégorie
     private VBox createCategoryBox(String categoryName, List<String> items, String color) {
         VBox categoryBox = new VBox(10);
         categoryBox.setStyle("-fx-background-color: white; -fx-background-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 2); -fx-padding: 15;");
 
-        // En-tête de catégorie
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
 
@@ -447,7 +618,6 @@ public class ApprentissageController {
         header.getChildren().addAll(categoryIcon, categoryLabel, countBadge);
         HBox.setHgrow(categoryLabel, Priority.ALWAYS);
 
-        // Liste des ressources
         VBox itemsBox = new VBox(8);
 
         for (String item : items) {
@@ -456,7 +626,6 @@ public class ApprentissageController {
             itemRow.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 10; -fx-padding: 10 15 10 15;");
             itemRow.setEffect(new DropShadow(2, Color.rgb(0, 0, 0, 0.05)));
 
-            // Icône selon le type
             Label itemIcon = new Label();
             if (item.contains("youtube.com") || item.contains("youtu.be")) {
                 itemIcon.setText("🎬");
@@ -473,7 +642,6 @@ public class ApprentissageController {
             }
             itemIcon.setStyle("-fx-font-size: 18px;");
 
-            // Nom du fichier (tronqué)
             String fileName = item;
             if (fileName.contains("/")) {
                 fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
