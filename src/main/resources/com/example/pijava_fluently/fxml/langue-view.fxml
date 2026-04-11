@@ -10,20 +10,15 @@
       spacing="0" style="-fx-background-color:#F8F9FD;">
 
     <!-- ══ HEADER ══ -->
-    <HBox alignment="CENTER_LEFT" spacing="16"
-          style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
-        <padding>
-            <Insets top="20" left="32" right="32" bottom="20"/>
-        </padding>
+    <!-- Remplacer le header existant par -->
+    <HBox alignment="CENTER_LEFT" spacing="16" styleClass="langues-header">
+        <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
+        <Label text="🌍" styleClass="header-icon"/>
         <VBox HBox.hgrow="ALWAYS" spacing="3">
-            <Label text="🌍 Gestion des Langues"
-                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
-            <Label text="Ajoutez, modifiez ou supprimez les langues disponibles sur Fluently"
-                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+            <Label text="Gestion des Langues" styleClass="langues-title"/>
+            <Label text="Ajoutez, modifiez ou supprimez les langues disponibles sur Fluently" styleClass="page-subtitle"/>
         </VBox>
-        <Button text="＋ Ajouter une langue"
-                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;-fx-cursor:hand;"
-                onAction="#handleAjouter"/>
+        <Button text="＋ Ajouter une langue" styleClass="btn-add" onAction="#handleAjouter"/>
     </HBox>
 
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"

@@ -75,4 +75,30 @@ public class TestPassageService implements IService<TestPassage> {
         }
         return list;
     }
+    public List<TestPassage> recupererParTestEtUser(int testId, int userId) throws SQLException {
+        List<TestPassage> list = new ArrayList<>();
+        String sql = "SELECT * FROM test_passage WHERE test_id = ? AND user_id = ? ORDER BY date_debut DESC";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, testId);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                TestPassage tp = new TestPassage();
+                tp.setId(rs.getInt("id"));
+                Timestamp dd = rs.getTimestamp("date_debut");
+                if (dd != null) tp.setDateDebut(dd.toLocalDateTime());
+                Timestamp df = rs.getTimestamp("date_fin");
+                if (df != null) tp.setDateFin(df.toLocalDateTime());
+                tp.setResultat(rs.getDouble("resultat"));
+                tp.setScore(rs.getInt("score"));
+                tp.setScoreMax(rs.getInt("score_max"));
+                tp.setStatut(rs.getString("statut"));
+                tp.setTempsPasse(rs.getInt("temps_passe"));
+                tp.setTestId(rs.getInt("test_id"));
+                tp.setUserId(rs.getInt("user_id"));
+                list.add(tp);
+            }
+        }
+        return list;
+    }
 }
