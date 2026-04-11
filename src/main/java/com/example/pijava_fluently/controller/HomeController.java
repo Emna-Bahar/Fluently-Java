@@ -115,8 +115,21 @@ public class HomeController implements Initializable {
 
     @FXML
     public void showMesTests() {
-        loadView("mes-tests.fxml");
-        setActiveButton(btnTests);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/mes-tests.fxml"));
+            Node view = loader.load();
+
+            MesTestsController ctrl = loader.getController();
+            ctrl.setHomeController(this);
+            ctrl.setCurrentUser(currentUser); // ← passe le user connecté
+
+            setContent(view);
+            setActiveButton(btnTests);
+        } catch (IOException e) {
+            System.err.println("❌ Impossible de charger : mes-tests.fxml");
+            e.printStackTrace();
+        }
     }
 
     @FXML
