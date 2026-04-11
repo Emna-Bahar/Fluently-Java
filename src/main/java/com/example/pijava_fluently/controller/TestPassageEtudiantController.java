@@ -1,5 +1,5 @@
 package com.example.pijava_fluently.controller;
-
+import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.entites.Question;
 import com.example.pijava_fluently.entites.Reponse;
 import com.example.pijava_fluently.entites.Test;
@@ -59,21 +59,32 @@ public class TestPassageEtudiantController {
     private int                secondesEcoulees = 0;
     private Timeline           timer;
     private LocalDateTime      dateDebut;
-    private int                userId           = 7; // à remplacer par l'utilisateur connecté
+    private int                userId           = -1;
+    private MesTestsController mesTestsController;
 
     private final QuestionService    questionService    = new QuestionService();
     private final ReponseService     reponseService     = new ReponseService();
     private final TestPassageService testPassageService = new TestPassageService();
 
     // ── Initialisation avec le test ───────────────────────
-    public void initTest(Test test, int userId) {
-        this.test   = test;
+    public void initTest(Test test, int userId, MesTestsController mesTestsController) {
+        this.test = test;
         this.userId = userId;
+        this.mesTestsController = mesTestsController;
         labelTitreTest.setText(test.getTitre());
         dateDebut = LocalDateTime.now();
         chargerQuestions();
         demarrerTimer();
         afficherQuestion(0);
+    }
+    // Surcharge qui accepte un User directement
+    public void initTest(Test test, User user) {
+        initTest(test, user != null ? user.getId() : -1, null);
+    }
+
+    // Surcharge rétrocompatibilité int
+    public void initTest(Test test, int userId) {
+        initTest(test, userId, null);
     }
 
     private void chargerQuestions() {
@@ -423,21 +434,32 @@ public class TestPassageEtudiantController {
     }
 
     @FXML private void handleRetourAccueil() {
-        // Retourner à la liste des tests
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/com/example/pijava_fluently/fxml/mes-tests.fxml")
-            );
-            Node vue = loader.load();
-            // Remonter jusqu'au StackPane parent
-            StackPane contentArea = (StackPane) panelResultat
-                    .getScene().lookup("#contentArea");
-            if (contentArea != null) {
-                contentArea.getChildren().setAll(vue);
+        if (mesTestsController != null) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                        "/com/example/pijava_fluently/fxml/mes-tests.fxml"));
+                Node vue = loader.load();
+                MesTestsController ctrl = loader.getController();
+                ctrl.setCurrentUser(mesTestsController.getCurrentUser());
+                ctrl.setHomeController(mesTestsController.getHomeController());
+                StackPane contentArea = (StackPane) panelResultat
+                        .getScene().lookup("#contentArea");
+                if (contentArea != null) contentArea.getChildren().setAll(vue);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } else {
+            // Retour depuis ApprentissageController
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                        "/com/example/pijava_fluently/fxml/apprentissage.fxml"));
+                Node vue = loader.load();
+                StackPane contentArea = (StackPane) panelResultat
+                        .getScene().lookup("#contentArea");
+                if (contentArea != null) contentArea.getChildren().setAll(vue);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

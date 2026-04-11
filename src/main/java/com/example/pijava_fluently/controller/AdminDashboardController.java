@@ -1,7 +1,11 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.User;
+import com.example.pijava_fluently.entites.Test;
+import com.example.pijava_fluently.entites.TestPassage;
 import com.example.pijava_fluently.services.UserService;
+import com.example.pijava_fluently.services.TestService;
+import com.example.pijava_fluently.services.TestPassageService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -823,14 +827,44 @@ public class AdminDashboardController implements Initializable {
     }
 
     private void loadStats() {
+        // Utilisateurs
         try {
-            if (statEtudiants != null) statEtudiants.setText(String.valueOf(userService.count()));
+            if (statEtudiants != null)
+                statEtudiants.setText(String.valueOf(userService.count()));
         } catch (SQLException e) {
             if (statEtudiants != null) statEtudiants.setText("?");
         }
-        if (statTests != null) statTests.setText("4");
-        if (statPassages != null) statPassages.setText("2");
-        if (statScore != null) statScore.setText("78%");
+
+        // Tests
+        try {
+            TestService ts = new TestService();
+            List<Test> tests = ts.recuperer();
+            if (statTests != null)
+                statTests.setText(String.valueOf(tests.size()));
+
+            // Passages
+            TestPassageService tps = new TestPassageService();
+            List<TestPassage> passages = tps.recuperer();
+            if (statPassages != null)
+                statPassages.setText(String.valueOf(passages.size()));
+
+            // Score moyen
+            if (statScore != null && !passages.isEmpty()) {
+                double avg = passages.stream()
+                        .filter(p -> p.getScoreMax() > 0)
+                        .mapToDouble(p -> (double) p.getScore() / p.getScoreMax() * 100)
+                        .average()
+                        .orElse(0);
+                statScore.setText(String.format("%.0f%%", avg));
+            } else if (statScore != null) {
+                statScore.setText("—");
+            }
+
+            // Table récents passages (5 derniers)
+            // Si tu as typé recentPassagesTable<TestPassage>, sinon ignore
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String initials(String p, String n) {
