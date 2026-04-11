@@ -8,88 +8,127 @@
       fx:controller="com.example.pijava_fluently.controller.TestPassageController"
       spacing="0" style="-fx-background-color:#F0F2FF;">
 
-    <HBox alignment="CENTER_LEFT" spacing="16"
-          style="-fx-background-color:white;
-                 -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;
-                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.07),10,0,0,3);">
-        <padding><Insets top="22" left="32" right="32" bottom="22"/></padding>
-        <VBox HBox.hgrow="ALWAYS" spacing="3">
-            <Label text="📊 Passages de Tests"
-                   style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+    <HBox alignment="CENTER_LEFT" spacing="20"
+          style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;
+                 -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.08),12,0,0,3);">
+        <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
+        <StackPane style="-fx-background-color:#EFF6FF;-fx-background-radius:14;
+                          -fx-min-width:48;-fx-min-height:48;-fx-max-width:48;-fx-max-height:48;">
+            <Label text="📊" style="-fx-font-size:22px;"/>
+        </StackPane>
+        <VBox HBox.hgrow="ALWAYS" spacing="2">
+            <Label text="Passages de Tests"
+                   style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
             <Label text="Consultez les résultats des passages de tests des étudiants"
                    style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
         </VBox>
-        <Label text="🔒 Lecture seule"
-               style="-fx-font-size:12px;-fx-text-fill:#6C63FF;
-                      -fx-background-color:#F0EEFF;-fx-background-radius:20;
-                      -fx-padding:6 14;-fx-font-weight:bold;"/>
+        <HBox spacing="6" alignment="CENTER"
+              style="-fx-background-color:#FEF9C3;-fx-background-radius:20;
+                     -fx-border-color:#FDE68A;-fx-border-radius:20;-fx-border-width:1.5;
+                     -fx-padding:8 16;">
+            <Label text="🔒" style="-fx-font-size:12px;"/>
+            <Label text="Lecture seule"
+                   style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#92400E;"/>
+        </HBox>
     </HBox>
 
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
-                style="-fx-background:transparent;-fx-background-color:transparent;">
-        <VBox spacing="24">
-            <padding><Insets top="28" left="32" right="32" bottom="32"/></padding>
+                style="-fx-background:transparent;-fx-background-color:transparent;
+                       -fx-border-color:transparent;">
+        <VBox spacing="20">
+            <padding><Insets top="24" left="28" right="28" bottom="28"/></padding>
 
+            <!-- Mini stats -->
+            <HBox spacing="16">
+                <VBox HBox.hgrow="ALWAYS" spacing="6" alignment="CENTER"
+                      style="-fx-background-color:white;-fx-background-radius:16;
+                             -fx-border-color:#DBEAFE;-fx-border-width:1.5;-fx-padding:18 20;
+                             -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.10),10,0,0,3);">
+                    <Label text="📝" style="-fx-font-size:22px;"/>
+                    <Label fx:id="countLabel" text="—"
+                           style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1E40AF;"/>
+                    <Label text="Total passages"
+                           style="-fx-font-size:11px;-fx-text-fill:#6B7280;-fx-font-weight:bold;"/>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="6" alignment="CENTER"
+                      style="-fx-background-color:white;-fx-background-radius:16;
+                             -fx-border-color:#D1FAE5;-fx-border-width:1.5;-fx-padding:18 20;
+                             -fx-effect:dropshadow(gaussian,rgba(5,150,105,0.10),10,0,0,3);">
+                    <Label text="✅" style="-fx-font-size:22px;"/>
+                    <Label text="Terminés"
+                           style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#059669;"/>
+                    <Label text="Passages complétés"
+                           style="-fx-font-size:11px;-fx-text-fill:#6B7280;"/>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="6" alignment="CENTER"
+                      style="-fx-background-color:white;-fx-background-radius:16;
+                             -fx-border-color:#EDE9FE;-fx-border-width:1.5;-fx-padding:18 20;
+                             -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),10,0,0,3);">
+                    <Label text="🔍" style="-fx-font-size:22px;"/>
+                    <Label text="Filtrez"
+                           style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
+                    <Label text="Par statut, user ou test"
+                           style="-fx-font-size:11px;-fx-text-fill:#6B7280;"/>
+                </VBox>
+            </HBox>
+
+            <!-- TABLE CARD -->
             <VBox spacing="0"
-                  style="-fx-background-color:white;-fx-background-radius:18;
-                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),16,0,0,4);">
-
-                <HBox alignment="CENTER_LEFT" spacing="12"
-                      style="-fx-padding:18 24;-fx-border-color:#F0F1F7;
-                             -fx-border-width:0 0 1 0;">
-                    <VBox HBox.hgrow="ALWAYS" spacing="2">
-                        <Label text="📊 Historique des Passages"
-                               style="-fx-font-size:15px;-fx-font-weight:bold;
-                                      -fx-text-fill:#1A1D2E;"/>
-                        <Label fx:id="countLabel" text="0 passage(s)"
-                               style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+                  style="-fx-background-color:white;-fx-background-radius:20;
+                         -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.08),20,0,0,6);
+                         -fx-border-color:#DBEAFE;-fx-border-radius:20;-fx-border-width:1.5;">
+                <HBox alignment="CENTER_LEFT" spacing="16"
+                      style="-fx-background-color:linear-gradient(to right,#EFF6FF,#EEF2FF);
+                             -fx-background-radius:20 20 0 0;
+                             -fx-padding:18 24;
+                             -fx-border-color:transparent transparent #DBEAFE transparent;
+                             -fx-border-width:0 0 1.5 0;">
+                    <VBox spacing="3" HBox.hgrow="ALWAYS">
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Label text="📊" style="-fx-font-size:16px;"/>
+                            <Label text="Historique des Passages"
+                                   style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                        </HBox>
                     </VBox>
-                    <HBox alignment="CENTER_LEFT" spacing="8" prefWidth="290"
-                          style="-fx-background-color:#F4F5FA;-fx-background-radius:30;
-                                 -fx-padding:9 16;-fx-border-color:#E0E3F0;
-                                 -fx-border-radius:30;-fx-border-width:1;">
-                        <Label text="🔍" style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;"/>
+                    <HBox alignment="CENTER_LEFT" spacing="10" prefWidth="310"
+                          style="-fx-background-color:white;-fx-background-radius:30;
+                                 -fx-padding:10 18;-fx-border-color:#DBEAFE;
+                                 -fx-border-radius:30;-fx-border-width:1.5;
+                                 -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.08),8,0,0,2);">
+                        <Label text="🔍" style="-fx-font-size:13px;-fx-text-fill:#3B82F6;"/>
                         <TextField fx:id="searchField"
-                                   promptText="Rechercher par statut, user, test…"
+                                   promptText="Statut, utilisateur, test…"
                                    HBox.hgrow="ALWAYS" onKeyReleased="#handleSearch"
-                                   style="-fx-background-color:transparent;
-                                          -fx-border-color:transparent;
-                                          -fx-font-size:13px;-fx-padding:0;"/>
+                                   style="-fx-background-color:transparent;-fx-border-color:transparent;
+                                          -fx-font-size:13px;-fx-padding:0;-fx-text-fill:#1A1D2E;
+                                          -fx-prompt-text-fill:#C0C4D8;"/>
                     </HBox>
                 </HBox>
 
                 <TableView fx:id="tablePassages" VBox.vgrow="ALWAYS" prefHeight="500"
-                           style="-fx-background-color:transparent;
-                                  -fx-border-color:transparent;">
+                           style="-fx-background-color:transparent;-fx-border-color:transparent;
+                                  -fx-table-cell-border-color:transparent;">
                     <columns>
-                        <TableColumn fx:id="colId"        text="#"
-                                     prefWidth="60"  style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colTest"      text="Test"
-                                     prefWidth="180" style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colUser"      text="Étudiant"
-                                     prefWidth="100" style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colScore"     text="Score"
-                                     prefWidth="80"  style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colScoreMax"  text="/ Max"
-                                     prefWidth="70"  style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colStatut"    text="Statut"
-                                     prefWidth="140" style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colTemps"     text="Temps"
-                                     prefWidth="90"  style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colDateDebut" text="Date"
-                                     prefWidth="100" style="-fx-alignment:CENTER;"/>
-                        <TableColumn fx:id="colActions"   text="Actions"
-                                     prefWidth="140" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colId"        text="#"        prefWidth="60"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colTest"      text="Test"     prefWidth="190" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colUser"      text="Étudiant" prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colScore"     text="Score"    prefWidth="80"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colScoreMax"  text="/ Max"    prefWidth="70"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colStatut"    text="Statut"   prefWidth="140" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colTemps"     text="Temps"    prefWidth="90"  style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colDateDebut" text="Date"     prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActions"   text="Actions"  prefWidth="140" style="-fx-alignment:CENTER;"/>
                     </columns>
                     <placeholder>
-                        <VBox alignment="CENTER" spacing="12">
-                            <padding><Insets top="50" bottom="50"/></padding>
-                            <Label text="📭" style="-fx-font-size:52px;"/>
+                        <VBox alignment="CENTER" spacing="16">
+                            <padding><Insets top="70" bottom="70"/></padding>
+                            <Label text="📊" style="-fx-font-size:60px;"/>
                             <Label text="Aucun passage trouvé"
-                                   style="-fx-font-size:15px;-fx-font-weight:bold;
-                                          -fx-text-fill:#4A4D6A;"/>
+                                   style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
                             <Label text="Les passages apparaîtront ici après les tests"
-                                   style="-fx-font-size:12px;-fx-text-fill:#C0C4D8;"/>
+                                   style="-fx-font-size:12px;-fx-text-fill:#C0C4D8;
+                                          -fx-background-color:#EFF6FF;-fx-background-radius:20;
+                                          -fx-padding:6 16;"/>
                         </VBox>
                     </placeholder>
                 </TableView>
