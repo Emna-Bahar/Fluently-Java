@@ -15,7 +15,7 @@ public class HelloApplication extends Application {
 
         FXMLLoader fxmlLoader = new FXMLLoader(
                 HelloApplication.class.getResource(
-                        "/com/example/pijava_fluently/fxml/admin-dashboard.fxml"
+                        "/com/example/pijava_fluently/fxml/login.fxml"
                 )
         );
 
