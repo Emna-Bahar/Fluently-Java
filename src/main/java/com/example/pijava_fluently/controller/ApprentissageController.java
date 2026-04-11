@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.Optional;
 
 public class ApprentissageController {
 
@@ -116,38 +118,40 @@ public class ApprentissageController {
     }
 
     private void chargerNiveauActuel() {
-        if (currentUser == null) {
+        if (currentUser == null || langue == null) {
             niveauActuelValue.setText("Non défini");
             return;
         }
 
         try {
-            TestPassageService testPassageService = new TestPassageService();
-            List<TestPassage> passages = testPassageService.recuperer();
+            TestService testService   = new TestService();
+            TestPassageService tps    = new TestPassageService();
 
-            List<TestPassage> passagesUtilisateur = passages.stream()
-                    .filter(p -> p.getUserId() == currentUser.getId())
-                    .filter(p -> "termine".equals(p.getStatut()))
+            // IDs des tests de niveau pour CETTE langue uniquement
+            List<Integer> idsTestsNiveau = testService.recuperer().stream()
+                    .filter(t -> t.getLangueId() == langue.getId()
+                            && "Test de niveau".equals(t.getType()))
+                    .map(Test::getId)
                     .collect(Collectors.toList());
 
-            if (passagesUtilisateur.isEmpty()) {
+            if (idsTestsNiveau.isEmpty()) {
                 niveauActuelValue.setText("Non défini");
                 return;
             }
 
-            TestPassage dernierPassage = passagesUtilisateur.stream()
-                    .max((p1, p2) -> {
-                        if (p1.getDateFin() == null && p2.getDateFin() == null) return 0;
-                        if (p1.getDateFin() == null) return -1;
-                        if (p2.getDateFin() == null) return 1;
-                        return p1.getDateFin().compareTo(p2.getDateFin());
-                    })
-                    .orElse(null);
+            // Dernier passage terminé de CET utilisateur pour UN de ces tests
+            Optional<TestPassage> meilleur = tps.recuperer().stream()
+                    .filter(p -> p.getUserId() == currentUser.getId())
+                    .filter(p -> "termine".equals(p.getStatut()))
+                    .filter(p -> idsTestsNiveau.contains(p.getTestId()))
+                    .max(Comparator.comparing(p ->
+                            p.getDateDebut() != null ? p.getDateDebut() : LocalDateTime.MIN));
 
-            if (dernierPassage != null && dernierPassage.getResultat() > 0) {
-                double pourcentage = dernierPassage.getResultat();
-                String niveau = determinerNiveauParScore(pourcentage);
-                niveauActuelValue.setText(niveau);
+            if (meilleur.isPresent()) {
+                double pct = meilleur.get().getScoreMax() > 0
+                        ? (double) meilleur.get().getScore() / meilleur.get().getScoreMax() * 100
+                        : 0;
+                niveauActuelValue.setText(determinerNiveauParScore(pct));
             } else {
                 niveauActuelValue.setText("Non défini");
             }
