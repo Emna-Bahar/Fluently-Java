@@ -105,7 +105,7 @@ public class ApprentissageController {
                     "/com/example/pijava_fluently/fxml/test-passage.fxml"));
             Node vue = loader.load();
             TestPassageEtudiantController ctrl = loader.getController();
-            ctrl.initTest(testChoisi, currentUser.getId());
+            ctrl.initTest(testChoisi, currentUser); // ← utilise la surcharge User
 
             if (homeController != null) {
                 homeController.setContent(vue);

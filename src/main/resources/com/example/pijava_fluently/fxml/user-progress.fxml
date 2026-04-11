@@ -12,12 +12,15 @@
     <padding><Insets top="24" left="28" right="28" bottom="28"/></padding>
 
     <!-- En-tête -->
-    <VBox spacing="8">
-        <Label text="📊 Progression des Étudiants"
-               style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
-        <Label text="Consultez l'avancement des étudiants dans chaque langue"
-               style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;"/>
-    </VBox>
+    <!-- Remplacer l'en-tête existant par -->
+    <HBox alignment="CENTER_LEFT" spacing="16" styleClass="progression-header">
+        <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
+        <Label text="📊" styleClass="header-icon"/>
+        <VBox HBox.hgrow="ALWAYS" spacing="3">
+            <Label text="Progression des Étudiants" styleClass="progression-title"/>
+            <Label text="Consultez l'avancement des étudiants dans chaque langue" styleClass="page-subtitle"/>
+        </VBox>
+    </HBox>
 
     <!-- Barre de recherche et filtres -->
     <HBox spacing="16" alignment="CENTER_LEFT">
