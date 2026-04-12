@@ -17,6 +17,10 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 public class TestPassageController {
 
@@ -33,6 +37,12 @@ public class TestPassageController {
     @FXML private TableColumn<TestPassage, Integer>       colTemps;
     @FXML private TableColumn<TestPassage, LocalDateTime> colDateDebut;
     @FXML private TableColumn<TestPassage, Void>          colActions;
+
+    @FXML private Label statTotalLabel;
+    @FXML private Label statReussiteLabel;
+    @FXML private Label statScoreMoyenLabel;
+    @FXML private Label statTempsMoyenLabel;
+    @FXML private ProgressBar barReussite;
 
     private final TestPassageService service     = new TestPassageService();
     private final TestService        testService = new TestService();
@@ -378,9 +388,46 @@ public class TestPassageController {
             allData = FXCollections.observableArrayList(list);
             tablePassages.setItems(allData);
             if (countLabel != null) countLabel.setText(allData.size() + " passage(s)");
+            mettreAJourStats();
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
         }
+    }
+    private void mettreAJourStats() {
+        if (allData == null || allData.isEmpty()) return;
+
+        int total = allData.size();
+        long termines = allData.stream()
+                .filter(p -> "termine".equals(p.getStatut())).count();
+        long reussis = allData.stream()
+                .filter(p -> "termine".equals(p.getStatut()))
+                .filter(p -> p.getScoreMax() > 0
+                        && (double) p.getScore() / p.getScoreMax() >= 0.5)
+                .count();
+
+        double scoreMoyen = allData.stream()
+                .filter(p -> p.getScoreMax() > 0)
+                .mapToDouble(p -> (double) p.getScore() / p.getScoreMax() * 100)
+                .average().orElse(0);
+
+        double tempsMoyen = allData.stream()
+                .mapToInt(TestPassage::getTempsPasse)
+                .average().orElse(0);
+
+        double tauxReussite = termines > 0 ? (double) reussis / termines * 100 : 0;
+
+        if (statTotalLabel != null)
+            statTotalLabel.setText(String.valueOf(total));
+        if (statReussiteLabel != null)
+            statReussiteLabel.setText(String.format("%.0f%%", tauxReussite));
+        if (statScoreMoyenLabel != null)
+            statScoreMoyenLabel.setText(String.format("%.1f%%", scoreMoyen));
+        if (statTempsMoyenLabel != null) {
+            int min = (int)(tempsMoyen / 60), sec = (int)(tempsMoyen % 60);
+            statTempsMoyenLabel.setText(min + "m " + sec + "s");
+        }
+        if (barReussite != null)
+            barReussite.setProgress(tauxReussite / 100.0);
     }
 
     @FXML private void handleSearch() {
@@ -403,5 +450,58 @@ public class TestPassageController {
     private void showAlert(Alert.AlertType type, String title, String msg) {
         Alert a = new Alert(type, msg, ButtonType.OK);
         a.setTitle(title); a.setHeaderText(null); a.showAndWait();
+    }
+
+    @FXML
+    private void handleExportCSV() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Exporter les passages en CSV");
+        fc.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Fichier CSV", "*.csv"));
+        fc.setInitialFileName("passages_tests.csv");
+
+        Stage stage = (Stage) tablePassages.getScene().getWindow();
+        File file = fc.showSaveDialog(stage);
+        if (file == null) return;
+
+        try (PrintWriter pw = new PrintWriter(
+                new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+
+            // En-tête BOM pour Excel
+            pw.print('\uFEFF');
+            pw.println("ID;Test;Étudiant;Score;Score Max;Pourcentage;Statut;Temps (s);Date Début;Date Fin");
+
+            ObservableList<TestPassage> items = tablePassages.getItems();
+            for (TestPassage p : items) {
+                String titreTest = tests.stream()
+                        .filter(t -> t.getId() == p.getTestId())
+                        .map(Test::getTitre).findFirst().orElse("Test #" + p.getTestId());
+                double pct = p.getScoreMax() > 0
+                        ? (double) p.getScore() / p.getScoreMax() * 100 : 0;
+                String dateDeb = p.getDateDebut() != null
+                        ? p.getDateDebut().toString().replace("T", " ") : "—";
+                String dateFin = p.getDateFin() != null
+                        ? p.getDateFin().toString().replace("T", " ") : "—";
+
+                pw.println(String.join(";",
+                        String.valueOf(p.getId()),
+                        "\"" + titreTest + "\"",
+                        "Utilisateur #" + p.getUserId(),
+                        String.valueOf(p.getScore()),
+                        String.valueOf(p.getScoreMax()),
+                        String.format("%.1f%%", pct),
+                        p.getStatut() != null ? p.getStatut() : "—",
+                        String.valueOf(p.getTempsPasse()),
+                        dateDeb,
+                        dateFin
+                ));
+            }
+
+            showAlert(Alert.AlertType.INFORMATION, "Export réussi",
+                    "✅ " + items.size() + " passage(s) exporté(s) vers :\n" + file.getAbsolutePath());
+
+        } catch (IOException e) {
+            showAlert(Alert.AlertType.ERROR, "Erreur export", e.getMessage());
+        }
     }
 }

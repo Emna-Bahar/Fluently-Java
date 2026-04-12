@@ -154,9 +154,113 @@ public class MesTestsController implements Initializable {
         else             afficherTestsPlat(filtered);
     }
 
+    private void afficherRecommandation() {
+        if (currentUser == null || allTests == null) return;
+
+        // Trouver si l'utilisateur a un niveau dans au moins une langue
+        if (niveauParLangue.isEmpty()) {
+            System.out.println("❌ niveauParLangue est vide");
+            return;
+        }
+
+        // Chercher le test recommandé : quiz_debutant du niveau actuel
+        // dans la première langue où l'étudiant a un niveau
+        int langueId = niveauParLangue.keySet().iterator().next();
+        String niveau = niveauParLangue.get(langueId);
+        System.out.println("✅ Langue ID : " + langueId + " | Niveau actuel : " + niveau);
+        //DEBUGGAGE------------------------------------------------------
+        // Affiche tous les quiz_debutant disponibles
+        allTests.stream()
+                .filter(t -> "quiz_debutant".equals(t.getType()))
+                .forEach(t -> {
+                    String niveauTest = trouverNiveauCecrlDuTest(t);
+                    System.out.println("📝 Test : " + t.getTitre()
+                            + " | langueId=" + t.getLangueId()
+                            + " | niveauTest=" + niveauTest
+                            + " | match niveau=" + niveau.equals(niveauTest));
+                });
+
+        // Vérifie les passages
+        allTests.stream()
+                .filter(t -> "quiz_debutant".equals(t.getType()))
+                .filter(t -> t.getLangueId() == langueId)
+                .forEach(t -> {
+                    try {
+                        int nbPassages = testPassageService
+                                .recupererParTestEtUser(t.getId(), currentUser.getId()).size();
+                        System.out.println("🔍 Test '" + t.getTitre()
+                                + "' → " + nbPassages + " passage(s) existant(s)");
+                    } catch (SQLException e) { e.printStackTrace(); }
+                });
+        //--------------------------------------------------------------
+        String nomLangue = allLangues == null ? "?" :
+                allLangues.stream().filter(l -> l.getId() == langueId)
+                        .map(Langue::getNom).findFirst().orElse("?");
+
+        // Chercher un quiz_debutant non encore tenté du bon niveau
+        Optional<Test> testReco = allTests.stream()
+                .filter(t -> t.getLangueId() == langueId)
+                .filter(t -> "quiz_debutant".equals(t.getType()))
+                .filter(t -> niveau.equals(trouverNiveauCecrlDuTest(t)))
+                .filter(t -> {
+                    try {
+                        return testPassageService
+                                .recupererParTestEtUser(t.getId(), currentUser.getId())
+                                .isEmpty();
+                    } catch (SQLException e) { return true; }
+                })
+                .findFirst();
+        System.out.println("🎯 testReco trouvé : " + testReco.isPresent());
+        if (testReco.isEmpty()) return;
+        Test reco = testReco.get();
+
+        // Construire la bannière
+        HBox banniere = new HBox(16);
+        banniere.setAlignment(Pos.CENTER_LEFT);
+        banniere.setPadding(new Insets(18, 24, 18, 24));
+        banniere.setStyle(
+                "-fx-background-color:linear-gradient(to right,#EFF6FF,#F0FDF4);" +
+                        "-fx-background-radius:16;" +
+                        "-fx-border-color:#BFDBFE;-fx-border-radius:16;-fx-border-width:1.5;" +
+                        "-fx-effect:dropshadow(gaussian,rgba(59,130,246,0.12),12,0,0,4);");
+
+        // Icône animée
+        StackPane ico = new StackPane();
+        ico.setPrefSize(50, 50);
+        ico.setStyle("-fx-background-color:#DBEAFE;-fx-background-radius:25;");
+        Label icoLbl = new Label("💡");
+        icoLbl.setStyle("-fx-font-size:22px;");
+        ico.getChildren().add(icoLbl);
+
+        VBox texte = new VBox(4);
+        HBox.setHgrow(texte, Priority.ALWAYS);
+        Label titre = new Label("Test recommandé pour vous !");
+        titre.setStyle("-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#1E40AF;");
+        Label detail = new Label(
+                "Niveau " + niveau + " en " + nomLangue + " · " + reco.getTitre() +
+                        "  (" + reco.getDureeEstimee() + " min)");
+        detail.setStyle("-fx-font-size:12px;-fx-text-fill:#64748B;");
+        texte.getChildren().addAll(titre, detail);
+
+        Button btnLancer = new Button("▶  Commencer");
+        btnLancer.setStyle(
+                "-fx-background-color:#3B82F6;-fx-text-fill:white;" +
+                        "-fx-font-size:12px;-fx-font-weight:bold;" +
+                        "-fx-background-radius:10;-fx-padding:10 20;-fx-cursor:hand;" +
+                        "-fx-border-color:transparent;");
+        btnLancer.setOnAction(e -> lancerTest(reco));
+
+        banniere.getChildren().addAll(ico, texte, btnLancer);
+
+        // Insérer EN PREMIER dans vboxContenu
+        vboxContenu.getChildren().add(0, banniere);
+    }
     // ── Affichage principal : Langue → Type → Tests ───────────────
+
     private void afficherParLangue(List<Test> tests) {
+
         vboxContenu.getChildren().clear();
+        afficherRecommandation();
 
         // Grouper par langue
         Map<Integer, List<Test>> parLangue = new LinkedHashMap<>();
@@ -407,7 +511,7 @@ public class MesTestsController implements Initializable {
 
             String raison = niveauActuel == null
                     ? "Passez d'abord le test de niveau"
-                    : "Disponible au niveau " + niveauActuel + " uniquement";
+                    : "Pas Disponible au cours de votre Niveau";
             Label raisonLbl = new Label(raison);
             raisonLbl.setStyle("-fx-font-size:11px;-fx-text-fill:#C0C7D0;");
 
@@ -668,4 +772,5 @@ public class MesTestsController implements Initializable {
             default -> "#6B7280";
         };
     }
+
 }
