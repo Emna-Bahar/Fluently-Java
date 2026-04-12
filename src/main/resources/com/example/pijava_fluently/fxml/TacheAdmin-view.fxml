@@ -19,7 +19,7 @@
             <VBox spacing="5" HBox.hgrow="ALWAYS">
                 <Label text="📋  Gestion des Tâches"
                        style="-fx-font-size:24px;-fx-font-weight:bold;-fx-text-fill:white;"/>
-                <Label text="Consultation et suppression — toutes tâches confondues"
+                <Label text="Consultation — toutes les tâches de tous les objectifs"
                        style="-fx-font-size:12px;-fx-text-fill:rgba(255,255,255,0.78);"/>
             </VBox>
             <VBox spacing="8" alignment="CENTER_RIGHT">
@@ -48,31 +48,71 @@
             </VBox>
         </HBox>
 
-        <!-- ══ Barre de recherche ════════════════════════════════════ -->
-        <HBox spacing="14" alignment="CENTER_LEFT">
-            <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="500"
-                  style="-fx-background-color:#FFFFFF;-fx-background-radius:12;
-                         -fx-border-color:#E2E8F0;-fx-border-radius:12;-fx-border-width:1.5;
-                         -fx-padding:12 18 12 18;
-                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);">
-                <Label text="🔍" style="-fx-font-size:15px;-fx-text-fill:#9CA3AF;"/>
-                <TextField fx:id="searchField"
-                           promptText="Rechercher par titre, statut, priorité…"
-                           onKeyReleased="#handleSearch"
-                           style="-fx-background-color:transparent;-fx-border-color:transparent;
-                                  -fx-font-size:13px;-fx-text-fill:#374151;"
-                           HBox.hgrow="ALWAYS"/>
+        <!-- ══ Barre de recherche + Filtres + Export ════════════════ -->
+        <VBox spacing="12">
+            <!-- Ligne recherche + Export -->
+            <HBox spacing="14" alignment="CENTER_LEFT">
+                <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="500"
+                      style="-fx-background-color:#FFFFFF;-fx-background-radius:12;
+                             -fx-border-color:#E2E8F0;-fx-border-radius:12;-fx-border-width:1.5;
+                             -fx-padding:12 18 12 18;
+                             -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);">
+                    <Label text="🔍" style="-fx-font-size:15px;-fx-text-fill:#9CA3AF;"/>
+                    <TextField fx:id="searchField"
+                               promptText="Rechercher par titre, statut, priorité ou objectif…"
+                               onKeyReleased="#handleSearch"
+                               style="-fx-background-color:transparent;-fx-border-color:transparent;
+                                      -fx-font-size:13px;-fx-text-fill:#374151;"
+                               HBox.hgrow="ALWAYS"/>
+                </HBox>
+
+                <Button fx:id="btnExportPdf" text="📎  Exporter en CSV" onAction="#exportToPDF"
+                        style="-fx-background-color:#10B981;-fx-text-fill:white;-fx-font-size:13px;
+                               -fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 20 12 20;
+                               -fx-cursor:hand;-fx-effect:dropshadow(gaussian,rgba(16,185,129,0.3),8,0,0,3);"/>
             </HBox>
 
-            <!-- Bouton rafraîchir -->
+            <!-- Ligne des filtres -->
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <Label text="📊 Filtrer par :"
+                       style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
 
-        </HBox>
+                <ComboBox fx:id="filterStatut" prefWidth="140"
+                          style="-fx-background-color:#FFFFFF;-fx-border-color:#E2E8F0;
+                                 -fx-border-radius:8;-fx-background-radius:8;-fx-padding:8 12 8 12;
+                                 -fx-font-size:12px;-fx-cursor:hand;"/>
+
+                <ComboBox fx:id="filterPriorite" prefWidth="140"
+                          style="-fx-background-color:#FFFFFF;-fx-border-color:#E2E8F0;
+                                 -fx-border-radius:8;-fx-background-radius:8;-fx-padding:8 12 8 12;
+                                 -fx-font-size:12px;-fx-cursor:hand;"/>
+
+                <Button fx:id="btnResetFilters" text="⟳ Réinitialiser"
+                        style="-fx-background-color:#F1F5F9;-fx-text-fill:#64748B;-fx-font-size:12px;
+                               -fx-font-weight:bold;-fx-background-radius:8;-fx-padding:8 16 8 16;
+                               -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:8;"/>
+            </HBox>
+        </VBox>
 
         <!-- ══ Grille de cartes tâches ═══════════════════════════════ -->
         <FlowPane fx:id="cardsContainer"
                   hgap="18" vgap="18"
                   style="-fx-background-color:transparent;"
-                  prefWrapLength="900"/>
+                  prefWrapLength="1000"/>
+
+        <!-- ══ PAGINATION ═══════════════════════════════════════════ -->
+        <HBox spacing="20" alignment="CENTER" style="-fx-padding:20 0 10 0;">
+            <Button fx:id="btnPrev" text="◀  Précédent"
+                    style="-fx-background-color:#FFFFFF;-fx-text-fill:#6C63FF;-fx-font-size:13px;
+                           -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;
+                           -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
+            <Label fx:id="pageInfoLabel" text="Page 1 / 1"
+                   style="-fx-font-size:13px;-fx-text-fill:#64748B;-fx-font-weight:bold;"/>
+            <Button fx:id="btnNext" text="Suivant  ▶"
+                    style="-fx-background-color:#FFFFFF;-fx-text-fill:#6C63FF;-fx-font-size:13px;
+                           -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;
+                           -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
+        </HBox>
 
     </VBox>
 </ScrollPane>
