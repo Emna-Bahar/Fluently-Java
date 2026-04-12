@@ -1871,3 +1871,421 @@
 .btn-add-icon:pressed {
     -fx-translate-y: 1px;
 }
+/* ============================================================
+   STATISTIQUES / ENCYCLOPÉDIE DES LANGUES - DESIGN MODERNE
+   ============================================================ */
+
+/* Container principal */
+.stats-main-container {
+    -fx-background-color: linear-gradient(to bottom, #F8F9FD, #F0F2FF);
+}
+
+/* Cartes de statistiques */
+.stats-card {
+    -fx-background-color: white;
+    -fx-background-radius: 24px;
+    -fx-effect: dropshadow(gaussian, rgba(108, 99, 255, 0.12), 20, 0, 0, 6);
+    -fx-padding: 24;
+    -fx-border-color: rgba(108, 99, 255, 0.1);
+    -fx-border-width: 1px;
+    -fx-border-radius: 24px;
+}
+
+.stats-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(108, 99, 255, 0.2), 24, 0, 0, 8);
+    -fx-translate-y: -2px;
+}
+
+/* En-tête de carte */
+.stats-card-header {
+    -fx-background-color: linear-gradient(to right, #6C63FF, #8B5CF6, #A855F7);
+    -fx-background-radius: 20px;
+    -fx-padding: 24 28 24 28;
+    -fx-effect: dropshadow(gaussian, rgba(108, 99, 255, 0.3), 12, 0, 0, 3);
+}
+
+/* Drapeau */
+.stats-flag {
+    -fx-font-size: 56px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 2);
+}
+
+/* Nom de la langue */
+.stats-langue-nom {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: white;
+    -fx-font-family: "Segoe UI Semibold", sans-serif;
+}
+
+/* Famille linguistique */
+.stats-famille {
+    -fx-font-size: 13px;
+    -fx-text-fill: rgba(255,255,255,0.85);
+    -fx-font-style: italic;
+}
+
+/* Grille des statistiques */
+.stats-grid {
+    -fx-padding: 24;
+    -fx-background-color: #F8FAFC;
+    -fx-background-radius: 16px;
+    -fx-border-color: #E8EAF0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 16px;
+}
+
+/* Icônes */
+.stats-icon {
+    -fx-font-size: 32px;
+    -fx-min-width: 48px;
+}
+
+/* Labels */
+.stats-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #6B7280;
+    -fx-text-transform: uppercase;
+    -fx-letter-spacing: 0.5px;
+}
+
+/* Valeurs */
+.stats-value {
+    -fx-font-size: 16px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1A1D2E;
+}
+
+/* Valeur spéciale pour les chiffres */
+.stats-number {
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #6C63FF;
+}
+
+/* Section description */
+.stats-description {
+    -fx-background-color: #F5F6FF;
+    -fx-background-radius: 16px;
+    -fx-padding: 20;
+}
+
+.desc-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1A1D2E;
+    -fx-padding: 0 0 8 0;
+}
+
+.desc-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: #4B5563;
+    -fx-line-spacing: 6;
+}
+
+/* Fun fact - CORRIGÉ */
+.stats-funfact {
+    -fx-background-color: linear-gradient(to right, #FFF3E3, #FFE4CC);
+    -fx-background-radius: 16px;
+    -fx-padding: 20 24 20 24;
+    -fx-border-color: #FDE68A;
+    -fx-border-width: 1px;
+    -fx-border-radius: 16px;
+}
+
+.funfact-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #D97706;
+    -fx-text-transform: uppercase;
+    -fx-letter-spacing: 1px;
+}
+
+.funfact-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #92400E;
+    -fx-font-style: italic;
+}
+
+/* Boutons langues populaires */
+.langue-pop-btn {
+    -fx-background-color: white;
+    -fx-text-fill: #4A4D6A;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 40px;
+    -fx-padding: 12 24 12 24;
+    -fx-cursor: hand;
+    -fx-border-color: #E0E3F0;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 40px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 6, 0, 0, 2);
+}
+
+.langue-pop-btn:hover {
+    -fx-background-color: linear-gradient(to right, #6C63FF, #8B5CF6);
+    -fx-text-fill: white;
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.4), 12, 0, 0, 4);
+    -fx-translate-y: -2px;
+}
+
+/* Champ de recherche */
+.search-field-stats {
+    -fx-background-color: white;
+    -fx-background-radius: 40px;
+    -fx-border-color: #E0E3F0;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 40px;
+    -fx-padding: 12 20 12 20;
+    -fx-font-size: 14px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 4, 0, 0, 2);
+}
+
+.search-field-stats:focused {
+    -fx-border-color: #6C63FF;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.15), 8, 0, 0, 2);
+}
+
+/* Bouton recherche */
+.btn-search-stats {
+    -fx-background-color: linear-gradient(to right, #6C63FF, #8B5CF6);
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 40px;
+    -fx-padding: 12 28 12 28;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.3), 8, 0, 0, 3);
+}
+
+.btn-search-stats:hover {
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.5), 12, 0, 0, 5);
+    -fx-translate-y: -2px;
+}
+
+/* Tableau de classement */
+.classement-table {
+    -fx-background-color: white;
+    -fx-background-radius: 16px;
+    -fx-border-color: #E8EAF0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 16px;
+}
+
+.classement-table .column-header {
+    -fx-background-color: #F8FAFC;
+    -fx-background-radius: 16px 16px 0 0;
+    -fx-padding: 16 8;
+}
+
+.classement-table .column-header .label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #4A4D6A;
+    -fx-text-transform: uppercase;
+    -fx-letter-spacing: 1px;
+}
+
+.classement-table .table-row-cell {
+    -fx-padding: 12 0;
+    -fx-border-color: transparent transparent #F0F1F7 transparent;
+}
+
+.classement-table .table-row-cell:hover {
+    -fx-background-color: #F5F6FF;
+}
+
+/* Étoiles de difficulté - Version améliorée */
+.difficulte-stars {
+    -fx-spacing: 4;
+}
+
+.star-full {
+    -fx-text-fill: #F59E0B;
+    -fx-font-size: 18px;
+}
+
+.star-empty {
+    -fx-text-fill: #E2E8F0;
+    -fx-font-size: 18px;
+}
+
+/* Badge de compteur */
+.count-badge-stats {
+    -fx-background-color: linear-gradient(to right, #EEF0FF, #F5F3FF);
+    -fx-text-fill: #6C63FF;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-background-radius: 30px;
+    -fx-padding: 6 18 6 18;
+}
+
+/* Section titre */
+.stats-title-section {
+    -fx-background-color: linear-gradient(to right, white, #F8F9FD);
+    -fx-background-radius: 20px;
+    -fx-padding: 24 28 24 28;
+    -fx-border-color: #E8EAF0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 20px;
+}
+
+.stats-main-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1A1D2E;
+}
+
+.stats-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #8A8FA8;
+    -fx-padding: 8 0 0 0;
+}
+/* ============================================================
+   SECTION EXPLOREZ UNE LANGUE - DESIGN MODERNE
+   ============================================================ */
+
+/* Conteneur de la section */
+.explore-section {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 24px;
+    -fx-padding: 28;
+    -fx-border-color: #E0E3F0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 24px;
+    -fx-effect: dropshadow(gaussian, rgba(108, 99, 255, 0.1), 15, 0, 0, 5);
+}
+
+.explore-section:hover {
+    -fx-border-color: #6C63FF;
+    -fx-effect: dropshadow(gaussian, rgba(108, 99, 255, 0.2), 20, 0, 0, 8);
+}
+
+/* Titre de la section */
+.explore-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #4C6EF5;
+    -fx-padding: 0 0 16 0;
+}
+
+/* Conteneur des boutons de langues */
+.langues-buttons-container {
+    -fx-spacing: 15;
+    -fx-alignment: CENTER;
+    -fx-padding: 10 0 20 0;
+}
+
+/* Boutons de langues améliorés */
+.langue-pop-btn {
+    -fx-background-color: white;
+    -fx-text-fill: #4A4D6A;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 40px;
+    -fx-padding: 12 24 12 24;
+    -fx-cursor: hand;
+    -fx-border-color: #E0E3F0;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 40px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 6, 0, 0, 2);
+}
+
+.langue-pop-btn:hover {
+    -fx-background-color: #6C63FF;
+    -fx-text-fill: white;
+    -fx-border-color: #6C63FF;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.4), 12, 0, 0, 5);
+    -fx-translate-y: -2px;
+}
+
+.langue-pop-btn:pressed {
+    -fx-translate-y: 1px;
+}
+
+/* Conteneur de recherche */
+.search-container {
+    -fx-background-color: white;
+    -fx-background-radius: 50px;
+    -fx-border-color: #E0E3F0;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 50px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 6, 0, 0, 2);
+    -fx-padding: 4 4 4 20;
+}
+
+.search-container:focused-within {
+    -fx-border-color: #6C63FF;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.2), 10, 0, 0, 3);
+}
+
+/* Champ de recherche */
+.search-field-stats {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-font-size: 14px;
+    -fx-text-fill: #1A1D2E;
+    -fx-prompt-text-fill: #9CA3AF;
+    -fx-padding: 12 0 12 0;
+}
+
+.search-field-stats:focused {
+    -fx-border-color: transparent;
+}
+
+/* Bouton recherche */
+.btn-search-stats {
+    -fx-background-color: #6C63FF;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 40px;
+    -fx-padding: 12 28 12 28;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.3), 8, 0, 0, 3);
+}
+
+.btn-search-stats:hover {
+    -fx-background-color: #5849C4;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.5), 12, 0, 0, 5);
+    -fx-translate-y: -2px;
+}
+
+.btn-search-stats:pressed {
+    -fx-translate-y: 1px;
+}
+
+/* ============================================================
+   EN-TÊTE DE LA PAGE - DESIGN MODERNE
+   ============================================================ */
+
+/* En-tête principal */
+.stats-header {
+    -fx-background-color: white;
+    -fx-background-radius: 24px;
+    -fx-padding: 28 32 28 32;
+    -fx-border-color: #E8EAF0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 24px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 12, 0, 0, 3);
+}
+
+/* Titre principal avec icône */
+.stats-main-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1A1D2E;
+}
+
+.stats-main-icon {
+    -fx-font-size: 36px;
+}
+
+/* Sous-titre */
+.stats-subtitle {
+    -fx-font-size: 15px;
+    -fx-text-fill: #6B7280;
+    -fx-padding: 8 0 0 4;
+}

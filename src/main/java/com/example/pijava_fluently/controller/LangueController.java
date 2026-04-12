@@ -505,7 +505,6 @@ public class LangueController {
         selectedImageFile = null;
     }
 
-    // ── Validation ─────────────────────────────────────────────────
     // ── Validation complète du formulaire ─────────────────────────────
     private boolean validateForm() {
         cacherErreur();
@@ -529,6 +528,14 @@ public class LangueController {
         }
         if (!nom.matches("^[a-zA-ZÀ-ÿ\\s\\'\\-]+$")) {
             afficherErreur("Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes.");
+            fieldNom.requestFocus();
+            return false;
+        }
+
+        // ★ NOUVEAU : Vérification de l'unicité du nom ★
+        Integer excludeId = (selectedLangue != null) ? selectedLangue.getId() : null;
+        if (!isNomUnique(nom, excludeId)) {
+            afficherErreur("Une langue avec le nom '" + nom + "' existe déjà. Veuillez choisir un autre nom.");
             fieldNom.requestFocus();
             return false;
         }
@@ -569,8 +576,7 @@ public class LangueController {
         // checkActive est une CheckBox, elle a toujours une valeur (true/false)
 
         // 5. Validation de l'image (optionnelle mais vérification du fichier)
-        String imagePath = fieldDrapeau.getText().trim();
-        if (selectedImageFile != null && !imagePath.isEmpty()) {
+        if (selectedImageFile != null) {
             if (!selectedImageFile.exists()) {
                 afficherErreur("Le fichier image est introuvable.");
                 return false;
@@ -578,8 +584,8 @@ public class LangueController {
             String fileName = selectedImageFile.getName().toLowerCase();
             if (!fileName.endsWith(".png") && !fileName.endsWith(".jpg") &&
                     !fileName.endsWith(".jpeg") && !fileName.endsWith(".gif") &&
-                    !fileName.endsWith(".webp") && !fileName.endsWith(".svg")) {
-                afficherErreur("Format d'image non supporté. Utilisez PNG, JPG, JPEG, GIF, WEBP ou SVG.");
+                    !fileName.endsWith(".webp")) {
+                afficherErreur("Format d'image non supporté. Utilisez PNG, JPG, JPEG, GIF ou WEBP.");
                 return false;
             }
         }
@@ -594,14 +600,14 @@ public class LangueController {
             for (Langue l : toutesLangues) {
                 if (l.getNom().equalsIgnoreCase(nom)) {
                     if (excludeId == null || l.getId() != excludeId) {
-                        return false;
+                        return false; // Nom déjà utilisé par une autre langue
                     }
                 }
             }
         } catch (SQLException e) {
             return false;
         }
-        return true;
+        return true; // Nom unique
     }
 
 

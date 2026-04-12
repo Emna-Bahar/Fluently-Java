@@ -61,6 +61,9 @@
                             <Button fx:id="navUserProgress" text="• Progression"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showUserProgress"/>
+                            <Button fx:id="navLangueStats" text="• Statistiques"
+                                    styleClass="nav-btn-sub" maxWidth="Infinity"
+                                    onAction="#showLangueStats"/>
                         </VBox>
                     </VBox>
 

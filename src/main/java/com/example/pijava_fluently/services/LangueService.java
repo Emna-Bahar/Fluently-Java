@@ -73,4 +73,21 @@ public class LangueService implements IService<Langue> {
         }
         return langues;
     }
+    // Vérifier si une langue existe déjà avec ce nom
+    public boolean existsByNom(String nom, Integer excludeId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM langue WHERE LOWER(nom) = LOWER(?)";
+        if (excludeId != null) {
+            sql += " AND id != ?";
+        }
+        PreparedStatement ps = cnx.prepareStatement(sql);
+        ps.setString(1, nom);
+        if (excludeId != null) {
+            ps.setInt(2, excludeId);
+        }
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1) > 0;
+        }
+        return false;
+    }
 }
