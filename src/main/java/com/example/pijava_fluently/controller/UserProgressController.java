@@ -87,21 +87,15 @@ public class UserProgressController {
     private void setupColumns() {
         // Utilisateur avec badge
         colUserId.setCellValueFactory(new PropertyValueFactory<>("userId"));
-        colUserId.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Integer item, boolean empty) {
-                super.updateItem(item, empty);
-                setAlignment(Pos.CENTER);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    Label badge = new Label("" + item);
-                    badge.setStyle("-fx-background-color:#EFF6FF;-fx-text-fill:#3B82F6;-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:20;-fx-padding:4 12 4 12;");
-                    setGraphic(badge);
-                    setText(null);
-                }
-            }
+        colNiveauActuel.setCellValueFactory(cellData -> {
+            int niveauId = cellData.getValue().getNiveauActuelId();
+            // Chercher le niveau correspondant
+            String nom = allNiveaux.stream()
+                    .filter(n -> n.getId() == niveauId)
+                    .map(Niveau::getDifficulte)
+                    .findFirst()
+                    .orElse("Non défini");
+            return new javafx.beans.property.SimpleStringProperty(nom);
         });
 
         // Langue

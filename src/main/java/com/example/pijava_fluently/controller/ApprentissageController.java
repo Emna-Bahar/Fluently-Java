@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.Optional;
 
 public class ApprentissageController {
 
@@ -116,38 +118,40 @@ public class ApprentissageController {
     }
 
     private void chargerNiveauActuel() {
-        if (currentUser == null) {
+        if (currentUser == null || langue == null) {
             niveauActuelValue.setText("Non défini");
             return;
         }
 
         try {
-            TestPassageService testPassageService = new TestPassageService();
-            List<TestPassage> passages = testPassageService.recuperer();
+            TestService testService   = new TestService();
+            TestPassageService tps    = new TestPassageService();
 
-            List<TestPassage> passagesUtilisateur = passages.stream()
-                    .filter(p -> p.getUserId() == currentUser.getId())
-                    .filter(p -> "termine".equals(p.getStatut()))
+            // IDs des tests de niveau pour CETTE langue uniquement
+            List<Integer> idsTestsNiveau = testService.recuperer().stream()
+                    .filter(t -> t.getLangueId() == langue.getId()
+                            && "Test de niveau".equals(t.getType()))
+                    .map(Test::getId)
                     .collect(Collectors.toList());
 
-            if (passagesUtilisateur.isEmpty()) {
+            if (idsTestsNiveau.isEmpty()) {
                 niveauActuelValue.setText("Non défini");
                 return;
             }
 
-            TestPassage dernierPassage = passagesUtilisateur.stream()
-                    .max((p1, p2) -> {
-                        if (p1.getDateFin() == null && p2.getDateFin() == null) return 0;
-                        if (p1.getDateFin() == null) return -1;
-                        if (p2.getDateFin() == null) return 1;
-                        return p1.getDateFin().compareTo(p2.getDateFin());
-                    })
-                    .orElse(null);
+            // Dernier passage terminé de CET utilisateur pour UN de ces tests
+            Optional<TestPassage> meilleur = tps.recuperer().stream()
+                    .filter(p -> p.getUserId() == currentUser.getId())
+                    .filter(p -> "termine".equals(p.getStatut()))
+                    .filter(p -> idsTestsNiveau.contains(p.getTestId()))
+                    .max(Comparator.comparing(p ->
+                            p.getDateDebut() != null ? p.getDateDebut() : LocalDateTime.MIN));
 
-            if (dernierPassage != null && dernierPassage.getResultat() > 0) {
-                double pourcentage = dernierPassage.getResultat();
-                String niveau = determinerNiveauParScore(pourcentage);
-                niveauActuelValue.setText(niveau);
+            if (meilleur.isPresent()) {
+                double pct = meilleur.get().getScoreMax() > 0
+                        ? (double) meilleur.get().getScore() / meilleur.get().getScoreMax() * 100
+                        : 0;
+                niveauActuelValue.setText(determinerNiveauParScore(pct));
             } else {
                 niveauActuelValue.setText("Non défini");
             }
@@ -166,6 +170,7 @@ public class ApprentissageController {
         if (pourcentage >= 50) return "A2";
         return "A1";
     }
+    private Map<String, Integer> niveauIdParKey = new HashMap<>(); // "A1" -> id_niveau
 
     private void chargerCours() {
         new Thread(() -> {
@@ -177,11 +182,12 @@ public class ApprentissageController {
                         .filter(n -> n.getIdLangueId() == langue.getId())
                         .collect(Collectors.toList());
 
-                // Stocker les niveaux par difficulté
+                // Stocker les IDs des niveaux par clé
                 for (Niveau niveau : niveauxLangue) {
                     String difficulte = niveau.getDifficulte();
                     String niveauKey = extractNiveauKey(difficulte);
                     if (niveauKey != null) {
+                        niveauIdParKey.put(niveauKey, niveau.getId());
                         niveauParDifficulte.put(niveauKey.hashCode(), niveau);
                     }
                 }
@@ -202,9 +208,7 @@ public class ApprentissageController {
                     }
                 }
 
-                // Charger la progression depuis la base de données
                 chargerProgressionUtilisateur();
-
                 Platform.runLater(() -> afficherNiveaux());
 
             } catch (SQLException e) {
@@ -222,53 +226,57 @@ public class ApprentissageController {
         try {
             List<User_progress> progresses = userProgressService.recuperer();
 
-            // Chercher la progression pour cet utilisateur et cette langue
-            User_progress progress = progresses.stream()
-                    .filter(p -> p.getUserId() == currentUser.getId() && p.getLangueId() == langue.getId())
-                    .findFirst()
-                    .orElse(null);
-
             // Réinitialiser les maps
             coursCompleteParNiveau.clear();
             progressionParNiveau.clear();
             progressionCoursParNiveau.clear();
 
-            if (progress != null) {
-                // Pour chaque niveau, récupérer les cours complétés
-                for (Map.Entry<String, List<Cours>> entry : coursParNiveau.entrySet()) {
-                    String niveauKey = entry.getKey();
-                    List<Cours> cours = entry.getValue();
+            // Pour chaque niveau, charger sa propre progression
+            for (Map.Entry<String, List<Cours>> entry : coursParNiveau.entrySet()) {
+                String niveauKey = entry.getKey();
+                List<Cours> cours = entry.getValue();
 
-                    Map<Integer, Boolean> coursStatus = new HashMap<>();
-                    int completedCount = 0;
+                // Récupérer l'ID du niveau pour cette clé
+                Integer niveauId = niveauIdParKey.get(niveauKey);
+                if (niveauId == null) {
+                    progressionParNiveau.put(niveauKey, 0);
+                    progressionCoursParNiveau.put(niveauKey, new HashMap<>());
+                    continue;
+                }
 
+                // Chercher la progression pour CE niveau spécifique (via niveau_actuel_id)
+                User_progress progress = progresses.stream()
+                        .filter(p -> p.getUserId() == currentUser.getId()
+                                && p.getLangueId() == langue.getId()
+                                && p.getNiveauActuelId() == niveauId)
+                        .findFirst()
+                        .orElse(null);
+
+                Map<Integer, Boolean> coursStatus = new HashMap<>();
+                int completedCount = 0;
+
+                if (progress != null) {
+                    // Utiliser le dernierNumeroCours de CE niveau
+                    int dernierCours = progress.getDernierNumeroCours();
                     for (Cours c : cours) {
-                        boolean estComplete = false;
-                        // Vérifier si ce cours est complété (stocké dans dernierNumeroCours)
-                        // Note: Ceci est une solution temporaire. Idéalement, chaque niveau devrait avoir son propre compteur
-                        if (c.getNumero() <= progress.getDernierNumeroCours()) {
-                            estComplete = true;
+                        boolean estComplete = c.getNumero() <= dernierCours;
+                        if (estComplete) {
                             completedCount++;
                             coursCompleteParNiveau.put(niveauKey + "_" + c.getId(), c.getId());
                         }
                         coursStatus.put(c.getId(), estComplete);
                     }
-                    progressionCoursParNiveau.put(niveauKey, coursStatus);
-                    progressionParNiveau.put(niveauKey, completedCount);
+                } else {
+                    // Aucun cours complété pour ce niveau
+                    for (Cours c : cours) {
+                        coursStatus.put(c.getId(), false);
+                    }
                 }
-            } else {
-                // Aucune progression, initialiser à 0
-                for (String niveauKey : coursParNiveau.keySet()) {
-                    progressionParNiveau.put(niveauKey, 0);
-                    progressionCoursParNiveau.put(niveauKey, new HashMap<>());
-                }
+                progressionCoursParNiveau.put(niveauKey, coursStatus);
+                progressionParNiveau.put(niveauKey, completedCount);
             }
         } catch (SQLException e) {
             System.err.println("Erreur lors du chargement de la progression: " + e.getMessage());
-            for (String niveauKey : coursParNiveau.keySet()) {
-                progressionParNiveau.put(niveauKey, 0);
-                progressionCoursParNiveau.put(niveauKey, new HashMap<>());
-            }
         }
     }
 
@@ -310,41 +318,45 @@ public class ApprentissageController {
                 if (status) completedCount++;
             }
             progressionParNiveau.put(niveauKey, completedCount);
-
-            // Mettre à jour la clé coursCompleteParNiveau
             coursCompleteParNiveau.put(niveauKey + "_" + cours.getId(), cours.getId());
 
-            // Mettre à jour la base de données (stockage global)
+            // Récupérer l'ID du niveau
+            Integer niveauId = niveauIdParKey.get(niveauKey);
+            if (niveauId == null) {
+                showAlert("Erreur", "ID du niveau non trouvé.");
+                return;
+            }
+
+            // Chercher par user_id, langue_id ET niveau_actuel_id
             List<User_progress> progresses = userProgressService.recuperer();
             User_progress existingProgress = progresses.stream()
-                    .filter(p -> p.getUserId() == currentUser.getId() && p.getLangueId() == langue.getId())
+                    .filter(p -> p.getUserId() == currentUser.getId()
+                            && p.getLangueId() == langue.getId()
+                            && p.getNiveauActuelId() == niveauId)
                     .findFirst()
                     .orElse(null);
 
             if (existingProgress == null) {
-                // Créer une nouvelle progression
+                // Créer une NOUVELLE progression pour CE niveau
                 User_progress newProgress = new User_progress();
                 newProgress.setUserId(currentUser.getId());
                 newProgress.setLangueId(langue.getId());
-                newProgress.setDernierNumeroCours(cours.getNumero()); // Stocke le dernier cours
+                newProgress.setNiveauActuelId(niveauId);  // ID du niveau
+                newProgress.setDernierNumeroCours(completedCount);
                 newProgress.setDernierCoursCompleteId(cours.getId());
                 newProgress.setTestNiveauComplete(false);
                 newProgress.setDateDerniereActivite(LocalDateTime.now());
 
-                int niveauId = trouverNiveauId(niveauKey);
-                newProgress.setNiveauActuelId(niveauId);
-
                 userProgressService.ajouter(newProgress);
             } else {
-                // Mettre à jour
+                // Mettre à jour la progression EXISTANTE pour CE niveau
+                existingProgress.setDernierNumeroCours(completedCount);
                 existingProgress.setDernierCoursCompleteId(cours.getId());
                 existingProgress.setDateDerniereActivite(LocalDateTime.now());
                 userProgressService.modifier(existingProgress);
             }
 
-            // Recharger l'affichage pour ce niveau uniquement
             afficherNiveaux();
-
             showAlert("Succès", "Félicitations ! Vous avez complété le cours " + cours.getNumero() + " du niveau " + niveauKey);
 
         } catch (SQLException e) {
