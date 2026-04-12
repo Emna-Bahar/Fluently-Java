@@ -11,6 +11,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -649,7 +650,57 @@ public class AdminDashboardController implements Initializable {
         setTitle("Progression des Étudiants", "Administration › Langues › Progression");
         setActive(navUserProgress);
     }
+    // Ajoutez cette déclaration avec les autres @FXML
+    @FXML private Button navLangueStats;
 
+    @FXML
+    private void showLangueStats() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/langues-stats.fxml")
+            );
+            Node view = loader.load();
+
+            // Cacher toutes les vues existantes
+            hideAll();
+
+            // Vider et ajouter la nouvelle vue dans languesView (qui est un VBox)
+            if (languesView != null) {
+                languesView.getChildren().clear();
+                languesView.getChildren().add(view);
+                VBox.setVgrow(view, Priority.ALWAYS);
+                languesView.setVisible(true);
+                languesView.setManaged(true);
+            } else {
+                // Fallback: créer un conteneur temporaire
+                VBox tempContainer = new VBox(view);
+                tempContainer.setStyle("-fx-background-color: #F8FAFC;");
+                tempContainer.setPadding(new Insets(20));
+                VBox.setVgrow(tempContainer, Priority.ALWAYS);
+
+                // Trouver le scrollPane et remplacer son contenu
+                ScrollPane scrollPane = (ScrollPane) pageTitle.getParent().getParent();
+                if (scrollPane != null) {
+                    scrollPane.setContent(tempContainer);
+                }
+            }
+
+            setTitle("📊 Statistiques des Langues", "Administration › Langues › Statistiques");
+            setActive(navLangueStats);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger la page des statistiques: " + e.getMessage());
+        }
+    }
+
+    // Ajoutez aussi cette méthode showAlert si elle n'existe pas
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.showAndWait();
+    }
     @FXML
     private void showTests() {
         hideAll();
