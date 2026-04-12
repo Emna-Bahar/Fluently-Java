@@ -22,9 +22,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ObjectifController {
@@ -50,14 +48,27 @@ public class ObjectifController {
     @FXML private TextField searchField;
     @FXML private Label     countLabel;
 
+    // Pagination controls
+    @FXML private HBox paginationBox;
+    @FXML private Button btnPrev;
+    @FXML private Button btnNext;
+    @FXML private Label pageInfoLabel;
+
     private final ObjectifService service      = new ObjectifService();
     private final TacheService    tacheService  = new TacheService();
     private ObservableList<Objectif> allData   = FXCollections.observableArrayList();
+    private ObservableList<Objectif> currentPageData = FXCollections.observableArrayList();
     private Objectif selectedObjectif          = null;
     private HomeController homeController;
     private User currentUser;
 
     private final Map<String, Integer> userMap = new LinkedHashMap<>();
+    private final Map<Integer, String> userIdToNameMap = new HashMap<>();
+
+    // Pagination variables
+    private int currentPage = 0;
+    private int itemsPerPage = 4;
+    private int totalPages = 0;
 
     private static final String[] STATUTS = {"En cours", "Terminé", "En pause", "Annulé"};
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -81,6 +92,16 @@ public class ObjectifController {
     public void initialize() {
         comboStatut.setItems(FXCollections.observableArrayList(STATUTS));
         setupLiveValidation();
+        setupPagination();
+    }
+
+    private void setupPagination() {
+        if (btnPrev != null) {
+            btnPrev.setOnAction(e -> previousPage());
+        }
+        if (btnNext != null) {
+            btnNext.setOnAction(e -> nextPage());
+        }
     }
 
     private void setupLiveValidation() {
@@ -117,41 +138,107 @@ public class ObjectifController {
 
     private void loadUsersForCurrentUser() {
         userMap.clear();
+        userIdToNameMap.clear();
 
-        if (currentUser == null) {
-            try {
-                Connection cnx = MyDatabase.getInstance().getConnection();
-                ResultSet rs = cnx.createStatement().executeQuery(
-                        "SELECT id, nom, prenom FROM user ORDER BY nom, prenom"
-                );
-                while (rs.next()) {
-                    String label = rs.getString("nom") + " " + rs.getString("prenom");
-                    userMap.put(label, rs.getInt("id"));
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
+        try {
+            Connection cnx = MyDatabase.getInstance().getConnection();
+            ResultSet rs = cnx.createStatement().executeQuery(
+                    "SELECT id, nom, prenom FROM user ORDER BY nom, prenom"
+            );
+            while (rs.next()) {
+                String label = rs.getString("nom") + " " + rs.getString("prenom");
+                int userId = rs.getInt("id");
+                userMap.put(label, userId);
+                userIdToNameMap.put(userId, label);
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        if (currentUser != null) {
+            String label = currentUser.getNom() + " " + currentUser.getPrenom();
+            comboUser.setItems(FXCollections.observableArrayList(label));
+            comboUser.setValue(label);
+            comboUser.setDisable(true);
+            comboUser.setStyle("-fx-opacity:0.8;");
+        } else {
             comboUser.setItems(FXCollections.observableArrayList(userMap.keySet()));
             comboUser.setPromptText("Sélectionner un utilisateur…");
             comboUser.setDisable(false);
-            return;
         }
-
-        String label = currentUser.getNom() + " " + currentUser.getPrenom();
-        userMap.put(label, currentUser.getId());
-        comboUser.setItems(FXCollections.observableArrayList(label));
-        comboUser.setValue(label);
-        comboUser.setDisable(true);
-        comboUser.setStyle("-fx-opacity:0.8;");
     }
 
     private void loadData() {
         try {
             allData = FXCollections.observableArrayList(service.recuperer());
-            renderCards(allData);
+            updatePagination();
             updateCountLabel(allData.size());
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
+        }
+    }
+
+    private void updatePagination() {
+        totalPages = (int) Math.ceil((double) allData.size() / itemsPerPage);
+        if (totalPages == 0) totalPages = 1;
+
+        if (currentPage >= totalPages) {
+            currentPage = totalPages - 1;
+        }
+        if (currentPage < 0) {
+            currentPage = 0;
+        }
+
+        updatePageInfo();
+        updateButtonsState();
+        loadCurrentPage();
+    }
+
+    private void loadCurrentPage() {
+        int start = currentPage * itemsPerPage;
+        int end = Math.min(start + itemsPerPage, allData.size());
+
+        currentPageData.clear();
+        if (start < allData.size()) {
+            currentPageData.addAll(allData.subList(start, end));
+        }
+        renderCards(currentPageData);
+    }
+
+    private void updatePageInfo() {
+        if (pageInfoLabel != null) {
+            int start = currentPage * itemsPerPage + 1;
+            int end = Math.min((currentPage + 1) * itemsPerPage, allData.size());
+            if (allData.isEmpty()) {
+                pageInfoLabel.setText("Page 0 / 0");
+            } else {
+                pageInfoLabel.setText("Page " + (currentPage + 1) + " / " + totalPages + " (" + start + "-" + end + " sur " + allData.size() + ")");
+            }
+        }
+    }
+
+    private void updateButtonsState() {
+        if (btnPrev != null) {
+            btnPrev.setDisable(currentPage == 0);
+        }
+        if (btnNext != null) {
+            btnNext.setDisable(currentPage >= totalPages - 1);
+        }
+    }
+
+    @FXML
+    private void previousPage() {
+        if (currentPage > 0) {
+            currentPage--;
+            updatePagination();
+        }
+    }
+
+    @FXML
+    private void nextPage() {
+        if (currentPage < totalPages - 1) {
+            currentPage++;
+            updatePagination();
         }
     }
 
@@ -176,12 +263,25 @@ public class ObjectifController {
 
     private VBox buildCard(Objectif o, int colorIdx) {
         String c1 = CARD_COLORS[colorIdx][0], c2 = CARD_COLORS[colorIdx][1];
+
+        // Récupérer les tâches et calculer la progression
+        List<com.example.pijava_fluently.entites.Tache> taches;
         int nbTaches = 0;
-        try { nbTaches = tacheService.recupererParObjectif(o.getId()).size(); } catch (SQLException ignored) {}
+        int tachesTerminees = 0;
+        int progression = 0;
+
+        try {
+            taches = tacheService.recupererParObjectif(o.getId());
+            nbTaches = taches.size();
+            tachesTerminees = (int) taches.stream()
+                    .filter(t -> "Terminée".equals(t.getStatut()))
+                    .count();
+            progression = nbTaches > 0 ? (tachesTerminees * 100 / nbTaches) : 0;
+        } catch (SQLException ignored) {}
 
         VBox card = new VBox(0);
-        card.setPrefWidth(295);
-        card.setMaxWidth(295);
+        card.setPrefWidth(320);
+        card.setMaxWidth(320);
         card.setStyle("-fx-background-color:#FFFFFF;-fx-background-radius:18;" +
                 "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),20,0,0,5);" +
                 "-fx-cursor:hand;");
@@ -226,11 +326,23 @@ public class ObjectifController {
                 dateBadge("🏁 Fin",o.getDateFin(),"#FFF7ED","#EA580C"));
 
         Label statutBadge = buildStatutBadge(o.getStatut());
-        String nomUser = getUserLabel(o.getIdUserId());
+
+        String nomUser = getUserNameById(o.getIdUserId());
         Label userBadge = new Label("👤  " + nomUser);
         userBadge.setStyle("-fx-background-color:#F0FDF4;-fx-text-fill:#16A34A;-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:20;-fx-padding:4 12 4 12;");
 
-        body.getChildren().addAll(descLabel, datesBox, statutBadge, userBadge);
+        // ⭐ BARRE DE PROGRESSION (AJOUTÉE)
+        VBox progressBox = new VBox(4);
+        Label progressLabel = new Label("📊 Progression des tâches : " + progression + "%");
+        progressLabel.setStyle("-fx-font-size:10px;-fx-text-fill:#64748B;-fx-font-weight:bold;");
+
+        ProgressBar progressBar = new ProgressBar(progression / 100.0);
+        progressBar.setPrefWidth(Double.MAX_VALUE);
+        progressBar.setStyle("-fx-accent: " + c1 + "; -fx-background-radius: 10;");
+        progressBar.setMaxHeight(6);
+        progressBox.getChildren().addAll(progressLabel, progressBar);
+
+        body.getChildren().addAll(descLabel, datesBox, statutBadge, userBadge, progressBox);
 
         Separator sep = new Separator();
         VBox.setMargin(sep, new Insets(4,0,0,0));
@@ -282,11 +394,8 @@ public class ObjectifController {
         return card;
     }
 
-    private String getUserLabel(int userId) {
-        return userMap.entrySet().stream()
-                .filter(e -> e.getValue() == userId)
-                .map(Map.Entry::getKey)
-                .findFirst().orElse("User #" + userId);
+    private String getUserNameById(int userId) {
+        return userIdToNameMap.getOrDefault(userId, "Utilisateur #" + userId);
     }
 
     private void ouvrirTaches(Objectif o) {
@@ -340,11 +449,10 @@ public class ObjectifController {
         fieldDateDeb.setValue(o.getDateDeb());
         fieldDateFin.setValue(o.getDateFin());
         comboStatut.setValue(o.getStatut());
-        userMap.entrySet().stream()
-                .filter(e -> e.getValue() == o.getIdUserId())
-                .map(Map.Entry::getKey)
-                .findFirst()
-                .ifPresent(comboUser::setValue);
+        String userName = userIdToNameMap.get(o.getIdUserId());
+        if (userName != null) {
+            comboUser.setValue(userName);
+        }
         formTitle.setText("Modifier l'Objectif");
         formTitleIcon.setText("✎");
         formCard.setVisible(true);
@@ -555,7 +663,8 @@ public class ObjectifController {
     @FXML private void handleSearch() {
         String q = searchField.getText().toLowerCase().trim();
         if (q.isEmpty()) {
-            renderCards(allData);
+            currentPage = 0;
+            updatePagination();
             updateCountLabel(allData.size());
             return;
         }
@@ -564,8 +673,34 @@ public class ObjectifController {
                         (o.getDescription()!=null && o.getDescription().toLowerCase().contains(q)) ||
                         (o.getStatut()!=null && o.getStatut().toLowerCase().contains(q)))
                 .collect(Collectors.toList());
-        renderCards(filtered);
+
+        currentPage = 0;
+        totalPages = (int) Math.ceil((double) filtered.size() / itemsPerPage);
+        if (totalPages == 0) totalPages = 1;
+
+        int start = currentPage * itemsPerPage;
+        int end = Math.min(start + itemsPerPage, filtered.size());
+
+        currentPageData.clear();
+        if (start < filtered.size()) {
+            currentPageData.addAll(filtered.subList(start, end));
+        }
+        renderCards(currentPageData);
         updateCountLabel(filtered.size());
+        updatePageInfoForFiltered(filtered.size());
+        updateButtonsState();
+    }
+
+    private void updatePageInfoForFiltered(int filteredSize) {
+        if (pageInfoLabel != null) {
+            int start = currentPage * itemsPerPage + 1;
+            int end = Math.min((currentPage + 1) * itemsPerPage, filteredSize);
+            if (filteredSize == 0) {
+                pageInfoLabel.setText("Page 0 / 0");
+            } else {
+                pageInfoLabel.setText("Page " + (currentPage + 1) + " / " + totalPages + " (" + start + "-" + end + " sur " + filteredSize + ")");
+            }
+        }
     }
 
     private void showDetails(Objectif o) {
@@ -609,7 +744,18 @@ public class ObjectifController {
         addRow(grid,0,"ID",String.valueOf(o.getId()),ls,vs);
         addRow(grid,1,"Date début",o.getDateDeb()!=null?o.getDateDeb().format(FMT):"—",ls,vs);
         addRow(grid,2,"Date fin",o.getDateFin()!=null?o.getDateFin().format(FMT):"—",ls,vs);
-        addRow(grid,3,"Utilisateur",getUserLabel(o.getIdUserId()),ls,vs);
+        addRow(grid,3,"Utilisateur",getUserNameById(o.getIdUserId()),ls,vs);
+
+        // Ajout de la progression dans les détails
+        int nbTaches = 0;
+        int tachesTerminees = 0;
+        try {
+            List<com.example.pijava_fluently.entites.Tache> taches = tacheService.recupererParObjectif(o.getId());
+            nbTaches = taches.size();
+            tachesTerminees = (int) taches.stream().filter(t -> "Terminée".equals(t.getStatut())).count();
+        } catch (SQLException ignored) {}
+        int progression = nbTaches > 0 ? (tachesTerminees * 100 / nbTaches) : 0;
+        addRow(grid,4,"Progression", progression + "% (" + tachesTerminees + "/" + nbTaches + " tâches)", ls, vs);
 
         Label descTitle = new Label("📝  Description");
         descTitle.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#374151;");

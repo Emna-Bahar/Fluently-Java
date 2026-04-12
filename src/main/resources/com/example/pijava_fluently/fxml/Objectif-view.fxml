@@ -156,7 +156,21 @@
         <FlowPane fx:id="cardsContainer"
                   hgap="20" vgap="20"
                   style="-fx-background-color:transparent;"
-                  prefWrapLength="900"/>
+                  prefWrapLength="1000"/>
+
+        <!-- ══ PAGINATION ═══════════════════════════════════════════ -->
+        <HBox spacing="20" alignment="CENTER" style="-fx-padding:20 0 10 0;">
+            <Button fx:id="btnPrev" text="◀  Précédent"
+                    style="-fx-background-color:#FFFFFF;-fx-text-fill:#6C63FF;-fx-font-size:13px;
+                           -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;
+                           -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
+            <Label fx:id="pageInfoLabel" text="Page 1 / 1"
+                   style="-fx-font-size:13px;-fx-text-fill:#64748B;-fx-font-weight:bold;"/>
+            <Button fx:id="btnNext" text="Suivant  ▶"
+                    style="-fx-background-color:#FFFFFF;-fx-text-fill:#6C63FF;-fx-font-size:13px;
+                           -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;
+                           -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
+        </HBox>
 
     </VBox>
 </ScrollPane>
