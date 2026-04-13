@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.LangueStatsController"
+      spacing="20" style="-fx-background-color:#F8F9FD;">
+
+    <padding><Insets top="24" left="28" right="28" bottom="28"/></padding>
+
+    <!-- En-tête -->
+    <VBox styleClass="stats-header" spacing="8">
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <Label text="📊" styleClass="stats-main-icon"/>
+            <Label text="Encyclopédie des Langues" styleClass="stats-main-title"/>
+        </HBox>
+        <Label text="Découvrez les langues, leurs statistiques et leur popularité sur Fluently"
+               styleClass="stats-subtitle"/>
+    </VBox>
+
+    <!-- Section Classement -->
+    <VBox spacing="12" styleClass="stats-card">
+        <Label text="🏆 Langues les plus étudiées sur Fluently"
+               style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+        <TableView fx:id="classementTable" prefHeight="300">
+            <!-- Les colonnes seront ajoutées dans le contrôleur -->
+        </TableView>
+    </VBox>
+
+    <!-- Section Sélection langue -->
+    <VBox styleClass="explore-section" spacing="16">
+        <Label text="🔍 Explorez une langue" styleClass="explore-title"/>
+
+        <HBox spacing="15" alignment="CENTER" styleClass="langues-buttons-container">
+            <Button text="🇬🇧 Anglais" styleClass="langue-pop-btn" onAction="#selectAnglais"/>
+            <Button text="🇫🇷 Français" styleClass="langue-pop-btn" onAction="#selectFrancais"/>
+            <Button text="🇪🇸 Espagnol" styleClass="langue-pop-btn" onAction="#selectEspagnol"/>
+            <Button text="🇩🇪 Allemand" styleClass="langue-pop-btn" onAction="#selectAllemand"/>
+            <Button text="🇸🇦 Arabe" styleClass="langue-pop-btn" onAction="#selectArabe"/>
+        </HBox>
+
+        <HBox spacing="12" alignment="CENTER" styleClass="search-container">
+            <TextField fx:id="searchField" promptText="Ou entrez une langue..."
+                       HBox.hgrow="ALWAYS" styleClass="search-field-stats"/>
+            <Button text="Rechercher" onAction="#handleSearch" styleClass="btn-search-stats"/>
+        </HBox>
+    </VBox>
+
+    <!-- Carte détaillée de la langue -->
+    <VBox fx:id="statsCard" spacing="16" styleClass="stats-card" visible="false">
+
+        <HBox spacing="16" alignment="CENTER_LEFT" styleClass="stats-card-header">
+            <Label fx:id="langueFlag" text="🌍" styleClass="stats-flag"/>
+            <VBox>
+                <Label fx:id="langueNom" text="Anglais" styleClass="stats-langue-nom"/>
+                <Label fx:id="langueFamille" text="Famille: Indo-européenne" styleClass="stats-famille"/>
+            </VBox>
+            <Label fx:id="tendanceBadge" text="📈 Très populaire"
+                   style="-fx-background-color:white;-fx-text-fill:#6C63FF;-fx-background-radius:20;-fx-padding:6 14;-fx-font-size:12px;-fx-font-weight:bold;"
+                   HBox.hgrow="ALWAYS" alignment="CENTER_RIGHT"/>
+        </HBox>
+
+        <GridPane hgap="20" vgap="15" styleClass="stats-grid">
+
+            <HBox spacing="12" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                <Label text="👥" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Locuteurs (monde)" styleClass="stats-label"/>
+                    <Label fx:id="locuteursValue" text="1,456 milliards" styleClass="stats-value"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                <Label text="🌎" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Pays" styleClass="stats-label"/>
+                    <Label fx:id="paysValue" text="Royaume-Uni, USA..." styleClass="stats-value"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                <Label text="📈" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Difficulté (1-5)" styleClass="stats-label"/>
+                    <HBox spacing="4" fx:id="difficulteStars"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <Label text="✍️" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Système d'écriture" styleClass="stats-label"/>
+                    <Label fx:id="ecritureValue" text="Latin" styleClass="stats-value"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                <Label text="🎓" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Étudiants sur Fluently" styleClass="stats-label"/>
+                    <Label fx:id="nbEtudiantsValue" text="0" styleClass="stats-value"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                <Label text="✅" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Taux de complétion" styleClass="stats-label"/>
+                    <Label fx:id="tauxCompletionValue" text="0%" styleClass="stats-value"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" GridPane.columnIndex="0" GridPane.rowIndex="3">
+                <Label text="📝" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Tests passés" styleClass="stats-label"/>
+                    <Label fx:id="nbTestsValue" text="0" styleClass="stats-value"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="12" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                <Label text="⭐" styleClass="stats-icon"/>
+                <VBox>
+                    <Label text="Score moyen" styleClass="stats-label"/>
+                    <Label fx:id="scoreMoyenValue" text="0%" styleClass="stats-value"/>
+                </VBox>
+            </HBox>
+        </GridPane>
+
+        <VBox spacing="8" styleClass="stats-description">
+            <Label text="📖 Présentation" styleClass="desc-title"/>
+            <Label fx:id="descriptionValue" wrapText="true" styleClass="desc-text"/>
+        </VBox>
+
+        <HBox spacing="12" styleClass="stats-funfact">
+            <Label text="💡" style="-fx-font-size:24px;"/>
+            <VBox>
+                <Label text="Le saviez-vous ?" styleClass="funfact-title"/>
+                <Label fx:id="funfactValue" wrapText="true" styleClass="funfact-text"/>
+            </VBox>
+        </HBox>
+    </VBox>
+</VBox>

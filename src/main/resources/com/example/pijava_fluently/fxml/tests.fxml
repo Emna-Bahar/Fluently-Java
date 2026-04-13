@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.TestController"
+      spacing="0" style="-fx-background-color:#F0F2FF;">
+
+    <HBox alignment="CENTER_LEFT" spacing="20"
+          style="-fx-background-color:white;
+                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),14,0,0,3);
+                 -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+        <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
+        <StackPane style="-fx-background-color:#EEF0FF;-fx-background-radius:14;
+                          -fx-min-width:48;-fx-min-height:48;-fx-max-width:48;-fx-max-height:48;">
+            <Label text="📝" style="-fx-font-size:22px;"/>
+        </StackPane>
+        <VBox HBox.hgrow="ALWAYS" spacing="2">
+            <Label text="Gestion des Tests"
+                   style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+            <Label text="Créez et gérez les tests de niveau, de fin de niveau et les quiz"
+                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+        </VBox>
+        <Button text="＋  Ajouter un test" onAction="#handleAjouter"
+                style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B7CF6);
+                       -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+                       -fx-background-radius:12;-fx-padding:11 24;-fx-cursor:hand;
+                       -fx-border-color:transparent;
+                       -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.40),12,0,0,4);"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background:transparent;-fx-background-color:transparent;
+                       -fx-border-color:transparent;">
+        <VBox spacing="20">
+            <padding><Insets top="24" left="28" right="28" bottom="28"/></padding>
+
+            <!-- FORMULAIRE -->
+            <VBox fx:id="formCard" visible="false" managed="false" spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:20;
+                         -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.15),24,0,0,8);
+                         -fx-border-color:#E8EAF0;-fx-border-radius:20;-fx-border-width:1;">
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B7CF6);
+                             -fx-background-radius:20 20 0 0;-fx-padding:16 24;">
+                    <Label text="✏️" style="-fx-font-size:16px;"/>
+                    <Label fx:id="formTitle" text="Nouveau Test"
+                           style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="* champs obligatoires"
+                           style="-fx-font-size:11px;-fx-text-fill:rgba(255,255,255,0.7);"/>
+                </HBox>
+                <VBox spacing="16">
+                    <padding><Insets top="24" left="28" right="28" bottom="24"/></padding>
+                    <HBox spacing="16">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="TITRE DU TEST *"
+                                   style="-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;"/>
+                            <TextField fx:id="fieldTitre"
+                                       promptText="Ex : Test de niveau A1 — Français"
+                                       style="-fx-background-color:#F9FAFB;-fx-border-color:#E5E7EB;
+                                              -fx-border-radius:10;-fx-background-radius:10;
+                                              -fx-padding:11 14;-fx-font-size:13px;-fx-text-fill:#1A1D2E;"/>
+                        </VBox>
+                        <VBox spacing="5" prefWidth="220">
+                            <Label text="TYPE *"
+                                   style="-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;"/>
+                            <ComboBox fx:id="comboType" maxWidth="Infinity" promptText="Sélectionner…"
+                                      style="-fx-background-color:#F9FAFB;-fx-border-color:#E5E7EB;
+                                             -fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+                    <HBox spacing="16">
+                        <VBox spacing="5" prefWidth="120">
+                            <Label text="DURÉE (MIN) *"
+                                   style="-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;"/>
+                            <TextField fx:id="fieldDuree" promptText="30"
+                                       style="-fx-background-color:#F9FAFB;-fx-border-color:#E5E7EB;
+                                              -fx-border-radius:10;-fx-background-radius:10;
+                                              -fx-padding:11 14;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="LANGUE *"
+                                   style="-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;"/>
+                            <ComboBox fx:id="comboLangue" maxWidth="Infinity" promptText="Choisir une langue…"
+                                      style="-fx-background-color:#F9FAFB;-fx-border-color:#E5E7EB;
+                                             -fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="NIVEAU"
+                                   style="-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;"/>
+                            <ComboBox fx:id="comboNiveau" maxWidth="Infinity" promptText="Choisir un niveau…"
+                                      style="-fx-background-color:#F9FAFB;-fx-border-color:#E5E7EB;
+                                             -fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;"/>
+                        </VBox>
+                    </HBox>
+                    <Label fx:id="labelErreur" text="" visible="false" managed="false" wrapText="true"
+                           style="-fx-font-size:12px;-fx-text-fill:#DC2626;-fx-background-color:#FEF2F2;
+                                  -fx-background-radius:10;-fx-border-color:#FECACA;-fx-border-radius:10;
+                                  -fx-border-width:1;-fx-padding:10 14;"/>
+                    <Separator style="-fx-background-color:#F3F4F6;"/>
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="✕  Annuler" onAction="#handleCancel"
+                                style="-fx-background-color:white;-fx-text-fill:#6B7280;
+                                       -fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;
+                                       -fx-padding:10 22;-fx-cursor:hand;-fx-border-color:#E5E7EB;
+                                       -fx-border-radius:10;-fx-border-width:1.5;"/>
+                        <Button text="💾  Enregistrer" onAction="#handleSave"
+                                style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B7CF6);
+                                       -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+                                       -fx-background-radius:10;-fx-padding:10 24;-fx-cursor:hand;
+                                       -fx-border-color:transparent;
+                                       -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.35),10,0,0,3);"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- TABLE CARD MODERNE -->
+            <VBox spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:20;
+                         -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.08),20,0,0,6);
+                         -fx-border-color:#EEF0FF;-fx-border-radius:20;-fx-border-width:1.5;">
+
+                <!-- Toolbar avec dégradé subtil -->
+                <HBox alignment="CENTER_LEFT" spacing="16"
+                      style="-fx-background-color:linear-gradient(to right,#FAFBFF,#F5F3FF);
+                             -fx-background-radius:20 20 0 0;
+                             -fx-padding:18 24 18 24;
+                             -fx-border-color:transparent transparent #EEF0FF transparent;
+                             -fx-border-width:0 0 1.5 0;">
+                    <VBox spacing="3" HBox.hgrow="ALWAYS">
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Label text="📋" style="-fx-font-size:16px;"/>
+                            <Label text="Liste des Tests"
+                                   style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                            <Label fx:id="countLabel" text="0 test(s)"
+                                   style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;
+                                          -fx-background-color:#EEF0FF;-fx-background-radius:20;
+                                          -fx-padding:3 12;"/>
+                        </HBox>
+                    </VBox>
+                    <!-- Barre de recherche moderne -->
+                    <HBox alignment="CENTER_LEFT" spacing="10" prefWidth="320"
+                          style="-fx-background-color:white;-fx-background-radius:30;
+                                 -fx-padding:10 18;
+                                 -fx-border-color:#E0E3F0;-fx-border-radius:30;-fx-border-width:1.5;
+                                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.08),8,0,0,2);">
+                        <Label text="🔍" style="-fx-font-size:13px;-fx-text-fill:#6C63FF;"/>
+                        <TextField fx:id="searchField" promptText="Rechercher un test…"
+                                   HBox.hgrow="ALWAYS" onKeyReleased="#handleSearch"
+                                   style="-fx-background-color:transparent;-fx-border-color:transparent;
+                                          -fx-font-size:13px;-fx-padding:0;-fx-text-fill:#1A1D2E;
+                                          -fx-prompt-text-fill:#C0C4D8;"/>
+                    </HBox>
+                </HBox>
+
+                <TableView fx:id="tableTests" VBox.vgrow="ALWAYS" prefHeight="480"
+                           style="-fx-background-color:transparent;-fx-border-color:transparent;
+                                  -fx-table-cell-border-color:transparent;">
+                    <columns>
+                        <TableColumn fx:id="colId"      text="ID"      prefWidth="0" visible="false"/>
+                        <TableColumn fx:id="colTitre"   text="Titre"   prefWidth="240"/>
+                        <TableColumn fx:id="colType"    text="Type"    prefWidth="200" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colDuree"   text="Durée"   prefWidth="100" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colLangue"  text="Langue"  prefWidth="120" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colNiveau"  text="Niveau"  prefWidth="180" style="-fx-alignment:CENTER;"/>
+                        <TableColumn fx:id="colActions" text="Actions" prefWidth="300" style="-fx-alignment:CENTER;"/>
+                    </columns>
+                    <placeholder>
+                        <VBox alignment="CENTER" spacing="16">
+                            <padding><Insets top="70" bottom="70"/></padding>
+                            <Label text="📭" style="-fx-font-size:60px;"/>
+                            <Label text="Aucun test créé"
+                                   style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#4A4D6A;"/>
+                            <Label text="Cliquez sur ＋ Ajouter pour créer votre premier test"
+                                   style="-fx-font-size:12px;-fx-text-fill:#C0C4D8;
+                                          -fx-background-color:#F5F3FF;-fx-background-radius:20;
+                                          -fx-padding:6 16;"/>
+                        </VBox>
+                    </placeholder>
+                </TableView>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>
