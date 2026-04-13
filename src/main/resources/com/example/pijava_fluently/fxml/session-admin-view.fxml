@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane fitToWidth="true"
+            style="-fx-background:#F1F5F9;-fx-background-color:#F1F5F9;"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.Sessionadmincontroller">
+
+    <VBox fx:id="rootPane" spacing="28"
+          style="-fx-padding:32 38 32 38;-fx-background-color:#F1F5F9;">
+
+        <!-- ══ En-tête ══ -->
+        <HBox alignment="CENTER_LEFT"
+              style="-fx-background-color:linear-gradient(from 0% 0% to 100% 0%,#3B82F6,#6C63FF);
+                     -fx-background-radius:20;-fx-padding:28 32 28 32;
+                     -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.42),28,0,0,10);">
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="📅  Gestion des Sessions"
+                       style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                <Label text="Consultez toutes les sessions de la plateforme"
+                       style="-fx-font-size:13px;-fx-text-fill:#BFC8D9;"/>
+            </VBox>
+            <Label fx:id="countSessionsLabel" text="0 session(s)"
+                   style="-fx-background-color:#FFFFFF3F;-fx-text-fill:white;
+                          -fx-font-size:13px;-fx-font-weight:bold;
+                          -fx-background-radius:30;-fx-padding:8 20 8 20;"/>
+        </HBox>
+
+        <!-- ══ Stats ══ -->
+        <HBox spacing="16">
+
+            <!-- Planifiées -->
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;
+                         -fx-background-radius:18;
+                         -fx-border-color:#DBEAFE;
+                         -fx-border-radius:18;
+                         -fx-border-width:2;
+                         -fx-padding:22 14 22 14;
+                         -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.15),16,0,0,4);">
+                <Label text="📅" style="-fx-font-size:30px;"/>
+                <Label fx:id="statPlanifiee" text="0"
+                       style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#2563EB;"/>
+                <Label text="Planifiées"
+                       style="-fx-font-size:12px;-fx-text-fill:#3B82F6;-fx-font-weight:bold;"/>
+            </VBox>
+
+            <!-- En cours -->
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;
+                         -fx-background-radius:18;
+                         -fx-border-color:#E0E7FF;
+                         -fx-border-radius:18;
+                         -fx-border-width:2;
+                         -fx-padding:22 14 22 14;
+                         -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.15),16,0,0,4);">
+                <Label text="🔄" style="-fx-font-size:30px;"/>
+                <Label fx:id="statEnCours" text="0"
+                       style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
+                <Label text="En cours"
+                       style="-fx-font-size:12px;-fx-text-fill:#8B5CF6;-fx-font-weight:bold;"/>
+            </VBox>
+
+            <!-- Terminées -->
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;
+                         -fx-background-radius:18;
+                         -fx-border-color:#D1FAE5;
+                         -fx-border-radius:18;
+                         -fx-border-width:2;
+                         -fx-padding:22 14 22 14;
+                         -fx-effect:dropshadow(gaussian,rgba(16,185,129,0.15),16,0,0,4);">
+                <Label text="✅" style="-fx-font-size:30px;"/>
+                <Label fx:id="statTerminee" text="0"
+                       style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#059669;"/>
+                <Label text="Terminées"
+                       style="-fx-font-size:12px;-fx-text-fill:#10B981;-fx-font-weight:bold;"/>
+            </VBox>
+
+            <!-- Annulées -->
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;
+                         -fx-background-radius:18;
+                         -fx-border-color:#FEE2E2;
+                         -fx-border-radius:18;
+                         -fx-border-width:2;
+                         -fx-padding:22 14 22 14;
+                         -fx-effect:dropshadow(gaussian,rgba(239,68,68,0.15),16,0,0,4);">
+                <Label text="❌" style="-fx-font-size:30px;"/>
+                <Label fx:id="statAnnulee" text="0"
+                       style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#DC2626;"/>
+                <Label text="Annulées"
+                       style="-fx-font-size:12px;-fx-text-fill:#EF4444;-fx-font-weight:bold;"/>
+            </VBox>
+
+        </HBox>
+
+        <!-- ══ Bandeau lecture seule ══ -->
+        <HBox spacing="12" alignment="CENTER_LEFT"
+              style="-fx-background-color:#FFF7ED;
+                     -fx-background-radius:14;
+                     -fx-border-color:#FED7AA;
+                     -fx-border-radius:14;
+                     -fx-border-width:2;
+                     -fx-padding:14 18 14 18;">
+            <Label text="⚠️" style="-fx-font-size:18px;"/>
+            <VBox spacing="3">
+                <Label text="Droits en lecture seule"
+                       style="-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#C2410C;"/>
+                <Label text="En tant qu'administrateur, vous consultez toutes les sessions sans pouvoir les modifier."
+                       style="-fx-font-size:11px;-fx-text-fill:#EA580C;"/>
+            </VBox>
+        </HBox>
+
+        <!-- ══ Filtres ══ -->
+        <HBox spacing="14" alignment="CENTER_LEFT"
+              style="-fx-background-color:white;
+                     -fx-background-radius:14;
+                     -fx-border-color:#E2E8F0;
+                     -fx-border-radius:14;
+                     -fx-border-width:1.5;
+                     -fx-padding:14 18 14 18;
+                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),12,0,0,3);">
+            <Label text="🔍" style="-fx-font-size:16px;-fx-text-fill:#9CA3AF;"/>
+            <TextField fx:id="searchSessions" promptText="Rechercher sessions…"
+                       onKeyReleased="#handleSearchSessions" HBox.hgrow="ALWAYS"
+                       style="-fx-background-color:transparent;-fx-border-color:transparent;
+                              -fx-font-size:13px;-fx-text-fill:#374151;"/>
+            <Separator orientation="VERTICAL"/>
+            <ComboBox fx:id="filterStatutSession" prefWidth="170"
+                      style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                             -fx-border-radius:10;-fx-background-radius:10;
+                             -fx-border-width:1.5;-fx-font-size:13px;-fx-padding:7;"/>
+        </HBox>
+
+        <!-- ══ Cartes sessions ══ -->
+        <FlowPane fx:id="sessionsContainer" hgap="20" vgap="20"
+                  style="-fx-background-color:transparent;" prefWrapLength="950"/>
+
+    </VBox>
+</ScrollPane>

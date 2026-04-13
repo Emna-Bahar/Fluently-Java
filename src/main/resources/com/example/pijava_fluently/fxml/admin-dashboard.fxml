@@ -34,17 +34,19 @@
                 <VBox spacing="2">
                     <padding><Insets top="4" left="8" right="8" bottom="8"/></padding>
 
-                    <!-- Utilisateurs (simple bouton, pas de sous-menu) -->
+                    <!-- SUPPRIMEZ LE BOUTON btnTheme ICI - gardez-le seulement dans la topbar -->
+
+                    <!-- Utilisateurs -->
                     <Button fx:id="navEtudiants" text="👥  Utilisateurs"
                             styleClass="nav-btn" maxWidth="Infinity"
                             onAction="#showEtudiants"/>
 
-                    <!-- Langues (simple) -->
+                    <!-- Langues -->
                     <Button fx:id="navLangues" text="🌍  Langues"
                             styleClass="nav-btn" maxWidth="Infinity"
                             onAction="#showLangues"/>
 
-                    <!-- Tests — menu déroulant -->
+                    <!-- Tests -->
                     <VBox styleClass="nav-group">
                         <Button fx:id="navTestsToggle" text="📝  Tests  ▾"
                                 styleClass="nav-btn" maxWidth="Infinity"
@@ -67,12 +69,12 @@
                         </VBox>
                     </VBox>
 
-                    <!-- Groupes (simple) -->
+                    <!-- Groupes -->
                     <Button fx:id="navGroupes" text="💬  Groupes"
                             styleClass="nav-btn" maxWidth="Infinity"
                             onAction="#showGroupes"/>
 
-                    <!-- Sessions — menu déroulant -->
+                    <!-- Sessions -->
                     <VBox styleClass="nav-group">
                         <Button fx:id="navSessionsToggle" text="📅  Sessions  ▾"
                                 styleClass="nav-btn" maxWidth="Infinity"
@@ -89,7 +91,7 @@
                         </VBox>
                     </VBox>
 
-                    <!-- Objectifs — menu déroulant -->
+                    <!-- Objectifs -->
                     <VBox styleClass="nav-group">
                         <Button fx:id="navObjectifsToggle" text="🎯  Objectifs  ▾"
                                 styleClass="nav-btn" maxWidth="Infinity"
@@ -118,9 +120,7 @@
                     <Label fx:id="adminName" text="Admin" styleClass="profile-name"/>
                     <Label text="Administrateur" styleClass="profile-role"/>
                 </VBox>
-                <Button text="⏻" styleClass="logout-btn" onAction="#handleLogout">
-                    <tooltip><Tooltip text="Se déconnecter"/></tooltip>
-                </Button>
+                <Button text="⏻" styleClass="logout-btn" onAction="#handleLogout"/>
             </HBox>
 
         </VBox>
@@ -136,8 +136,15 @@
                     <Label fx:id="pageTitle" text="Dashboard" styleClass="page-title"/>
                     <Label fx:id="pageBreadcrumb" text="Administration › Dashboard" styleClass="page-breadcrumb"/>
                 </VBox>
+
                 <HBox spacing="12" alignment="CENTER_RIGHT">
+                    <!-- Bouton Mode Sombre/Clair (un seul) -->
+                    <Button fx:id="btnTheme" text="🌙" onAction="#toggleTheme"
+                            style="-fx-background-color:transparent;-fx-text-fill:#64748B;-fx-font-size:16px;
+                                   -fx-cursor:hand;-fx-padding:8 12 8 12;"/>
+
                     <Button text="🔔" styleClass="icon-btn"/>
+
                     <HBox styleClass="topbar-user" spacing="8" alignment="CENTER">
                         <Label text="👤" styleClass="topbar-avatar"/>
                         <Label fx:id="topbarUsername" text="Admin" styleClass="topbar-username"/>
@@ -205,6 +212,7 @@
                         </VBox>
                     </VBox>
 
+                    <!-- Autres vues -->
                     <VBox fx:id="testsView" visible="false" managed="false" spacing="16">
                         <Label text="📝 Gestion des Tests" styleClass="page-title"/>
                         <Label text="À implémenter — liste des tests depuis la DB" styleClass="loading-label"/>
