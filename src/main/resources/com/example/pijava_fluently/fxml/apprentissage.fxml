@@ -109,7 +109,6 @@
                 <HBox fx:id="coursB2" spacing="20" alignment="CENTER"/>
             </VBox>
 
-            
             <!-- Niveau C1 -->
             <VBox fx:id="niveauC1" spacing="12" style="-fx-background-color: white; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2); -fx-padding: 20;">
                 <HBox alignment="CENTER_LEFT" spacing="16">
