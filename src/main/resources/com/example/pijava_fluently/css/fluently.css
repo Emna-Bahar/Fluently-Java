@@ -873,3 +873,187 @@
 .sidebar-scroll > .viewport {
     -fx-background-color: transparent;
 }
+/*
+ * fluently.css — Charte graphique Fluently
+ * Dark / Light modes — Sessions & Réservations
+ * Couleurs : Indigo #4F46E5, Violet #7C3AED, Teal #0EA5E9
+ */
+
+/* ══════════════ RESET & BASE ══════════════ */
+* {
+    -fx-font-family: "Segoe UI", "SF Pro Display", sans-serif;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+.scroll-pane .scroll-bar:vertical,
+.scroll-pane .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-pref-width: 6px;
+    -fx-pref-height: 6px;
+}
+.scroll-pane .scroll-bar:vertical .thumb,
+.scroll-pane .scroll-bar:horizontal .thumb {
+    -fx-background-color: rgba(99,102,241,0.25);
+    -fx-background-radius: 6;
+}
+.scroll-pane .scroll-bar:vertical .increment-button,
+.scroll-pane .scroll-bar:vertical .decrement-button,
+.scroll-pane .scroll-bar:horizontal .increment-button,
+.scroll-pane .scroll-bar:horizontal .decrement-button {
+    -fx-background-color: transparent;
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
+}
+
+/* ══════════════ NAVIGATION ACTIVE ══════════════ */
+.nav-active {
+    -fx-background-color: rgba(99,102,241,0.25) !important;
+    -fx-text-fill: #A5B4FC !important;
+    -fx-border-color: rgba(99,102,241,0.45) !important;
+    -fx-border-width: 1 !important;
+    -fx-border-radius: 12 !important;
+}
+
+/* ══════════════ BOUTONS GÉNÉRAUX ══════════════ */
+.button {
+    -fx-cursor: hand;
+}
+.button:hover {
+    -fx-opacity: 0.88;
+}
+.button:pressed {
+    -fx-opacity: 0.75;
+    -fx-translate-y: 1;
+}
+
+/* ══════════════ TEXTFIELD / TEXTAREA ══════════════ */
+.text-field:focused,
+.text-area:focused {
+    -fx-border-color: #6366F1;
+    -fx-border-width: 1.5;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.25), 10, 0, 0, 0);
+}
+
+.date-picker:focused > .text-field {
+    -fx-border-color: #6366F1;
+}
+
+/* ══════════════ COMBOBOX ══════════════ */
+.combo-box:focused {
+    -fx-border-color: #6366F1;
+    -fx-border-width: 1.5;
+}
+.combo-box .list-cell {
+    -fx-font-size: 13px;
+    -fx-padding: 8 12;
+}
+.combo-box-popup .list-view {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #E0E7FF;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 16, 0, 0, 6);
+}
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #EEF2FF;
+}
+.combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: #6366F1;
+    -fx-text-fill: white;
+}
+
+/* ══════════════ TOOLTIP ══════════════ */
+.tooltip {
+    -fx-background-color: #1E293B;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+}
+
+/* ══════════════ DIALOG ══════════════ */
+.dialog-pane {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 20;
+    -fx-padding: 0;
+}
+.dialog-pane .header-panel {
+    -fx-background-color: transparent;
+}
+.dialog-pane .button-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 12 20 16 20;
+}
+
+/* ══════════════ FLOW PANE ══════════════ */
+.flow-pane {
+    -fx-background-color: transparent;
+}
+
+/* ══════════════ DARK MODE — Overrides classes nav-active ══════════════ */
+/* Les styles dark sont appliqués dynamiquement via Java setStyle() */
+
+/* ══════════════ ANIMATIONS ══════════════ */
+.card-hover-up {
+    -fx-translate-y: -5;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.45), 32, 0, 0, 12);
+}
+
+/* Bouton gradient indigo */
+.btn-primary {
+    -fx-background-color: linear-gradient(to right, #4F46E5, #7C3AED);
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 14;
+    -fx-padding: 11 22;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.4), 14, 0, 0, 4);
+}
+.btn-primary:hover {
+    -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.6), 18, 0, 0, 6);
+}
+
+/* Bouton danger */
+.btn-danger {
+    -fx-background-color: linear-gradient(to right, #EF4444, #DC2626);
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 14;
+    -fx-padding: 11 22;
+    -fx-cursor: hand;
+}
+
+/* Bouton secondaire */
+.btn-secondary {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 14;
+    -fx-padding: 11 22;
+    -fx-cursor: hand;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 14;
+}
+
+/* Badge statuts */
+.badge-planifie  { -fx-background-color: #EFF6FF; -fx-text-fill: #60A5FA; -fx-background-radius: 20; -fx-padding: 4 12; -fx-font-weight: bold; -fx-font-size: 11px; }
+.badge-encours   { -fx-background-color: #EEF2FF; -fx-text-fill: #818CF8; -fx-background-radius: 20; -fx-padding: 4 12; -fx-font-weight: bold; -fx-font-size: 11px; }
+.badge-terminee  { -fx-background-color: #ECFDF5; -fx-text-fill: #34D399; -fx-background-radius: 20; -fx-padding: 4 12; -fx-font-weight: bold; -fx-font-size: 11px; }
+.badge-annulee   { -fx-background-color: #FFF1F2; -fx-text-fill: #FB7185; -fx-background-radius: 20; -fx-padding: 4 12; -fx-font-weight: bold; -fx-font-size: 11px; }
+.badge-acceptee  { -fx-background-color: #ECFDF5; -fx-text-fill: #34D399; -fx-background-radius: 20; -fx-padding: 4 12; -fx-font-weight: bold; -fx-font-size: 11px; }
+.badge-attente   { -fx-background-color: #FFFBEB; -fx-text-fill: #FBBF24; -fx-background-radius: 20; -fx-padding: 4 12; -fx-font-weight: bold; -fx-font-size: 11px; }
+.badge-refusee   { -fx-background-color: #FFF1F2; -fx-text-fill: #FB7185; -fx-background-radius: 20; -fx-padding: 4 12; -fx-font-weight: bold; -fx-font-size: 11px; }
+
+/* ══════════════ DARK MODE SCROLLBAR ══════════════ */
+.dark-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(99,102,241,0.2);
+}

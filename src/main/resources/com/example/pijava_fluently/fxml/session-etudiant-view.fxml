@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane fitToWidth="true"
+            style="-fx-background:#F0F4F8;-fx-background-color:#F0F4F8;"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.Sessionetudiantcontroller">
+
+    <VBox fx:id="rootPane" spacing="24"
+          style="-fx-padding:28 34 28 34;-fx-background-color:#F0F4F8;">
+
+        <!-- ══ EN-TÊTE MODERNE AVEC DÉGRADÉ ══ -->
+        <HBox alignment="CENTER_LEFT"
+              style="-fx-background-color:linear-gradient(from 0% 0% to 100% 0%,#7C3AED,#3B82F6);
+                     -fx-background-radius:24;
+                     -fx-padding:28 32 28 32;
+                     -fx-effect:dropshadow(gaussian,rgba(124,58,237,0.35),25,0,0,10);">
+            <VBox spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="🎓  Sessions Disponibles"
+                       style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:white;
+                              -fx-font-family:'Segoe UI';"/>
+                <Label text="Consultez et réservez les sessions de formation"
+                       style="-fx-font-size:13px;-fx-text-fill:rgba(255,255,255,0.85);"/>
+            </VBox>
+            <Label fx:id="countLabel" text="0 session(s)"
+                   style="-fx-background-color:rgba(255,255,255,0.2);
+                          -fx-text-fill:white;
+                          -fx-font-size:13px;-fx-font-weight:bold;
+                          -fx-background-radius:40;
+                          -fx-padding:8 20 8 20;
+                          -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),5,0,0,2);"/>
+        </HBox>
+
+        <!-- ══ ONGLETS ══ -->
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE"
+                 style="-fx-background-color:#EFF6FF;
+                        -fx-border-color:transparent;
+                        -fx-tab-min-height:48;
+                        -fx-tab-max-height:48;
+                        -fx-tab-min-width:200;
+                        -fx-tab-max-width:200;
+                        -fx-font-size:15px;
+                        -fx-font-weight:bold;
+                        -fx-font-family:'Segoe UI';">
+
+            <!-- Onglet Sessions disponibles -->
+            <Tab text="📅  Sessions disponibles">
+                <VBox spacing="20" style="-fx-padding:20 0 0 0;-fx-background-color:#EFF6FF;">
+
+                    <!-- Barre de recherche + filtre -->
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <HBox spacing="12" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="450"
+                              style="-fx-background-color:#FFFFFF;
+                                     -fx-background-radius:16;
+                                     -fx-border-color:#E2E8F0;
+                                     -fx-border-radius:16;
+                                     -fx-border-width:1.5;
+                                     -fx-padding:12 18 12 18;
+                                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.04),8,0,0,3);">
+                            <Label text="🔍" style="-fx-font-size:15px;-fx-text-fill:#94A3B8;"/>
+                            <TextField fx:id="searchField" promptText="Rechercher une session par titre, description..."
+                                       onKeyReleased="#handleSearch" HBox.hgrow="ALWAYS"
+                                       style="-fx-background-color:transparent;
+                                              -fx-border-color:transparent;
+                                              -fx-font-size:14px;
+                                              -fx-text-fill:#1E293B;
+                                              -fx-prompt-text-fill:#94A3B8;"/>
+                        </HBox>
+                        <ComboBox fx:id="filterStatut" prefWidth="170"
+                                  style="-fx-background-color:#FFFFFF;
+                                         -fx-border-color:#E2E8F0;
+                                         -fx-border-radius:16;
+                                         -fx-background-radius:16;
+                                         -fx-border-width:1.5;
+                                         -fx-font-size:13px;
+                                         -fx-padding:8 12 8 12;
+                                         -fx-text-fill:#1E293B;
+                                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.04),8,0,0,3);"/>
+                    </HBox>
+
+                    <!-- Bandeau info moderne -->
+                    <HBox spacing="18" alignment="TOP_LEFT"
+                          style="-fx-background-color:linear-gradient(from 0% 0% to 100% 100%,#1E3A8A,#1D4ED8,#7C3AED);
+                                 -fx-background-radius:20;
+                                 -fx-padding:20 24 20 24;">
+                        <VBox alignment="CENTER" minWidth="48" prefWidth="48" prefHeight="48"
+                              style="-fx-background-color:rgba(255,255,255,0.15);
+                                     -fx-background-radius:14;
+                                     -fx-padding:10;">
+                            <Label text="📌" style="-fx-font-size:22px;"/>
+                        </VBox>
+                        <VBox spacing="10" HBox.hgrow="ALWAYS">
+                            <Label text="Comment réserver une session ?"
+                                   style="-fx-font-size:15px;-fx-font-weight:bold;
+                                          -fx-text-fill:white;-fx-font-family:'Segoe UI';"/>
+                            <Label text="Trouvez la session qui vous convient, cliquez sur &quot;Réserver&quot; et votre demande sera transmise au professeur pour validation."
+                                   style="-fx-font-size:13px;
+                                          -fx-text-fill:rgba(255,255,255,0.85);
+                                          -fx-font-family:'Segoe UI';
+                                          -fx-wrap-text:true;" wrapText="true"/>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <HBox spacing="7" alignment="CENTER"
+                                      style="-fx-background-color:rgba(255,255,255,0.15);
+                                             -fx-border-color:rgba(255,255,255,0.25);
+                                             -fx-border-radius:30;-fx-background-radius:30;
+                                             -fx-padding:5 14 5 14;">
+                                    <Label text="1" style="-fx-font-size:11px;-fx-font-weight:bold;
+                                                           -fx-text-fill:white;
+                                                           -fx-background-color:rgba(255,255,255,0.25);
+                                                           -fx-background-radius:30;-fx-padding:2 6 2 6;"/>
+                                    <Label text="Choisir une session"
+                                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                                </HBox>
+                                <HBox spacing="7" alignment="CENTER"
+                                      style="-fx-background-color:rgba(255,255,255,0.15);
+                                             -fx-border-color:rgba(255,255,255,0.25);
+                                             -fx-border-radius:30;-fx-background-radius:30;
+                                             -fx-padding:5 14 5 14;">
+                                    <Label text="2" style="-fx-font-size:11px;-fx-font-weight:bold;
+                                                           -fx-text-fill:white;
+                                                           -fx-background-color:rgba(255,255,255,0.25);
+                                                           -fx-background-radius:30;-fx-padding:2 6 2 6;"/>
+                                    <Label text="Cliquer sur Réserver"
+                                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                                </HBox>
+                                <HBox spacing="7" alignment="CENTER"
+                                      style="-fx-background-color:rgba(255,255,255,0.15);
+                                             -fx-border-color:rgba(255,255,255,0.25);
+                                             -fx-border-radius:30;-fx-background-radius:30;
+                                             -fx-padding:5 14 5 14;">
+                                    <Label text="3" style="-fx-font-size:11px;-fx-font-weight:bold;
+                                                           -fx-text-fill:white;
+                                                           -fx-background-color:rgba(255,255,255,0.25);
+                                                           -fx-background-radius:30;-fx-padding:2 6 2 6;"/>
+                                    <Label text="Attendre la validation"
+                                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                                </HBox>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Cartes sessions -->
+                    <FlowPane fx:id="sessionsContainer" hgap="22" vgap="22"
+                              style="-fx-background-color:transparent;" prefWrapLength="950"/>
+                </VBox>
+            </Tab>
+
+            <!-- Onglet Mes réservations -->
+            <Tab text="📋  Mes Réservations">
+                <VBox spacing="18" style="-fx-padding:20 0 0 0;-fx-background-color:#EFF6FF;">
+
+                    <!-- En-tête avec compteur -->
+                    <HBox alignment="CENTER_LEFT" spacing="15">
+                        <Label text="Mes réservations"
+                               style="-fx-font-size:18px;
+                                      -fx-font-weight:bold;
+                                      -fx-text-fill:#1E293B;" HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="mesResasCount" text="0 réservation(s)"
+                               style="-fx-background-color:#EFF6FF;
+                                      -fx-text-fill:#3B82F6;
+                                      -fx-font-size:13px;
+                                      -fx-font-weight:bold;
+                                      -fx-background-radius:30;
+                                      -fx-padding:6 18 6 18;
+                                      -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.15),8,0,0,3);"/>
+                    </HBox>
+
+                    <!-- Légende des statuts -->
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label text="⏳ En attente"
+                               style="-fx-background-color:#FFFBEB;
+                                      -fx-text-fill:#D97706;
+                                      -fx-font-size:11px;-fx-font-weight:bold;
+                                      -fx-background-radius:20;-fx-padding:5 14 5 14;
+                                      -fx-border-color:#FDE68A;-fx-border-radius:20;-fx-border-width:1;"/>
+                        <Label text="✅ Acceptée"
+                               style="-fx-background-color:#ECFDF5;
+                                      -fx-text-fill:#059669;
+                                      -fx-font-size:11px;-fx-font-weight:bold;
+                                      -fx-background-radius:20;-fx-padding:5 14 5 14;
+                                      -fx-border-color:#A7F3D0;-fx-border-radius:20;-fx-border-width:1;"/>
+                        <Label text="❌ Refusée"
+                               style="-fx-background-color:#FFF1F2;
+                                      -fx-text-fill:#E11D48;
+                                      -fx-font-size:11px;-fx-font-weight:bold;
+                                      -fx-background-radius:20;-fx-padding:5 14 5 14;
+                                      -fx-border-color:#FECDD3;-fx-border-radius:20;-fx-border-width:1;"/>
+                        <Label text="🚫 Annulée"
+                               style="-fx-background-color:#F8FAFC;
+                                      -fx-text-fill:#64748B;
+                                      -fx-font-size:11px;-fx-font-weight:bold;
+                                      -fx-background-radius:20;-fx-padding:5 14 5 14;
+                                      -fx-border-color:#E2E8F0;-fx-border-radius:20;-fx-border-width:1;"/>
+                    </HBox>
+
+                    <!-- Cartes réservations -->
+                    <FlowPane fx:id="mesResasContainer" hgap="20" vgap="20"
+                              style="-fx-background-color:transparent;" prefWrapLength="950"/>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+
+    </VBox>
+</ScrollPane>
