@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane fitToWidth="true"
+            style="-fx-background:#F1F5F9;-fx-background-color:#F1F5F9;"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.ObjectifAdminController">
+
+    <VBox spacing="24" style="-fx-padding:30 36 30 36;-fx-background-color:#F1F5F9;">
+
+        <!-- ══ En-tête Admin ════════════════════════════════════════ -->
+        <HBox alignment="CENTER_LEFT" spacing="0"
+              style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B5CF6);
+                     -fx-background-radius:18;-fx-padding:28 32 28 32;
+                     -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.35),24,0,0,8);">
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="🎯  Gestion des Objectifs"
+                       style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                <Label text="Consultation uniquement — aucune modification possible"
+                       style="-fx-font-size:13px;-fx-text-fill:rgba(255,255,255,0.75);"/>
+            </VBox>
+            <VBox spacing="8" alignment="CENTER_RIGHT">
+                <Label text="🔒 Accès Admin"
+                       style="-fx-background-color:rgba(255,255,255,0.18);-fx-text-fill:white;
+                              -fx-font-size:11px;-fx-font-weight:bold;
+                              -fx-background-radius:20;-fx-padding:6 14 6 14;"/>
+                <Label fx:id="countLabel" text="0 objectif(s)"
+                       style="-fx-background-color:rgba(255,255,255,0.2);-fx-text-fill:white;
+                              -fx-font-size:13px;-fx-font-weight:bold;
+                              -fx-background-radius:30;-fx-padding:8 18 8 18;"/>
+            </VBox>
+        </HBox>
+
+        <!-- ══ SECTION STATISTIQUES SOBRES ═══════════════════════════ -->
+        <VBox spacing="16">
+            <Label text="📊  Statistiques"
+                   style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+
+            <HBox spacing="16" alignment="CENTER">
+                <!-- Carte 1 : Total Objectifs -->
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-background-color:#FFFFFF;-fx-background-radius:16;
+                             -fx-border-color:#E2E8F0;-fx-border-radius:16;-fx-border-width:1.5;
+                             -fx-padding:16 20 16 20;
+                             -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);"
+                      HBox.hgrow="ALWAYS">
+                    <Label text="📋" style="-fx-font-size:28px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Total Objectifs" style="-fx-font-size:12px;-fx-text-fill:#64748B;"/>
+                        <Label fx:id="totalObjectifsLabel" text="0" style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Carte 2 : Total Tâches -->
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-background-color:#FFFFFF;-fx-background-radius:16;
+                             -fx-border-color:#E2E8F0;-fx-border-radius:16;-fx-border-width:1.5;
+                             -fx-padding:16 20 16 20;
+                             -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);"
+                      HBox.hgrow="ALWAYS">
+                    <Label text="✅" style="-fx-font-size:28px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Total Tâches" style="-fx-font-size:12px;-fx-text-fill:#64748B;"/>
+                        <Label fx:id="totalTachesLabel" text="0" style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Carte 3 : Taux Complétion -->
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-background-color:#FFFFFF;-fx-background-radius:16;
+                             -fx-border-color:#E2E8F0;-fx-border-radius:16;-fx-border-width:1.5;
+                             -fx-padding:16 20 16 20;
+                             -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);"
+                      HBox.hgrow="ALWAYS">
+                    <Label text="📈" style="-fx-font-size:28px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Taux Complétion" style="-fx-font-size:12px;-fx-text-fill:#64748B;"/>
+                        <Label fx:id="tauxCompletionLabel" text="0%" style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Carte 4 : Objectifs Actifs -->
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-background-color:#FFFFFF;-fx-background-radius:16;
+                             -fx-border-color:#E2E8F0;-fx-border-radius:16;-fx-border-width:1.5;
+                             -fx-padding:16 20 16 20;
+                             -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);"
+                      HBox.hgrow="ALWAYS">
+                    <Label text="⚡" style="-fx-font-size:28px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Objectifs Actifs" style="-fx-font-size:12px;-fx-text-fill:#64748B;"/>
+                        <Label fx:id="objectifsActifsLabel" text="0" style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+                    </VBox>
+                </HBox>
+            </HBox>
+        </VBox>
+
+        <!-- ══ Bandeau info droits admin ════════════════════════════ -->
+        <HBox spacing="12" alignment="CENTER_LEFT"
+              style="-fx-background-color:#FFFBEB;-fx-background-radius:12;
+                     -fx-border-color:#FDE68A;-fx-border-radius:12;-fx-border-width:1.5;
+                     -fx-padding:14 18 14 18;">
+            <Label text="⚠️" style="-fx-font-size:18px;"/>
+            <VBox spacing="2">
+                <Label text="Droits en lecture seule"
+                       style="-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#92400E;"/>
+                <Label text="En tant qu'administrateur, vous pouvez consulter les objectifs, mais pas les créer ou les modifier."
+                       style="-fx-font-size:11px;-fx-text-fill:#B45309;-fx-wrap-text:true;"/>
+            </VBox>
+        </HBox>
+
+        <!-- ══ Barre de recherche ════════════════════════════════════ -->
+        <HBox spacing="14" alignment="CENTER_LEFT">
+            <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="500"
+                  style="-fx-background-color:#FFFFFF;-fx-background-radius:12;
+                         -fx-border-color:#E2E8F0;-fx-border-radius:12;-fx-border-width:1.5;
+                         -fx-padding:12 18 12 18;
+                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);">
+                <Label text="🔍" style="-fx-font-size:15px;-fx-text-fill:#9CA3AF;"/>
+                <TextField fx:id="searchField"
+                           promptText="Rechercher par titre, description, statut ou utilisateur…"
+                           style="-fx-background-color:transparent;-fx-border-color:transparent;
+                                  -fx-font-size:13px;-fx-text-fill:#374151;"
+                           HBox.hgrow="ALWAYS"/>
+            </HBox>
+        </HBox>
+
+        <!-- ══ Grille de cartes ══════════════════════════════════════ -->
+        <FlowPane fx:id="cardsContainer"
+                  hgap="20" vgap="20"
+                  style="-fx-background-color:transparent;"
+                  prefWrapLength="1000"/>
+
+        <!-- ══ PAGINATION ═══════════════════════════════════════════ -->
+        <HBox spacing="20" alignment="CENTER" style="-fx-padding:20 0 10 0;">
+            <Button fx:id="btnPrev" text="◀  Précédent"
+                    style="-fx-background-color:#FFFFFF;-fx-text-fill:#6C63FF;-fx-font-size:13px;
+                           -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;
+                           -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
+            <Label fx:id="pageInfoLabel" text="Page 1 / 1"
+                   style="-fx-font-size:13px;-fx-text-fill:#64748B;-fx-font-weight:bold;"/>
+            <Button fx:id="btnNext" text="Suivant  ▶"
+                    style="-fx-background-color:#FFFFFF;-fx-text-fill:#6C63FF;-fx-font-size:13px;
+                           -fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20 10 20;
+                           -fx-cursor:hand;-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;"/>
+        </HBox>
+
+    </VBox>
+</ScrollPane>

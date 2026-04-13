@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.example.pijava_fluently.controller.TestPassageEtudiantController"
+           style="-fx-background-color:#F8F9FD;">
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- PANEL QUESTION (visible par défaut)               -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <VBox fx:id="panelQuestion" spacing="0">
+
+        <!-- EN-TÊTE DU TEST -->
+        <HBox alignment="CENTER_LEFT" spacing="16"
+              style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+            <padding><Insets top="18" left="32" right="32" bottom="18"/></padding>
+
+            <VBox HBox.hgrow="ALWAYS" spacing="4">
+                <Label fx:id="labelTitreTest" text="Test de niveau"
+                       style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label fx:id="labelNumeroQuestion" text="Question 1 / 5"
+                           style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+                    <Label text="•" style="-fx-text-fill:#C0C4D8;"/>
+                    <Label fx:id="labelProgression" text="1 / 5"
+                           style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+                </HBox>
+            </VBox>
+
+            <!-- Timer -->
+            <HBox spacing="8" alignment="CENTER"
+                  style="-fx-background-color:#FEF9C3;-fx-background-radius:10;-fx-padding:8 16;">
+                <Label fx:id="labelTimer" text="⏱ 00:00"
+                       style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#CA8A04;"/>
+            </HBox>
+        </HBox>
+
+        <!-- BARRE DE PROGRESSION -->
+        <ProgressBar fx:id="progressBar" progress="0"
+                     maxWidth="Infinity" prefHeight="6"
+                     style="-fx-accent:#6C63FF;-fx-background-color:#E8EAF0;"/>
+
+        <!-- ZONE SCROLLABLE -->
+        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                    style="-fx-background:transparent;-fx-background-color:transparent;">
+            <VBox spacing="24">
+                <padding><Insets top="36" left="80" right="80" bottom="36"/></padding>
+
+                <!-- CARTE QUESTION -->
+                <VBox spacing="16"
+                      style="-fx-background-color:white;-fx-background-radius:20;-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),20,0,0,6);-fx-padding:36;">
+
+                    <!-- Badge numéro -->
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label fx:id="labelNumQ2" text="❓"
+                               style="-fx-font-size:20px;"/>
+                        <Label text="Choisissez la bonne réponse"
+                               style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;-fx-font-style:italic;"/>
+                    </HBox>
+
+                    <!-- Énoncé -->
+                    <Label fx:id="labelEnonce" text=""
+                           wrapText="true"
+                           style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;-fx-line-spacing:4;"/>
+
+                    <!-- Séparateur -->
+                    <Separator style="-fx-background-color:#F0F1F7;"/>
+
+                    <!-- Réponses -->
+                    <VBox fx:id="vboxReponses" spacing="12"/>
+                </VBox>
+
+                <!-- NAVIGATION -->
+                <HBox spacing="12" alignment="CENTER_RIGHT">
+                    <Button fx:id="btnPrecedent" text="← Précédent"
+                            onAction="#handlePrecedent"
+                            style="-fx-background-color:#F4F5FA;-fx-text-fill:#4A4D6A;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:12 24;-fx-cursor:hand;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-border-width:1;"/>
+                    <Button fx:id="btnSuivant" text="Suivant →"
+                            onAction="#handleSuivant"
+                            style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:12 28;-fx-cursor:hand;"/>
+                    <Button fx:id="btnTerminer" text="✅ Terminer le test"
+                            onAction="#handleTerminer" visible="false" managed="false"
+                            style="-fx-background-color:#059669;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:12 28;-fx-cursor:hand;"/>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </VBox>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- PANEL RÉSULTATS (caché par défaut)                -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <VBox fx:id="panelResultat" spacing="0"
+          visible="false" managed="false">
+
+        <!-- EN-TÊTE RÉSULTATS -->
+        <HBox alignment="CENTER_LEFT"
+              style="-fx-background-color:white;-fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+            <padding><Insets top="18" left="32" right="32" bottom="18"/></padding>
+            <Label text="📊 Résultats du Test"
+                   style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+        </HBox>
+
+        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                    style="-fx-background:transparent;-fx-background-color:transparent;">
+            <VBox spacing="24">
+                <padding><Insets top="36" left="80" right="80" bottom="36"/></padding>
+
+                <!-- CARTE SCORE PRINCIPAL -->
+                <VBox alignment="CENTER" spacing="16"
+                      style="-fx-background-color:white;-fx-background-radius:24;-fx-effect:dropshadow(gaussian,rgba(108,99,255,0.12),24,0,0,8);-fx-padding:48 36;">
+
+                    <Label fx:id="labelResultatTitre" text="🎉 Excellent !"
+                           style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#059669;"/>
+
+                    <!-- Score en cercle simulé -->
+                    <StackPane>
+                        <VBox alignment="CENTER" spacing="4"
+                              style="-fx-background-color:#F5F3FF;-fx-background-radius:80;-fx-padding:40;-fx-pref-width:180;-fx-pref-height:180;">
+                            <Label fx:id="labelScoreFinal" text="0%"
+                                   style="-fx-font-size:48px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
+                            <Label text="Score"
+                                   style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;"/>
+                        </VBox>
+                    </StackPane>
+
+                    <!-- Infos complémentaires -->
+                    <HBox spacing="32" alignment="CENTER">
+                        <VBox alignment="CENTER" spacing="4">
+                            <Label fx:id="labelNiveauEstime" text="Niveau estimé : A1"
+                                   style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
+                        </VBox>
+                        <Separator orientation="VERTICAL" style="-fx-background-color:#E0E3F0;"/>
+                        <VBox alignment="CENTER" spacing="4">
+                            <Label fx:id="labelTempsTotal" text="Temps : 00 min 00 s"
+                                   style="-fx-font-size:14px;-fx-text-fill:#6B7280;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Boutons d'action -->
+                    <HBox spacing="12" alignment="CENTER">
+                        <Button text="🔄 Recommencer"
+                                onAction="#handleRecommencer"
+                                style="-fx-background-color:#F4F5FA;-fx-text-fill:#4A4D6A;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:12 24;-fx-cursor:hand;-fx-border-color:#E0E3F0;-fx-border-radius:10;-fx-border-width:1;"/>
+                        <Button text="🏠 Retour aux tests"
+                                onAction="#handleRetourAccueil"
+                                style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:12 24;-fx-cursor:hand;"/>
+                    </HBox>
+                </VBox>
+
+                <!-- DÉTAIL DES RÉPONSES -->
+                <VBox spacing="0"
+                      style="-fx-background-color:white;-fx-background-radius:16;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.06),16,0,0,4);">
+
+                    <HBox style="-fx-padding:20 24;-fx-border-color:#F0F1F7;-fx-border-width:0 0 1 0;">
+                        <Label text="📋 Détail des réponses"
+                               style="-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                    </HBox>
+
+                    <VBox fx:id="vboxDetailResultats" spacing="8">
+                        <padding><Insets top="16" left="20" right="20" bottom="16"/></padding>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </VBox>
+
+</StackPane>
