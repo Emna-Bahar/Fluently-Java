@@ -37,7 +37,7 @@
                         onAction="#showGroupes"/>
                 <Button fx:id="btnSessions" text="Sessions"
                         styleClass="nav-link"
-                        onAction="#showSessionsProf"/>
+                        onAction="#showSessions"/>
                 <Button fx:id="btnObjectifs" text="Objectifs"
                         styleClass="nav-link"
                         onAction="#showObjectifs"/>
