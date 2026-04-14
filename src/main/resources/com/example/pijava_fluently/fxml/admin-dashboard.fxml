@@ -4,6 +4,16 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<!--
+    admin-dashboard.fxml — version fusionnée
+    =========================================
+    Intègre :
+     - le bouton thème (btnTheme) dans la topbar  [ton apport]
+     - le sous-menu Langues enrichi (Niveaux, Cours, Progression, Statistiques)
+     - le tableau Utilisateurs complet avec recherche  [apport ami]
+     - le profil inline avec hero banner  [apport ami]
+     - toutes les vues dynamiques : Tests, Sessions, Objectifs…
+-->
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.pijava_fluently.controller.AdminDashboardController"
@@ -41,7 +51,7 @@
                             styleClass="nav-btn" maxWidth="Infinity"
                             onAction="#showEtudiants"/>
 
-                    <!-- Langues — menu déroulant -->
+                    <!-- Langues — menu déroulant enrichi -->
                     <VBox styleClass="nav-group">
                         <Button fx:id="navLanguesToggle" text="🌍  Langues  ▾"
                                 styleClass="nav-btn" maxWidth="Infinity"
@@ -49,7 +59,7 @@
                         <VBox fx:id="languesSubmenu" visible="false" managed="false"
                               styleClass="nav-submenu" spacing="1">
                             <padding><Insets top="2" left="16" bottom="2"/></padding>
-                            <Button text="• Langues"
+                            <Button fx:id="navLangues" text="• Langues"
                                     styleClass="nav-btn-sub" maxWidth="Infinity"
                                     onAction="#showLangues"/>
                             <Button text="• Niveaux"
@@ -132,7 +142,7 @@
                 </VBox>
             </ScrollPane>
 
-            <!-- Profile bas -->
+            <!-- Profile bas — clic ouvre le menu admin -->
             <Separator/>
             <HBox fx:id="topbarUserPill" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#showAdminUserMenu">
@@ -160,11 +170,23 @@
             <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="16">
                 <padding><Insets top="0" left="32" right="32" bottom="0"/></padding>
                 <VBox HBox.hgrow="ALWAYS">
-                    <Label fx:id="pageTitle" text="Dashboard" styleClass="page-title"/>
+                    <Label fx:id="pageTitle"      text="Dashboard"            styleClass="page-title"/>
                     <Label fx:id="pageBreadcrumb" text="Administration › Dashboard" styleClass="page-breadcrumb"/>
                 </VBox>
+
                 <HBox spacing="12" alignment="CENTER_RIGHT">
+                    <!--
+                        Bouton thème sombre/clair — ton apport.
+                        fx:id="btnTheme" est référencé dans AdminDashboardController.
+                    -->
+                    <Button fx:id="btnTheme" text="🌙" onAction="#toggleTheme"
+                            style="-fx-background-color:transparent;-fx-text-fill:#64748B;
+                                   -fx-font-size:16px;-fx-cursor:hand;-fx-padding:8 12 8 12;">
+                        <tooltip><Tooltip text="Changer le thème"/></tooltip>
+                    </Button>
+
                     <Button text="🔔" styleClass="icon-btn"/>
+
                     <HBox fx:id="topbarUserPillRight" styleClass="topbar-user" spacing="8" alignment="CENTER"
                           onMouseClicked="#showAdminUserMenu">
                         <Label text="👤" styleClass="topbar-avatar"/>
@@ -193,26 +215,26 @@
                             <VBox styleClass="stat-card,stat-blue" HBox.hgrow="ALWAYS" spacing="8">
                                 <padding><Insets top="20" left="20" right="20" bottom="20"/></padding>
                                 <Label text="📝" styleClass="card-icon"/>
-                                <Label fx:id="statTests" text="—" styleClass="card-value"/>
-                                <Label text="Tests créés" styleClass="card-desc"/>
+                                <Label fx:id="statTests"    text="—" styleClass="card-value"/>
+                                <Label text="Tests créés"   styleClass="card-desc"/>
                             </VBox>
                             <VBox styleClass="stat-card,stat-green" HBox.hgrow="ALWAYS" spacing="8">
                                 <padding><Insets top="20" left="20" right="20" bottom="20"/></padding>
                                 <Label text="✅" styleClass="card-icon"/>
                                 <Label fx:id="statPassages" text="—" styleClass="card-value"/>
-                                <Label text="Tests passés" styleClass="card-desc"/>
+                                <Label text="Tests passés"  styleClass="card-desc"/>
                             </VBox>
                             <VBox styleClass="stat-card,stat-purple" HBox.hgrow="ALWAYS" spacing="8">
                                 <padding><Insets top="20" left="20" right="20" bottom="20"/></padding>
                                 <Label text="👥" styleClass="card-icon"/>
                                 <Label fx:id="statEtudiants" text="—" styleClass="card-value"/>
-                                <Label text="Utilisateurs" styleClass="card-desc"/>
+                                <Label text="Utilisateurs"   styleClass="card-desc"/>
                             </VBox>
                             <VBox styleClass="stat-card,stat-orange" HBox.hgrow="ALWAYS" spacing="8">
                                 <padding><Insets top="20" left="20" right="20" bottom="20"/></padding>
                                 <Label text="📊" styleClass="card-icon"/>
-                                <Label fx:id="statScore" text="—" styleClass="card-value"/>
-                                <Label text="Score moyen" styleClass="card-desc"/>
+                                <Label fx:id="statScore"   text="—" styleClass="card-value"/>
+                                <Label text="Score moyen"  styleClass="card-desc"/>
                             </VBox>
                         </HBox>
                         <VBox styleClass="table-card" spacing="0">
@@ -235,8 +257,6 @@
 
                     <!-- ═══════ UTILISATEURS (tableau complet) ═══════ -->
                     <VBox fx:id="etudiantsView" visible="false" managed="false" spacing="24">
-
-                        <!-- Header row -->
                         <HBox alignment="CENTER_LEFT" spacing="16">
                             <VBox HBox.hgrow="ALWAYS" spacing="4">
                                 <Label text="👥 Gestion des Utilisateurs" styleClass="page-title"/>
@@ -244,8 +264,6 @@
                             </VBox>
                             <Button text="＋  Nouvel utilisateur" styleClass="btn-add-user" onAction="#handleNewUser"/>
                         </HBox>
-
-                        <!-- Search bar -->
                         <HBox styleClass="search-bar-box" spacing="10" alignment="CENTER_LEFT">
                             <padding><Insets top="12" left="16" right="16" bottom="12"/></padding>
                             <Label text="🔍" styleClass="search-icon"/>
@@ -254,16 +272,14 @@
                                        onAction="#handleSearchUser"/>
                             <Button text="Rechercher" styleClass="btn-search" onAction="#handleSearchUser"/>
                         </HBox>
-
-                        <!-- Users list as styled TableView -->
                         <VBox styleClass="users-table-card" spacing="0">
                             <TableView fx:id="usersTable" styleClass="users-tv" VBox.vgrow="ALWAYS">
                                 <columns>
-                                    <TableColumn fx:id="colUserAvatar" text="Utilisateur" prefWidth="260" sortable="false"/>
-                                    <TableColumn fx:id="colUserEmail" text="Email" prefWidth="240" sortable="false"/>
-                                    <TableColumn fx:id="colUserStatut" text="Statut" prefWidth="100" sortable="false"/>
-                                    <TableColumn fx:id="colUserRoles" text="Rôle" prefWidth="130" sortable="false"/>
-                                    <TableColumn fx:id="colUserActions" text="Actions" prefWidth="140" sortable="false"/>
+                                    <TableColumn fx:id="colUserAvatar"  text="Utilisateur" prefWidth="260" sortable="false"/>
+                                    <TableColumn fx:id="colUserEmail"   text="Email"       prefWidth="240" sortable="false"/>
+                                    <TableColumn fx:id="colUserStatut"  text="Statut"      prefWidth="100" sortable="false"/>
+                                    <TableColumn fx:id="colUserRoles"   text="Rôle"        prefWidth="130" sortable="false"/>
+                                    <TableColumn fx:id="colUserActions" text="Actions"     prefWidth="140" sortable="false"/>
                                 </columns>
                                 <placeholder>
                                     <VBox alignment="CENTER" spacing="12">
@@ -276,24 +292,20 @@
                         </VBox>
                     </VBox>
 
-                    <!-- ═══════ VUES LANGUES (conteneurs vides, chargés dynamiquement) ═══════ -->
-                    <VBox fx:id="languesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="niveauxView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="coursView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <!-- ═══════ VUES CHARGÉES DYNAMIQUEMENT ═══════ -->
+                    <VBox fx:id="languesView"      visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="niveauxView"      visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="coursView"        visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="userProgressView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-
-                    <!-- ═══════ VUES TESTS (conteneurs vides, chargés dynamiquement) ═══════ -->
-                    <VBox fx:id="testsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="questionsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="reponsesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="passagesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-
-                    <!-- ═══════ AUTRES VUES ═══════ -->
-                    <VBox fx:id="groupesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="sessionsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="testsView"        visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="questionsView"    visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="reponsesView"     visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="passagesView"     visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="groupesView"      visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="sessionsView"     visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="reservationsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="objectifsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="tachesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="objectifsView"    visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="tachesView"       visible="false" managed="false" VBox.vgrow="ALWAYS"/>
 
                     <!-- ═══════ PROFIL INLINE ═══════ -->
                     <VBox fx:id="profileView" visible="false" managed="false" spacing="32">
@@ -305,10 +317,10 @@
                                 <Label fx:id="heroInitials" text="??" styleClass="hero-initials"/>
                             </StackPane>
                             <VBox spacing="8" HBox.hgrow="ALWAYS">
-                                <Label fx:id="heroFullName" text="Prénom Nom" styleClass="hero-name"/>
+                                <Label fx:id="heroFullName"   text="Prénom Nom"         styleClass="hero-name"/>
                                 <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <Label fx:id="heroRoleBadge" text="Utilisateur" styleClass="hero-role-chip"/>
-                                    <Label fx:id="heroStatusBadge" text="actif" styleClass="hero-status-chip hero-status-actif"/>
+                                    <Label fx:id="heroRoleBadge"   text="Utilisateur" styleClass="hero-role-chip"/>
+                                    <Label fx:id="heroStatusBadge" text="actif"       styleClass="hero-status-chip hero-status-actif"/>
                                 </HBox>
                                 <Label fx:id="heroEmail" text="email@exemple.com" styleClass="hero-email"/>
                             </VBox>
@@ -318,10 +330,10 @@
                             </VBox>
                         </HBox>
 
-                        <!-- Form cards row -->
+                        <!-- Cartes formulaire -->
                         <HBox spacing="24">
 
-                            <!-- Personal info card -->
+                            <!-- Informations personnelles -->
                             <VBox styleClass="profile-form-card" spacing="20" HBox.hgrow="ALWAYS">
                                 <padding><Insets top="28" left="28" right="28" bottom="28"/></padding>
                                 <HBox alignment="CENTER_LEFT" spacing="10">
@@ -329,7 +341,6 @@
                                     <Label text="Informations personnelles" styleClass="form-card-title"/>
                                 </HBox>
                                 <Separator/>
-
                                 <VBox spacing="6">
                                     <Label text="Prénom" styleClass="pf-label"/>
                                     <TextField fx:id="fieldPrenom" promptText="Prénom" styleClass="pf-field"/>
@@ -342,8 +353,6 @@
                                     <Label text="Email" styleClass="pf-label"/>
                                     <TextField fx:id="fieldEmail" promptText="email@exemple.com" styleClass="pf-field"/>
                                 </VBox>
-
-                                <!-- Statut + Rôle -->
                                 <HBox fx:id="statusRoleRow" spacing="16">
                                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                                         <Label text="Statut" styleClass="pf-label"/>
@@ -375,7 +384,7 @@
                                 </HBox>
                             </VBox>
 
-                            <!-- Password card -->
+                            <!-- Mot de passe -->
                             <VBox styleClass="profile-form-card" spacing="20" prefWidth="320">
                                 <padding><Insets top="28" left="28" right="28" bottom="28"/></padding>
                                 <HBox alignment="CENTER_LEFT" spacing="10">
