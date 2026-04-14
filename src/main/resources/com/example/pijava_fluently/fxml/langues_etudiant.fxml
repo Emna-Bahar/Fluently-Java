@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.LanguesEtudiantController"
+      spacing="0" style="-fx-background-color: linear-gradient(to bottom, #F0F4FF, #FAFBFF);">
+
+    <!-- Hero Section avec gradient -->
+    <VBox style="-fx-background-color: linear-gradient(to right, #6C63FF, #8B5CF6); -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.3), 20, 0, 0, 4);">
+        <padding><Insets top="48" left="48" right="48" bottom="48"/></padding>
+        <VBox spacing="12">
+            <Label text="🌍" style="-fx-font-size: 48px;"/>
+            <Label text="Choisissez votre langue"
+                   style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+            <Label text="Découvrez notre sélection de langues et commencez votre apprentissage"
+                   style="-fx-font-size: 14px; -fx-text-fill: rgba(255,255,255,0.85);"/>
+        </VBox>
+    </VBox>
+
+    <!-- Barre de recherche et filtre améliorée -->
+    <HBox spacing="20" alignment="CENTER_LEFT"
+          style="-fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 2);">
+        <padding><Insets top="20" left="48" right="48" bottom="20"/></padding>
+
+        <HBox alignment="CENTER_LEFT" spacing="12"
+              style="-fx-background-color: #F4F5FA; -fx-background-radius: 50; -fx-padding: 12 20 12 20;"
+              HBox.hgrow="ALWAYS">
+            <Label text="🔍" style="-fx-font-size: 16px;"/>
+            <TextField fx:id="searchField" promptText="Rechercher une langue..."
+                       style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-font-size: 14px; -fx-padding: 0;"
+                       HBox.hgrow="ALWAYS"/>
+            <Button text="×" style="-fx-background-color: transparent; -fx-text-fill: #C0C4D8; -fx-cursor: hand;"
+                    onAction="#clearSearch" visible="false" fx:id="clearSearchBtn"/>
+        </HBox>
+
+        <ComboBox fx:id="filterPopularite" promptText="Filtrer par popularité"
+                  style="-fx-background-color: #F4F5FA; -fx-background-radius: 50; -fx-padding: 10 20 10 20; -fx-font-size: 13px;"
+                  prefWidth="220"/>
+    </HBox>
+
+    <!-- Zone des cartes avec effet glassmorphism -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
+        <VBox spacing="28">
+            <padding><Insets top="32" left="48" right="48" bottom="48"/></padding>
+            <FlowPane fx:id="cardsContainer" hgap="28" vgap="28"
+                      alignment="TOP_LEFT" prefWrapLength="1200"
+                      style="-fx-background-color: transparent;"/>
+
+            <VBox fx:id="emptyMessage" alignment="CENTER" spacing="16" visible="false" managed="false">
+                <Label text="📭" style="-fx-font-size: 64px;"/>
+                <Label text="Aucune langue disponible"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4A4D6A;"/>
+                <Label text="Revenez plus tard pour découvrir de nouvelles langues"
+                       style="-fx-font-size: 13px; -fx-text-fill: #8A8FA8;"/>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+
+    <!-- Loading overlay -->
+    <VBox fx:id="loadingOverlay" alignment="CENTER" spacing="16"
+          style="-fx-background-color: rgba(0,0,0,0.7);"
+          visible="false" managed="false">
+        <ProgressIndicator style="-fx-progress-color: #6C63FF;"/>
+        <Label text="Chargement des langues..." style="-fx-text-fill: white; -fx-font-size: 14px;"/>
+    </VBox>
+</VBox>

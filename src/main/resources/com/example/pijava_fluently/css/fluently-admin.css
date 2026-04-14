@@ -1,0 +1,205 @@
+/* ════════════════════════════════════════════════
+   fluently-admin.css — Thème Admin Fluently
+   ════════════════════════════════════════════════ */
+
+/* ── Root variables ── */
+.root {
+    -fx-font-family: "Segoe UI", "SF Pro Display", Arial, sans-serif;
+    -fx-background-color: #F0F2FF;
+}
+
+/* ── TableView moderne ── */
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-table-cell-border-color: transparent;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #6C63FF;
+    -fx-background-radius: 0;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-size: 42px;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-alignment: CENTER-LEFT;
+    -fx-padding: 0 8 0 8;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #F0F2FF transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-cell-size: 52px;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #FAFBFF;
+}
+
+.table-view .table-row-cell:hover {
+    -fx-background-color: #F0EEFF;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #EDE9FE;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #1A1D2E;
+    -fx-font-size: 13px;
+    -fx-padding: 0 10 0 10;
+    -fx-border-color: transparent;
+}
+
+/* ── ScrollPane ── */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: #C4B5FD;
+    -fx-background-radius: 4;
+}
+
+.scroll-bar:vertical .track,
+.scroll-bar:horizontal .track {
+    -fx-background-color: #F0F2FF;
+}
+
+/* ── ComboBox ── */
+.combo-box {
+    -fx-background-color: #F4F5FA;
+    -fx-border-color: #E0E3F0;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-font-size: 13px;
+}
+
+.combo-box:focused {
+    -fx-border-color: #6C63FF;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.15), 8, 0, 0, 2);
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-color: #E0E3F0;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 12, 0, 0, 4);
+}
+
+.combo-box-popup .list-cell {
+    -fx-padding: 10 14 10 14;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1A1D2E;
+    -fx-background-color: white;
+}
+
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #F0EEFF;
+    -fx-text-fill: #6C63FF;
+}
+
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: #6C63FF;
+    -fx-text-fill: white;
+}
+
+/* ── TextField / TextArea ── */
+.text-field, .text-area {
+    -fx-background-color: #F4F5FA;
+    -fx-border-color: #E0E3F0;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 10 14 10 14;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1A1D2E;
+    -fx-prompt-text-fill: #C0C4D8;
+}
+
+.text-field:focused, .text-area:focused {
+    -fx-border-color: #6C63FF;
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.15), 8, 0, 0, 2);
+}
+
+/* ── CheckBox ── */
+.check-box .box {
+    -fx-background-color: #F4F5FA;
+    -fx-border-color: #C0C4D8;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-pref-width: 18;
+    -fx-pref-height: 18;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #6C63FF;
+    -fx-border-color: #6C63FF;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: white;
+}
+
+/* ── Sidebar nav ── */
+.nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #A8ADCE;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER-LEFT;
+    -fx-padding: 12 16 12 20;
+    -fx-cursor: hand;
+    -fx-background-radius: 10;
+    -fx-border-color: transparent;
+}
+
+.nav-btn:hover {
+    -fx-background-color: rgba(108,99,255,0.12);
+    -fx-text-fill: white;
+}
+
+.nav-active {
+    -fx-background-color: rgba(108,99,255,0.20);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent transparent transparent #6C63FF;
+    -fx-border-width: 0 0 0 3;
+}
+
+/* ── Progress bar ── */
+.progress-bar .bar {
+    -fx-background-color: #6C63FF;
+    -fx-background-radius: 0;
+}
+
+.progress-bar .track {
+    -fx-background-color: #E0E3F0;
+    -fx-background-radius: 0;
+}
+
+/* ── Tooltip ── */
+.tooltip {
+    -fx-background-color: #1A1D2E;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12 6 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 2);
+}
