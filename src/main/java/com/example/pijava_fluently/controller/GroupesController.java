@@ -136,9 +136,17 @@ public class GroupesController implements Initializable {
         groupsContainer.getChildren().clear();
 
         if (groupes.isEmpty()) {
-            Label emptyLabel = new Label("Aucun groupe trouvé");
-            emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #6b7280; -fx-padding: 40px;");
-            groupsContainer.getChildren().add(emptyLabel);
+            VBox emptyState = new VBox(8);
+            emptyState.setAlignment(Pos.CENTER);
+            emptyState.setStyle("-fx-padding: 60 0;");
+            Label icon = new Label("🔍");
+            icon.setStyle("-fx-font-size: 36px;");
+            Label title = new Label("Aucun groupe trouvé");
+            title.getStyleClass().add("empty-state-title");
+            Label sub = new Label("Essayez de modifier vos filtres ou votre recherche");
+            sub.getStyleClass().add("empty-state-subtitle");
+            emptyState.getChildren().addAll(icon, title, sub);
+            groupsContainer.getChildren().add(emptyState);
             return;
         }
 
@@ -148,93 +156,79 @@ public class GroupesController implements Initializable {
     }
 
     private VBox createGroupCard(Groupe groupe) {
-        VBox card = new VBox(12);
-        card.setPrefWidth(320);
-        card.setStyle("""
-            -fx-background-color: white;
-            -fx-background-radius: 12px;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);
-            -fx-padding: 20px;
-            -fx-cursor: hand;
-            """);
+        VBox card = new VBox(14);
+        card.setPrefWidth(300);
+        card.getStyleClass().add("group-card");
+        card.setStyle("-fx-padding: 20;");
 
+        // ── Header: name + status badge ──
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
 
         Label nameLabel = new Label(groupe.getNom());
-        nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #111827;");
+        nameLabel.getStyleClass().add("group-card-title");
+        nameLabel.setWrapText(true);
         HBox.setHgrow(nameLabel, Priority.ALWAYS);
 
         Label statusBadge = new Label(groupe.getStatut());
         statusBadge.setStyle(getStatusStyle(groupe.getStatut()));
         header.getChildren().addAll(nameLabel, statusBadge);
 
+        // ── Description ──
         Label descLabel = new Label(groupe.getDescription() == null ? "" : groupe.getDescription());
         descLabel.setWrapText(true);
-        descLabel.setMaxHeight(60);
-        descLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #6b7280;");
+        descLabel.setMaxHeight(50);
+        descLabel.getStyleClass().add("group-card-desc");
 
-        int currentMembers = getCurrentMemberCount(groupe.getId());
-        boolean alreadyParticipant = isCurrentUserParticipant(groupe.getId());
-
-        VBox details = new VBox(8);
-        details.setStyle("-fx-padding: 12px 0;");
-
+        // ── Resolve langue / niveau names ──
         String langueNom = "N/A";
         String niveauTitre = "N/A";
         try {
             Langue langue = langueService.recupererParId(groupe.getIdLangueId());
-            if (langue != null) {
-                langueNom = langue.getNom();
-            }
-
+            if (langue != null) langueNom = langue.getNom();
             Niveau niveau = niveauService.recupererParId(groupe.getIdNiveauId());
-            if (niveau != null) {
-                niveauTitre = niveau.getTitre();
-            }
-        } catch (SQLException ignored) {
-        }
+            if (niveau != null) niveauTitre = niveau.getTitre();
+        } catch (SQLException ignored) {}
 
-        HBox langueBox = createDetailRow("🌍", "Langue", langueNom);
-        HBox niveauBox = createDetailRow("📊", "Niveau", niveauTitre);
-        String capacityText = currentMembers + " / " + groupe.getCapacite();
-        HBox capacityBox = createDetailRow("👥", "Membres", capacityText);
-        details.getChildren().addAll(langueBox, niveauBox, capacityBox);
+        int currentMembers = getCurrentMemberCount(groupe.getId());
+        boolean alreadyParticipant = isCurrentUserParticipant(groupe.getId());
 
-        ProgressBar progressBar = new ProgressBar();
+        // ── Detail rows ──
+        VBox details = new VBox(6);
+        details.setStyle("-fx-background-color: #F8FAFC; -fx-background-radius: 8; -fx-padding: 10 12;");
+        details.getChildren().addAll(
+                createDetailRow("🌍", "Langue", langueNom),
+                createDetailRow("📊", "Niveau", niveauTitre),
+                createDetailRow("👥", "Membres", currentMembers + " / " + groupe.getCapacite())
+        );
+
+        // ── Progress bar ──
+        ProgressBar progressBar = new ProgressBar(calculateProgress(currentMembers, groupe.getCapacite()));
         progressBar.setPrefWidth(Double.MAX_VALUE);
-        progressBar.setProgress(calculateProgress(currentMembers, groupe.getCapacite()));
-        progressBar.setStyle("-fx-accent: #3b82f6;");
+        progressBar.setPrefHeight(8);
+        progressBar.getStyleClass().add("group-progress");
 
-        Button joinBtn = new Button(alreadyParticipant ? "Entrer dans le groupe →" : "Rejoindre le groupe →");
+        // ── Join / enter button ──
+        Button joinBtn = new Button(alreadyParticipant ? "Entrer dans le groupe →" : "Rejoindre →");
         joinBtn.setMaxWidth(Double.MAX_VALUE);
-        joinBtn.setStyle("""
-            -fx-background-color: #3b82f6;
-            -fx-text-fill: white;
-            -fx-font-size: 14px;
-            -fx-font-weight: bold;
-            -fx-padding: 12px 20px;
-            -fx-background-radius: 8px;
-            -fx-cursor: hand;
-            """);
         joinBtn.setOnAction(e -> handleJoinGroup(groupe));
 
         if (currentMembers >= groupe.getCapacite() && !alreadyParticipant) {
-            joinBtn.setDisable(true);
             joinBtn.setText("Groupe complet");
-            joinBtn.setStyle(joinBtn.getStyle() + "-fx-background-color: #9ca3af; -fx-opacity: 0.6;");
+            joinBtn.getStyleClass().add("group-card-join-btn-disabled");
+            joinBtn.setDisable(true);
+        } else {
+            joinBtn.getStyleClass().add("group-card-join-btn");
         }
 
         card.getChildren().addAll(header, descLabel, details, progressBar, joinBtn);
 
-        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + """
-            -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.3), 15, 0, 0, 4);
-            -fx-translate-y: -2px;
-            """));
-        card.setOnMouseExited(e -> card.setStyle(card.getStyle().replace(
-                "-fx-effect: dropshadow(gaussian, rgba(59,130,246,0.3), 15, 0, 0, 4);",
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);"
-        ).replace("-fx-translate-y: -2px;", "")));
+        // ── Hover lift effect ──
+        card.setOnMouseEntered(e -> card.setStyle(
+                "-fx-padding: 20; -fx-translate-y: -3; " +
+                "-fx-effect: dropshadow(gaussian, rgba(76,110,245,0.25), 18, 0, 0, 6); " +
+                "-fx-border-color: #C7D2FE;"));
+        card.setOnMouseExited(e -> card.setStyle("-fx-padding: 20;"));
 
         return card;
     }
@@ -249,16 +243,16 @@ public class GroupesController implements Initializable {
         row.setAlignment(Pos.CENTER_LEFT);
 
         Label iconLabel = new Label(icon);
-        iconLabel.setStyle("-fx-font-size: 14px;");
+        iconLabel.setStyle("-fx-font-size: 13px;");
 
-        Label textLabel = new Label(label + ":");
-        textLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #6b7280; -fx-font-weight: 500;");
-
-        Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #111827; -fx-font-weight: bold;");
+        Label textLabel = new Label(label + " :");
+        textLabel.getStyleClass().add("group-card-detail-key");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label valueLabel = new Label(value);
+        valueLabel.getStyleClass().add("group-card-detail-val");
 
         row.getChildren().addAll(iconLabel, textLabel, spacer, valueLabel);
         return row;

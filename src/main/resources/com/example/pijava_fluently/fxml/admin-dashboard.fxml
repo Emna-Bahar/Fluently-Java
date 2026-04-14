@@ -231,75 +231,59 @@
                     </VBox>
                     <VBox fx:id="groupesView" visible="false" managed="false" spacing="24">
                         <StackPane VBox.vgrow="ALWAYS">
-                            <VBox spacing="24">
-                                
-                                <!-- Clean Header -->
+                            <VBox spacing="20">
+
+                                <!-- Header -->
                                 <HBox alignment="CENTER_LEFT" spacing="16">
                                     <VBox HBox.hgrow="ALWAYS" spacing="4">
                                         <Label text="💬 Gestion des Groupes" styleClass="page-title"/>
-                                        <Label text="Créez et gérez vos groupes d'apprentissage" style="-fx-text-fill: #6c757d; -fx-font-size: 13px;"/>
+                                        <Label text="Créez et gérez vos groupes d'apprentissage" styleClass="admin-page-subtitle"/>
                                     </VBox>
-                                    <Button fx:id="btnAddGroup" text="+ Nouveau Groupe" 
-                                            style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: bold;"
-                                            onAction="#handleAddGroup"/>
+                                    <Button fx:id="btnAddGroup" text="＋ Nouveau Groupe"
+                                            styleClass="btn-add" onAction="#handleAddGroup"/>
                                 </HBox>
-                                
-                                <!-- Simple Search Bar -->
+
+                                <!-- Search bar -->
                                 <HBox spacing="12" alignment="CENTER_LEFT">
-                                    <TextField fx:id="searchField" promptText="🔍 Rechercher un groupe..." 
-                                               HBox.hgrow="ALWAYS"
-                                               style="-fx-padding: 10 15; -fx-font-size: 13px; -fx-background-radius: 6; -fx-border-color: #ced4da; -fx-border-radius: 6;"/>
-                                    <Button text="Rechercher" 
-                                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand;"
-                                            onAction="#handleSearch"/>
-                                    <Button text="Réinitialiser" 
-                                            style="-fx-background-color: transparent; -fx-text-fill: #6c757d; -fx-border-color: #6c757d; -fx-border-radius: 6; -fx-padding: 10 20; -fx-cursor: hand;"
-                                            onAction="#handleResetFilters"/>
+                                    <TextField fx:id="searchField" promptText="🔍 Rechercher un groupe..."
+                                               HBox.hgrow="ALWAYS" styleClass="admin-search-field"/>
+                                    <Button text="Rechercher" styleClass="btn-search" onAction="#handleSearch"/>
+                                    <Button text="Réinitialiser" styleClass="btn-reset" onAction="#handleResetFilters"/>
                                 </HBox>
-                                
-                                <!-- Clean Table -->
-                                <VBox style="-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 8, 0, 0, 2);">
-                                    <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 16 20; -fx-border-color: #e9ecef; -fx-border-width: 0 0 1 0;">
-                                        <Label text="📋 Liste des Groupes" 
-                                               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #343a40;"
-                                               HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="lblResultCount" text="0 groupe(s)" 
-                                               style="-fx-text-fill: #6c757d; -fx-font-size: 12px;"/>
-                                        <Button text="🔄" 
-                                                style="-fx-background-color: #f8f9fa; -fx-padding: 6 12; -fx-background-radius: 4; -fx-cursor: hand;"
-                                                onAction="#handleRefreshGroups">
-                                            <tooltip><Tooltip text="Actualiser"/></tooltip>
-                                        </Button>
+
+                                <!-- Table card -->
+                                <VBox styleClass="admin-table-card">
+                                    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="admin-table-header">
+                                        <Label text="📋 Liste des Groupes" styleClass="admin-table-title" HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="lblResultCount" text="0 groupe(s)" styleClass="admin-result-count"/>
+                                        <Button text="Actualiser" styleClass="admin-refresh-btn" onAction="#handleRefreshGroups"/>
                                     </HBox>
-                                    
-                                    <TableView fx:id="groupesTable" 
-                                               style="-fx-background-color: white;"
-                                               prefHeight="500">
+
+                                    <TableView fx:id="groupesTable" styleClass="admin-table" prefHeight="500">
                                         <columns>
                                             <TableColumn fx:id="colGroupeId" text="ID" prefWidth="60"/>
                                             <TableColumn fx:id="colGroupeNom" text="Nom du Groupe" prefWidth="200"/>
-                                            <TableColumn fx:id="colGroupeDescription" text="Description" prefWidth="300"/>
+                                            <TableColumn fx:id="colGroupeDescription" text="Description" prefWidth="290"/>
                                             <TableColumn fx:id="colGroupeCapacite" text="Capacité" prefWidth="90"/>
-                                            <TableColumn fx:id="colGroupeStatut" text="Statut" prefWidth="100"/>
+                                            <TableColumn fx:id="colGroupeStatut" text="Statut" prefWidth="110"/>
                                             <TableColumn fx:id="colGroupeDate" text="Date Création" prefWidth="140"/>
-                                            <TableColumn fx:id="colGroupeActions" text="Actions" prefWidth="120"/>
+                                            <TableColumn fx:id="colGroupeActions" text="Actions" prefWidth="130"/>
                                         </columns>
                                         <placeholder>
-                                            <VBox alignment="CENTER" spacing="16" style="-fx-padding: 40;">
-                                                <Label text="📭" style="-fx-font-size: 48px;"/>
-                                                <Label text="Aucun groupe trouvé" style="-fx-font-size: 16px; -fx-text-fill: #495057;"/>
-                                                <Label text="Créez votre premier groupe pour commencer" style="-fx-font-size: 13px; -fx-text-fill: #6c757d;"/>
-                                                <Button text="+ Créer un Groupe" 
-                                                        style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand;"
-                                                        onAction="#handleAddGroup"/>
+                                            <VBox alignment="CENTER" spacing="12" style="-fx-padding: 50;">
+                                                <Label text="📭" styleClass="admin-table-empty-icon"/>
+                                                <Label text="Aucun groupe trouvé" styleClass="admin-table-empty-title"/>
+                                                <Label text="Créez votre premier groupe pour commencer" styleClass="admin-table-empty-sub"/>
+                                                <Button text="＋ Créer un Groupe" styleClass="btn-add" onAction="#handleAddGroup"/>
                                             </VBox>
                                         </placeholder>
                                     </TableView>
                                 </VBox>
                             </VBox>
 
+                            <!-- Form overlay (modal) -->
                             <StackPane fx:id="groupFormOverlay" visible="false" managed="false"
-                                       style="-fx-background-color: rgba(0,0,0,0.35); -fx-padding: 24;">
+                                       style="-fx-background-color: rgba(0,0,0,0.4); -fx-padding: 24;">
                                 <StackPane fx:id="groupFormHost" maxWidth="640" style="-fx-background-color: transparent;"/>
                             </StackPane>
                         </StackPane>

@@ -15,7 +15,7 @@ public class HelloApplication extends Application {
 
         FXMLLoader fxmlLoader = new FXMLLoader(
                 HelloApplication.class.getResource(
-                        "/com/example/pijava_fluently/fxml/home.fxml"
+                        "/com/example/pijava_fluently/fxml/admin-dashboard.fxml"
                 )
         );
 
@@ -26,6 +26,12 @@ public class HelloApplication extends Application {
         );
         if (css != null)
             scene.getStylesheets().add(css.toExternalForm());
+
+        var css2 = HelloApplication.class.getResource(
+                "/com/example/pijava_fluently/css/groups-enhanced.css"
+        );
+        if (css2 != null)
+            scene.getStylesheets().add(css2.toExternalForm());
 
         stage.setTitle("Fluently");
         stage.setScene(scene);

@@ -127,6 +127,63 @@ public class MessageService {
         }
     }
 
+    /**
+     * Delete a message and write an entry to message_log.
+     * Call this instead of supprimer() whenever a user/admin action should be audited.
+     */
+    public void supprimerAvecLog(Message message, int performedById, String performedByName,
+                                  MessageLogService logService) throws SQLException {
+        logService.logDelete(
+                message.getId(), message.getIdGroupeId(),
+                message.getIdUserId(), "User #" + message.getIdUserId(),
+                message.getContenu(), performedById
+        );
+        supprimer(message.getId());
+    }
+
+    /**
+     * Edit a message's content and write an entry to message_log.
+     */
+    public void modifierContenuAvecLog(Message message, String nouveauContenu,
+                                        int performedById, String performedByName,
+                                        MessageLogService logService) throws SQLException {
+        logService.logEdit(
+                message.getId(), message.getIdGroupeId(),
+                message.getIdUserId(), "User #" + message.getIdUserId(),
+                message.getContenu(), nouveauContenu, performedById
+        );
+        modifierContenu(message.getId(), nouveauContenu);
+    }
+
+    /**
+     * Fetch a single message by ID (needed for logging before delete/edit).
+     */
+    public Message recupererParId(int idMessage) throws SQLException {
+        String query = """
+                SELECT id, contenu, type_message, date_creation, date_modif,
+                       statut_message, id_groupe_id, id_user_id
+                FROM `message` WHERE id = ?
+                """;
+        try (PreparedStatement st = connection.prepareStatement(query)) {
+            st.setInt(1, idMessage);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    Message m = new Message();
+                    m.setId(rs.getInt("id"));
+                    m.setContenu(rs.getString("contenu"));
+                    m.setTypeMessage(rs.getString("type_message"));
+                    m.setDateCreation(rs.getTimestamp("date_creation"));
+                    m.setDateModif(rs.getTimestamp("date_modif"));
+                    m.setStatutMessage(rs.getString("statut_message"));
+                    m.setIdGroupeId(rs.getInt("id_groupe_id"));
+                    m.setIdUserId(rs.getInt("id_user_id"));
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
+
     public boolean estParticipant(int idGroupe, int idUser) throws SQLException {
         String query = "SELECT 1 FROM `message` WHERE id_groupe_id = ? AND id_user_id = ? LIMIT 1";
         try (PreparedStatement statement = connection.prepareStatement(query)) {

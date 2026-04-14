@@ -12,6 +12,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -144,30 +145,24 @@ public class AdminDashboardController implements Initializable {
         colGroupeStatut.setCellValueFactory(cellData -> 
             new SimpleStringProperty(cellData.getValue().getStatut()));
         
-        // Style statut cells with colors
         colGroupeStatut.setCellFactory(col -> new TableCell<Groupe, String>() {
+            private final Label badge = new Label();
+            {
+                setGraphic(badge);
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            }
             @Override
             protected void updateItem(String statut, boolean empty) {
                 super.updateItem(statut, empty);
-                if (empty || statut == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(statut);
-                    String style = "-fx-padding: 4 10; -fx-background-radius: 12; -fx-font-size: 11px; -fx-font-weight: bold;";
-                    switch (statut.toLowerCase()) {
-                        case "actif":
-                            style += " -fx-background-color: #d4edda; -fx-text-fill: #155724;";
-                            break;
-                        case "inactif":
-                            style += " -fx-background-color: #f8d7da; -fx-text-fill: #721c24;";
-                            break;
-                        case "complet":
-                            style += " -fx-background-color: #fff3cd; -fx-text-fill: #856404;";
-                            break;
-                    }
-                    setStyle(style);
-                }
+                if (empty || statut == null) { badge.setText(null); badge.setStyle(""); return; }
+                badge.setText(statut);
+                String base = "-fx-padding: 3 10; -fx-background-radius: 12; -fx-font-size: 11px; -fx-font-weight: bold;";
+                badge.setStyle(base + switch (statut.toLowerCase()) {
+                    case "actif"    -> "-fx-background-color: #D1FAE5; -fx-text-fill: #065F46;";
+                    case "inactif"  -> "-fx-background-color: #FEE2E2; -fx-text-fill: #991B1B;";
+                    case "complet"  -> "-fx-background-color: #FEF3C7; -fx-text-fill: #92400E;";
+                    default         -> "-fx-background-color: #E2E8F0; -fx-text-fill: #374151;";
+                });
             }
         });
         
@@ -179,20 +174,29 @@ public class AdminDashboardController implements Initializable {
         });
 
         colGroupeActions.setCellFactory(param -> new TableCell<>() {
-            private final Button btnEdit = new Button("✏️");
-            private final Button btnDelete = new Button("🗑️");
-            private final HBox pane = new HBox(6, btnEdit, btnDelete);
+            private final Button btnMessages = new Button("Messages");
+            private final Button btnEdit     = new Button("Editer");
+            private final Button btnDelete   = new Button("Suppr.");
+            private final HBox pane = new HBox(5, btnMessages, btnEdit, btnDelete);
 
             {
                 pane.setAlignment(Pos.CENTER);
-                btnEdit.setStyle("-fx-cursor: hand; -fx-background-color: #007bff; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 4; -fx-font-size: 12px;");
-                btnDelete.setStyle("-fx-cursor: hand; -fx-background-color: #dc3545; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 4; -fx-font-size: 12px;");
-                
+                btnMessages.getStyleClass().add("table-action-edit");
+                btnEdit.getStyleClass().add("table-action-edit");
+                btnDelete.getStyleClass().add("table-action-delete");
+
+                btnMessages.setTooltip(new Tooltip("Voir les messages"));
+                btnEdit.setTooltip(new Tooltip("Modifier"));
+                btnDelete.setTooltip(new Tooltip("Supprimer"));
+
+                btnMessages.setOnAction(event -> {
+                    Groupe groupe = getTableView().getItems().get(getIndex());
+                    openGroupMessages(groupe);
+                });
                 btnEdit.setOnAction(event -> {
                     Groupe groupe = getTableView().getItems().get(getIndex());
                     handleEditGroup(groupe);
                 });
-                
                 btnDelete.setOnAction(event -> {
                     Groupe groupe = getTableView().getItems().get(getIndex());
                     handleDeleteGroup(groupe);
@@ -260,6 +264,34 @@ public class AdminDashboardController implements Initializable {
 
         } catch (IOException e) {
             showError("Erreur lors de l'ouverture du formulaire : " + e.getMessage());
+        }
+    }
+
+    private void openGroupMessages(Groupe groupe) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/admin-group-messages.fxml")
+            );
+            Parent view = loader.load();
+
+            AdminGroupMessagesController controller = loader.getController();
+            controller.setGroupe(groupe);
+            controller.setOnBack(() -> {
+                if (groupFormHost != null) groupFormHost.getChildren().clear();
+                if (groupFormOverlay != null) {
+                    groupFormOverlay.setVisible(false);
+                    groupFormOverlay.setManaged(false);
+                }
+                loadGroupes();
+            });
+
+            if (groupFormHost != null && groupFormOverlay != null) {
+                groupFormHost.getChildren().setAll(view);
+                groupFormOverlay.setVisible(true);
+                groupFormOverlay.setManaged(true);
+            }
+        } catch (IOException e) {
+            showError("Erreur ouverture messages : " + e.getMessage());
         }
     }
 

@@ -20,7 +20,9 @@
 
     <StackPane VBox.vgrow="ALWAYS">
 
-        <VBox fx:id="groupsBrowseSection" spacing="24">
+        <VBox fx:id="groupsBrowseSection" spacing="20">
+
+            <!-- Page header -->
             <HBox alignment="CENTER_LEFT" spacing="16">
                 <VBox spacing="4" HBox.hgrow="ALWAYS">
                     <Label text="💬 Mes Groupes" styleClass="page-title"/>
@@ -31,34 +33,40 @@
                            onKeyReleased="#handleSearch"/>
             </HBox>
 
-            <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Filtrer par:" styleClass="filter-label"/>
-                <ComboBox fx:id="filterLangue" promptText="Langue" prefWidth="150" onAction="#handleFilter"/>
-                <ComboBox fx:id="filterNiveau" promptText="Niveau" prefWidth="150" onAction="#handleFilter"/>
-                <ComboBox fx:id="filterStatut" promptText="Statut" prefWidth="120" onAction="#handleFilter"/>
+            <!-- Filter bar -->
+            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="filter-bar">
+                <Label text="Filtrer par :" styleClass="filter-label"/>
+                <ComboBox fx:id="filterLangue" promptText="Langue" prefWidth="150"
+                          styleClass="filter-combo" onAction="#handleFilter"/>
+                <ComboBox fx:id="filterNiveau" promptText="Niveau" prefWidth="150"
+                          styleClass="filter-combo" onAction="#handleFilter"/>
+                <ComboBox fx:id="filterStatut" promptText="Statut" prefWidth="120"
+                          styleClass="filter-combo" onAction="#handleFilter"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label fx:id="lblResultCount" text="0 groupes" styleClass="result-count"/>
             </HBox>
 
+            <!-- Groups grid -->
             <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
-                        style="-fx-background-color: transparent; -fx-background: transparent;">
+                        style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
                 <FlowPane fx:id="groupsContainer" hgap="20" vgap="20"
                           style="-fx-background-color: transparent;"/>
             </ScrollPane>
         </VBox>
 
+        <!-- Conversation overlay -->
         <VBox fx:id="conversationSection" visible="false" managed="false" spacing="0"
-              style="-fx-background-color: #ffffff; -fx-background-radius: 12; -fx-border-color: #e5e7eb; -fx-border-radius: 12;">
+              style="-fx-background-color: #ffffff; -fx-background-radius: 14; -fx-border-color: #E2E8F0; -fx-border-radius: 14; -fx-border-width: 1; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.07), 16, 0, 0, 4);">
             <HBox alignment="CENTER_LEFT"
-                  style="-fx-padding: 12 16; -fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0;">
+                  style="-fx-padding: 14 20; -fx-background-color: white; -fx-border-color: #E2E8F0; -fx-border-width: 0 0 1 0; -fx-background-radius: 14 14 0 0;">
                 <Label fx:id="conversationTitle" text="Conversation"
-                       style="-fx-font-size: 18px; -fx-font-weight: 700; -fx-text-fill: #111827;"/>
+                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0F172A;"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button text="✕" onAction="#handleCloseConversation"
-                        style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 6 12; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                <Button text="✕ Fermer" onAction="#handleCloseConversation"
+                        style="-fx-background-color: #FEE2E2; -fx-text-fill: #991B1B; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 7 14; -fx-background-radius: 8; -fx-cursor: hand; -fx-border-color: transparent;"/>
             </HBox>
             <StackPane fx:id="conversationContainer" VBox.vgrow="ALWAYS"
-                       style="-fx-padding: 10;"/>
+                       style="-fx-padding: 0;"/>
         </VBox>
     </StackPane>
 

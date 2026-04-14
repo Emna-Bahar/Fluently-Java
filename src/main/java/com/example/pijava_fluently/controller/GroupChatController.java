@@ -2,6 +2,7 @@ package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.services.Groupe;
 import com.example.pijava_fluently.services.Message;
+import com.example.pijava_fluently.services.MessageLogService;
 import com.example.pijava_fluently.services.MessageService;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -37,12 +38,14 @@ public class GroupChatController implements Initializable {
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     private MessageService messageService;
+    private MessageLogService messageLogService;
     private Groupe currentGroupe;
     private int currentUserId = 1;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         messageService = new MessageService();
+        messageLogService = new MessageLogService();
         Label emptyLabel = new Label("Aucun message pour l'instant. Soyez le premier à écrire.");
         emptyLabel.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 13px;");
         listMessages.setPlaceholder(emptyLabel);
@@ -197,7 +200,8 @@ public class GroupChatController implements Initializable {
         }
 
         try {
-            messageService.modifierContenu(message.getId(), nouveauContenu);
+            messageService.modifierContenuAvecLog(message, nouveauContenu,
+                    currentUserId, "User #" + currentUserId, messageLogService);
             loadMessages();
         } catch (SQLException e) {
             showError("Erreur lors de la modification : " + e.getMessage());
@@ -216,7 +220,8 @@ public class GroupChatController implements Initializable {
         }
 
         try {
-            messageService.supprimer(message.getId());
+            messageService.supprimerAvecLog(message, currentUserId,
+                    "User #" + currentUserId, messageLogService);
             loadMessages();
         } catch (SQLException e) {
             showError("Erreur lors de la suppression : " + e.getMessage());

@@ -873,3 +873,285 @@
 .sidebar-scroll > .viewport {
     -fx-background-color: transparent;
 }
+
+
+/* ============================================================
+   ADMIN — GROUPS MANAGEMENT
+   ============================================================ */
+
+/* Page subtitle under any page-title */
+.admin-page-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #64748B;
+}
+
+/* Primary "add" button — gradient, used for "+ Nouveau Groupe" */
+.btn-add {
+    -fx-background-color: linear-gradient(to right, #4C6EF5, #7C3AED);
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 22;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(76,110,245,0.35), 10, 0, 0, 3);
+}
+
+.btn-add:hover {
+    -fx-background-color: linear-gradient(to right, #3B5BDB, #6D28D9);
+}
+
+/* Admin search field */
+.admin-search-field {
+    -fx-background-color: white;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 10 16;
+    -fx-font-size: 13px;
+    -fx-text-fill: #0F172A;
+    -fx-prompt-text-fill: #94A3B8;
+    -fx-border-width: 1.5;
+}
+
+.admin-search-field:focused {
+    -fx-border-color: #4C6EF5;
+    -fx-effect: dropshadow(gaussian, rgba(76,110,245,0.15), 6, 0, 0, 0);
+}
+
+/* Search action button */
+.btn-search {
+    -fx-background-color: #10B981;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.btn-search:hover {
+    -fx-background-color: #059669;
+}
+
+/* Reset / clear button */
+.btn-reset {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748B;
+    -fx-font-size: 13px;
+    -fx-padding: 10 18;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1.5;
+}
+
+.btn-reset:hover {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #374151;
+}
+
+/* Table card container */
+.admin-table-card {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 3);
+}
+
+/* Table card header bar */
+.admin-table-header {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #F1F5F9 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 16 20;
+    -fx-background-radius: 14 14 0 0;
+}
+
+/* Title inside the table header */
+.admin-table-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0F172A;
+}
+
+/* Small refresh button */
+.admin-refresh-btn {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #374151;
+    -fx-font-size: 14px;
+    -fx-padding: 6 12;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.admin-refresh-btn:hover {
+    -fx-background-color: #E2E8F0;
+}
+
+/* Result count badge in admin table header */
+.admin-result-count {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4C6EF5;
+    -fx-background-color: #EEF2FF;
+    -fx-padding: 4 12;
+    -fx-background-radius: 20;
+}
+
+/* TableView — full restyle */
+.admin-table {
+    -fx-background-color: white;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.admin-table:focused {
+    -fx-background-color: white;
+}
+
+/* Column header bar */
+.admin-table .column-header-background {
+    -fx-background-color: #F1F5F9;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent transparent #E2E8F0 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.admin-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-size: 44px;
+}
+
+.admin-table .column-header .label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64748B;
+    -fx-padding: 0 14;
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Filler corner cell (top-right) */
+.admin-table .filler {
+    -fx-background-color: #F1F5F9;
+    -fx-border-color: transparent;
+}
+
+/* Rows */
+.admin-table .table-row-cell {
+    -fx-cell-size: 46px;
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #F1F5F9 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0;
+}
+
+.admin-table .table-row-cell:odd {
+    -fx-background-color: #FAFBFC;
+}
+
+.admin-table .table-row-cell:hover {
+    -fx-background-color: #EEF2FF;
+    -fx-border-color: transparent;
+}
+
+.admin-table .table-row-cell:selected {
+    -fx-background-color: #C7D2FE;
+    -fx-border-color: transparent;
+}
+
+/* Cells */
+.admin-table .table-cell {
+    -fx-padding: 0 14;
+    -fx-font-size: 13px;
+    -fx-text-fill: #374151;
+    -fx-border-color: transparent;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.admin-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: #1E1B4B;
+}
+
+/* Scrollbar */
+.admin-table .scroll-bar:vertical {
+    -fx-background-color: #F8FAFC;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 0 1;
+    -fx-pref-width: 10;
+}
+
+.admin-table .scroll-bar:vertical .thumb {
+    -fx-background-color: #CBD5E1;
+    -fx-background-radius: 4;
+    -fx-background-insets: 2 3;
+}
+
+.admin-table .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #94A3B8;
+}
+
+.admin-table .scroll-bar .increment-button,
+.admin-table .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-pref-height: 0;
+}
+
+.admin-table .scroll-bar .increment-arrow,
+.admin-table .scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-pref-height: 0;
+}
+
+/* Action buttons inside table cells */
+.table-action-edit {
+    -fx-background-color: #EEF2FF;
+    -fx-text-fill: #4C6EF5;
+    -fx-font-size: 13px;
+    -fx-padding: 5 10;
+    -fx-background-radius: 7;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.table-action-edit:hover {
+    -fx-background-color: #4C6EF5;
+    -fx-text-fill: white;
+}
+
+.table-action-delete {
+    -fx-background-color: #FEF2F2;
+    -fx-text-fill: #EF4444;
+    -fx-font-size: 13px;
+    -fx-padding: 5 10;
+    -fx-background-radius: 7;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.table-action-delete:hover {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: white;
+}
+
+/* Placeholder inside empty table */
+.admin-table-empty-icon {
+    -fx-font-size: 48px;
+}
+
+.admin-table-empty-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #374151;
+}
+
+.admin-table-empty-sub {
+    -fx-font-size: 13px;
+    -fx-text-fill: #94A3B8;
+}
