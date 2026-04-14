@@ -19,7 +19,6 @@ public class HelloApplication extends Application {
                 )
         );
 
-
         Scene scene = new Scene(fxmlLoader.load(), 1000, 650);
         scene.getStylesheets().add(
                 getClass().getResource(
