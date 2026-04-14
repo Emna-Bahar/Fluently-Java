@@ -33,8 +33,8 @@ public class HomeController implements Initializable {
     @FXML private Button btnGroupes;
     @FXML private Button btnSessions;
     @FXML private Button btnObjectifs;
-    @FXML private Button btnTheme;   // peut être absent du FXML -> null géré proprement
-    @FXML private VBox   rootPane;   // conteneur racine pour accéder a la Scene
+    @FXML private Button btnTheme;
+    @FXML private VBox   rootPane;
 
     private ContextMenu   userMenu;
     private User          currentUser;
@@ -50,7 +50,8 @@ public class HomeController implements Initializable {
         if (navUsername != null && currentUser == null) {
             navUsername.setText("Utilisateur");
         }
-        loadView("home-content.fxml");
+        // Charger la page d'accueil avec le bon contrôleur
+        showAccueil();
     }
 
     public void setCurrentUser(User user) {
@@ -117,9 +118,23 @@ public class HomeController implements Initializable {
     // NAVIGATION
     // ============================================================
 
-    @FXML public void showAccueil() {
-        loadView("home-content.fxml");
-        setActiveButton(btnAccueil);
+    @FXML
+    public void showAccueil() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/home-content.fxml"));
+            Node view = loader.load();
+
+            // Lier le contrôleur de la page d'accueil avec HomeController
+            HomeContentController contentController = loader.getController();
+            contentController.setHomeController(this);
+
+            setContent(view);
+            setActiveButton(btnAccueil);
+        } catch (IOException e) {
+            System.err.println("Erreur chargement home-content.fxml");
+            e.printStackTrace();
+        }
     }
 
     @FXML public void showLangues() {
@@ -133,7 +148,8 @@ public class HomeController implements Initializable {
             setContent(view);
             setActiveButton(btnLangues);
         } catch (IOException e) {
-            System.err.println("langues_etudiant.fxml introuvable"); e.printStackTrace();
+            System.err.println("langues_etudiant.fxml introuvable");
+            e.printStackTrace();
         }
     }
 
@@ -148,20 +164,24 @@ public class HomeController implements Initializable {
             setContent(view);
             setActiveButton(btnTests);
         } catch (IOException e) {
-            System.err.println("mes-tests.fxml introuvable"); e.printStackTrace();
+            System.err.println("mes-tests.fxml introuvable");
+            e.printStackTrace();
         }
     }
 
     @FXML public void showGroupes() {
-        loadView("groupes.fxml");
-        setActiveButton(btnGroupes);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/groupes.fxml"));
+            Node view = loader.load();
+            setContent(view);
+            setActiveButton(btnGroupes);
+        } catch (IOException e) {
+            System.err.println("groupes.fxml introuvable");
+            e.printStackTrace();
+        }
     }
 
-    /**
-     * Bouton "Sessions" dans la navbar.
-     * Route automatiquement vers la vue prof ou etudiant selon le role.
-     * Cible de onAction="#showSessions" dans home.fxml.
-     */
     @FXML
     public void showSessions() {
         boolean isProf = currentUser != null
@@ -177,14 +197,6 @@ public class HomeController implements Initializable {
         setActiveButton(btnSessions);
     }
 
-    /**
-     * Vue sessions PROFESSEUR.
-     *
-     * IMPORTANT : cette methode DOIT etre @FXML public.
-     * home.fxml ligne 40 contient onAction="#showSessionsProf" et le
-     * FXMLLoader cherche une methode de ce nom dans le namespace du
-     * controleur. Si elle est private ou absente -> LoadException.
-     */
     @FXML
     public void showSessionsProf() {
         try {
@@ -202,11 +214,13 @@ public class HomeController implements Initializable {
         }
     }
 
-    /** Vue sessions ETUDIANT — appelee en interne par showSessions(). */
     private void showSessionsEtudiant() {
         var url = getClass().getResource(
                 "/com/example/pijava_fluently/fxml/session-etudiant-view.fxml");
-        if (url == null) { showError("session-etudiant-view.fxml introuvable"); return; }
+        if (url == null) {
+            showError("session-etudiant-view.fxml introuvable");
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(url);
             Node content = loader.load();
@@ -231,12 +245,13 @@ public class HomeController implements Initializable {
             setContent(view);
             setActiveButton(btnObjectifs);
         } catch (IOException e) {
-            System.err.println("Objectif-view.fxml introuvable"); e.printStackTrace();
+            System.err.println("Objectif-view.fxml introuvable");
+            e.printStackTrace();
         }
     }
 
     // ============================================================
-    // CONTENU CENTRAL (public - utilise par les sous-controleurs)
+    // CONTENU CENTRAL
     // ============================================================
 
     public void setContent(Node view) {
@@ -250,20 +265,14 @@ public class HomeController implements Initializable {
     // HELPERS PRIVES
     // ============================================================
 
-    private void loadView(String fxmlFile) {
-        try {
-            Node view = new FXMLLoader(getClass().getResource(
-                    "/com/example/pijava_fluently/fxml/" + fxmlFile)).load();
-            setContent(view);
-        } catch (IOException e) {
-            System.err.println(fxmlFile + " introuvable"); e.printStackTrace();
-        }
-    }
-
     private void setActiveButton(Button activeBtn) {
         if (activeBtn == null) return;
         Button[] all = {btnAccueil, btnLangues, btnTests, btnGroupes, btnSessions, btnObjectifs};
-        for (Button b : all) if (b != null) b.getStyleClass().remove("nav-link-active");
+        for (Button b : all) {
+            if (b != null) {
+                b.getStyleClass().remove("nav-link-active");
+            }
+        }
         activeBtn.getStyleClass().add("nav-link-active");
     }
 
@@ -272,7 +281,10 @@ public class HomeController implements Initializable {
     // ============================================================
 
     private void showProfile() {
-        if (currentUser == null) { System.out.println("Aucun utilisateur connecte"); return; }
+        if (currentUser == null) {
+            System.out.println("Aucun utilisateur connecte");
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/front-profile.fxml"));
@@ -286,15 +298,22 @@ public class HomeController implements Initializable {
             stage.setTitle("Fluently - Mon Profil");
             stage.setScene(scene);
             stage.centerOnScreen();
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void showSettings() { System.out.println("Parametres ouverts"); }
+    private void showSettings() {
+        System.out.println("Parametres ouverts");
+    }
 
     private void handleLogout() {
         if (currentUser != null) {
-            try { userService.updateStatut(currentUser.getId(), "offline"); }
-            catch (SQLException e) { System.err.println("Statut non mis a jour : " + e.getMessage()); }
+            try {
+                userService.updateStatut(currentUser.getId(), "offline");
+            } catch (SQLException e) {
+                System.err.println("Statut non mis a jour : " + e.getMessage());
+            }
         }
         navigateToLogin();
     }
@@ -311,10 +330,13 @@ public class HomeController implements Initializable {
             stage.setScene(scene);
             stage.setTitle("Fluently - Connexion");
             stage.centerOnScreen();
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void showError(String message) {
-        new Alert(Alert.AlertType.ERROR, message, ButtonType.OK).showAndWait();
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.showAndWait();
     }
 }
