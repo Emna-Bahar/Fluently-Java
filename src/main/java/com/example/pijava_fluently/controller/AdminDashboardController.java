@@ -29,6 +29,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+/**
+ * AdminDashboardController — version fusionnée.
+ *
+ * Intègre :
+ *  - la gestion du thème sombre/clair (ton apport)
+ *  - la gestion complète des utilisateurs + profil inline (apport ami)
+ *  - toutes les vues dynamiques : Langues, Tests, Sessions, Objectifs…
+ */
 public class AdminDashboardController implements Initializable {
 
     // ============================================================
@@ -49,23 +57,33 @@ public class AdminDashboardController implements Initializable {
     @FXML private Button navObjectifsList;
     @FXML private Button navTaches;
     @FXML private Button navUserProgress;
+    @FXML private Button navLangueStats;
 
     // ============================================================
-    // 2. LABELS TOPBAR
+    // 2. LABELS & BOUTONS TOPBAR
     // ============================================================
-    @FXML private Label pageTitle;
-    @FXML private Label pageBreadcrumb;
-    @FXML private Label adminName;
-    @FXML private Label topbarUsername;
-    @FXML private HBox topbarUserPill;
+    @FXML private Label  pageTitle;
+    @FXML private Label  pageBreadcrumb;
+    @FXML private Label  adminName;
+    @FXML private Label  topbarUsername;
+    @FXML private HBox   topbarUserPill;      // sidebar bas (clic → menu)
+    @FXML private HBox   topbarUserPillRight; // topbar droite (clic → menu)
+
+    /**
+     * Bouton thème sombre/clair — présent dans la topbar (apport de ta version).
+     * Le FXML final n'en a qu'un seul, dans la topbar.
+     * Si tu veux aussi le garder dans la sidebar, ajoute-le dans le FXML
+     * et déclare un deuxième @FXML private Button btnThemeSidebar;
+     */
+    @FXML private Button btnTheme;
 
     // ============================================================
     // 3. STATS DASHBOARD
     // ============================================================
-    @FXML private Label statTests;
-    @FXML private Label statPassages;
-    @FXML private Label statEtudiants;
-    @FXML private Label statScore;
+    @FXML private Label       statTests;
+    @FXML private Label       statPassages;
+    @FXML private Label       statEtudiants;
+    @FXML private Label       statScore;
     @FXML private TableView<?> recentPassagesTable;
     @FXML private TableColumn<?,?> colEtudiant, colTest, colScore, colStatut, colDate;
 
@@ -107,28 +125,28 @@ public class AdminDashboardController implements Initializable {
     @FXML private VBox profileView;
 
     // ============================================================
-    // 6. TABLEAU UTILISATEURS (module de l'autre personne)
+    // 6. TABLEAU UTILISATEURS
     // ============================================================
-    @FXML private TableView<User> usersTable;
-    @FXML private TableColumn<User, String> colUserAvatar, colUserEmail, colUserStatut, colUserRoles;
-    @FXML private TableColumn<User, Void> colUserActions;
-    @FXML private TextField fieldSearch;
-    @FXML private Label userCountLabel;
+    @FXML private TableView<User>         usersTable;
+    @FXML private TableColumn<User,String> colUserAvatar, colUserEmail, colUserStatut, colUserRoles;
+    @FXML private TableColumn<User,Void>   colUserActions;
+    @FXML private TextField               fieldSearch;
+    @FXML private Label                   userCountLabel;
 
     // ============================================================
-    // 7. PROFIL INLINE (module de l'autre personne)
+    // 7. PROFIL INLINE
     // ============================================================
-    @FXML private Label heroInitials, heroFullName, heroRoleBadge, heroStatusBadge, heroEmail, heroId;
-    @FXML private TextField fieldPrenom, fieldNom, fieldEmail;
+    @FXML private Label        heroInitials, heroFullName, heroRoleBadge, heroStatusBadge, heroEmail, heroId;
+    @FXML private TextField    fieldPrenom, fieldNom, fieldEmail;
     @FXML private ComboBox<String> comboStatut, comboRole;
     @FXML private PasswordField fieldNewPassword, fieldConfirmPassword;
-    @FXML private HBox statusRoleRow;
-    @FXML private VBox pwdStrengthBox;
-    @FXML private Label pwdStrengthLabel, profileMessage;
-    @FXML private Region bar1, bar2, bar3, bar4;
+    @FXML private HBox         statusRoleRow;
+    @FXML private VBox         pwdStrengthBox;
+    @FXML private Label        pwdStrengthLabel, profileMessage;
+    @FXML private Region       bar1, bar2, bar3, bar4;
 
     // ============================================================
-    // 8. SERVICES & LISTES
+    // 8. SERVICES & ÉTAT
     // ============================================================
     private final UserService userService = new UserService();
     private final ObservableList<User> usersList = FXCollections.observableArrayList();
@@ -141,8 +159,8 @@ public class AdminDashboardController implements Initializable {
     private ObservableList<Groupe> groupesList;
     private ObservableList<Groupe> filteredList;
     private ContextMenu adminUserMenu;
+    private boolean darkMode = false;           // état thème (ton apport)
 
-    // Liste complète des vues pour hideAll()
     private final List<VBox> allViews = new ArrayList<>();
 
     // ============================================================
@@ -151,7 +169,6 @@ public class AdminDashboardController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Enregistrement des vues
         addIfNotNull(dashboardView);
         addIfNotNull(languesView);
         addIfNotNull(niveauxView);
@@ -182,18 +199,10 @@ public class AdminDashboardController implements Initializable {
         loadStats();
         createAdminUserMenu();
 
-        // Setup profil
-        if (pwdStrengthBox != null) {
-            pwdStrengthBox.setVisible(false);
-            pwdStrengthBox.setManaged(false);
-        }
-        if (profileMessage != null) {
-            profileMessage.setVisible(false);
-            profileMessage.setManaged(false);
-        }
+        if (pwdStrengthBox   != null) { pwdStrengthBox.setVisible(false);   pwdStrengthBox.setManaged(false);   }
+        if (profileMessage   != null) { profileMessage.setVisible(false);    profileMessage.setManaged(false);    }
         setupPasswordStrengthListener();
 
-        // Dashboard par défaut
         showDashboard();
     }
 
@@ -201,19 +210,60 @@ public class AdminDashboardController implements Initializable {
         if (v != null) allViews.add(v);
     }
 
+    /** Appelé depuis le contrôleur de login après authentification. */
     public void setCurrentUser(User user) {
         this.currentUser = user;
+        if (user == null) return;
         String name = user.getPrenom() + " " + user.getNom();
-        if (adminName != null) adminName.setText(name);
+        if (adminName      != null) adminName.setText(name);
         if (topbarUsername != null) topbarUsername.setText(name);
     }
 
-    public void showEtudiantsTab() {
-        showEtudiants();
+    /** Raccourci pour ouvrir l'onglet utilisateurs depuis l'extérieur. */
+    public void showEtudiantsTab() { showEtudiants(); }
+
+    // ============================================================
+    // 10. THÈME SOMBRE / CLAIR  ← ton apport
+    // ============================================================
+
+    @FXML
+    private void toggleTheme() {
+        // On remonte jusqu'à la Scene via n'importe quel nœud disponible
+        Scene scene = resolveScene();
+        if (scene == null) {
+            System.err.println("toggleTheme : impossible de résoudre la Scene.");
+            return;
+        }
+
+        ObservableList<String> sheets = scene.getStylesheets();
+        var darkRes = getClass().getResource("/com/example/pijava_fluently/css/dark.css");
+        if (darkRes == null) {
+            System.err.println("dark.css introuvable");
+            return;
+        }
+        String darkCss = darkRes.toExternalForm();
+
+        darkMode = !darkMode;
+        if (darkMode) {
+            if (!sheets.contains(darkCss)) sheets.add(darkCss);
+            if (btnTheme != null) btnTheme.setText("☀️");
+        } else {
+            sheets.remove(darkCss);
+            if (btnTheme != null) btnTheme.setText("🌙");
+        }
+    }
+
+    /** Résout la Scene depuis n'importe lequel des nœuds FXML disponibles. */
+    private Scene resolveScene() {
+        // Priorité : btnTheme (topbar) → pageTitle → dashboardView
+        if (btnTheme    != null && btnTheme.getScene()    != null) return btnTheme.getScene();
+        if (pageTitle   != null && pageTitle.getScene()   != null) return pageTitle.getScene();
+        if (dashboardView != null && dashboardView.getScene() != null) return dashboardView.getScene();
+        return null;
     }
 
     // ============================================================
-    // 10. ADMIN TOPBAR MENU
+    // 11. MENU UTILISATEUR ADMIN (topbar)
     // ============================================================
 
     private void createAdminUserMenu() {
@@ -221,37 +271,37 @@ public class AdminDashboardController implements Initializable {
         MenuItem profile = new MenuItem("👤 Mon Profil");
         SeparatorMenuItem sep = new SeparatorMenuItem();
         MenuItem logout = new MenuItem("⏻ Déconnexion");
-        profile.setOnAction(e -> {
-            if (currentUser != null) openProfileView(currentUser);
-        });
+        profile.setOnAction(e -> { if (currentUser != null) openProfileView(currentUser); });
         logout.setOnAction(e -> handleLogout());
         adminUserMenu.getItems().addAll(profile, sep, logout);
     }
 
     @FXML
     private void showAdminUserMenu(MouseEvent event) {
-        if (adminUserMenu != null && topbarUserPill != null) {
-            adminUserMenu.show(topbarUserPill, event.getScreenX(), event.getScreenY() + 8);
-        }
+        // Fonctionne sur le pill de la sidebar ET celui de la topbar
+        Node source = (Node) event.getSource();
+        if (adminUserMenu != null && source != null)
+            adminUserMenu.show(source, event.getScreenX(), event.getScreenY() + 8);
     }
 
     // ============================================================
-    // 11. PROFIL INLINE
+    // 12. PROFIL INLINE  ← apport ami
     // ============================================================
 
     private void openProfileView(User user) {
         this.profiledUser = user;
         populateProfileView(user);
-        showView(profileView, "Profil Utilisateur",
+        showView(profileView,
+                "Profil Utilisateur",
                 "Administration › Utilisateurs › " + user.getPrenom() + " " + user.getNom());
     }
 
     private void populateProfileView(User user) {
         String initials = initials(user.getPrenom(), user.getNom());
-        if (heroInitials != null) heroInitials.setText(initials);
-        if (heroFullName != null) heroFullName.setText(user.getPrenom() + " " + user.getNom());
-        if (heroEmail != null) heroEmail.setText(user.getEmail() != null ? user.getEmail() : "");
-        if (heroId != null) heroId.setText("#" + user.getId());
+        if (heroInitials  != null) heroInitials.setText(initials);
+        if (heroFullName  != null) heroFullName.setText(user.getPrenom() + " " + user.getNom());
+        if (heroEmail     != null) heroEmail.setText(nvl(user.getEmail()));
+        if (heroId        != null) heroId.setText("#" + user.getId());
 
         boolean isAdmin = user.isAdmin();
         if (heroRoleBadge != null) {
@@ -260,52 +310,43 @@ public class AdminDashboardController implements Initializable {
             heroRoleBadge.getStyleClass().add(isAdmin ? "hero-role-chip-admin" : "hero-role-chip-user");
         }
 
-        String statut = user.getStatut() != null ? user.getStatut() : "actif";
+        String statut = nvl(user.getStatut()).isEmpty() ? "actif" : user.getStatut();
         if (heroStatusBadge != null) {
             heroStatusBadge.setText(statut);
             heroStatusBadge.getStyleClass().removeAll("hero-status-actif", "hero-status-other");
             heroStatusBadge.getStyleClass().add("actif".equalsIgnoreCase(statut) ? "hero-status-actif" : "hero-status-other");
         }
 
-        if (fieldPrenom != null) fieldPrenom.setText(nvl(user.getPrenom()));
-        if (fieldNom != null) fieldNom.setText(nvl(user.getNom()));
-        if (fieldEmail != null) fieldEmail.setText(nvl(user.getEmail()));
-        if (comboStatut != null) comboStatut.setValue(statut);
-        if (comboRole != null) comboRole.setValue(isAdmin ? "Administrateur" : "Utilisateur");
-        if (fieldNewPassword != null) fieldNewPassword.clear();
+        if (fieldPrenom  != null) fieldPrenom.setText(nvl(user.getPrenom()));
+        if (fieldNom     != null) fieldNom.setText(nvl(user.getNom()));
+        if (fieldEmail   != null) fieldEmail.setText(nvl(user.getEmail()));
+        if (comboStatut  != null) comboStatut.setValue(statut);
+        if (comboRole    != null) comboRole.setValue(isAdmin ? "Administrateur" : "Utilisateur");
+        if (fieldNewPassword    != null) fieldNewPassword.clear();
         if (fieldConfirmPassword != null) fieldConfirmPassword.clear();
-        if (pwdStrengthBox != null) {
-            pwdStrengthBox.setVisible(false);
-            pwdStrengthBox.setManaged(false);
-        }
-        if (profileMessage != null) {
-            profileMessage.setVisible(false);
-            profileMessage.setManaged(false);
-        }
+        if (pwdStrengthBox != null) { pwdStrengthBox.setVisible(false); pwdStrengthBox.setManaged(false); }
+        if (profileMessage != null) { profileMessage.setVisible(false); profileMessage.setManaged(false); }
     }
 
     private void setupPasswordStrengthListener() {
         if (fieldNewPassword == null) return;
         fieldNewPassword.textProperty().addListener((obs, old, val) -> {
             boolean show = !val.isEmpty();
-            if (pwdStrengthBox != null) {
-                pwdStrengthBox.setVisible(show);
-                pwdStrengthBox.setManaged(show);
-            }
+            if (pwdStrengthBox != null) { pwdStrengthBox.setVisible(show); pwdStrengthBox.setManaged(show); }
             if (show) updateStrength(val);
         });
     }
 
     private void updateStrength(String pwd) {
         int score = 0;
-        if (pwd.length() >= 8) score++;
-        if (pwd.matches(".*[A-Z].*")) score++;
-        if (pwd.matches(".*[0-9].*")) score++;
+        if (pwd.length() >= 8)               score++;
+        if (pwd.matches(".*[A-Z].*"))         score++;
+        if (pwd.matches(".*[0-9].*"))         score++;
         if (pwd.matches(".*[^a-zA-Z0-9].*")) score++;
 
-        Region[] bars = {bar1, bar2, bar3, bar4};
-        String[] colors = {"#EF4444", "#F97316", "#EAB308", "#22C55E"};
-        String[] labels = {"Très faible", "Faible", "Moyen", "Fort"};
+        Region[] bars   = {bar1, bar2, bar3, bar4};
+        String[] colors = {"#EF4444","#F97316","#EAB308","#22C55E"};
+        String[] labels = {"Très faible","Faible","Moyen","Fort"};
         int idx = Math.max(0, score - 1);
 
         for (int i = 0; i < 4; i++) {
@@ -324,44 +365,22 @@ public class AdminDashboardController implements Initializable {
     @FXML
     private void handleProfileSave() {
         if (profiledUser == null) return;
-        String prenom = fieldPrenom.getText().trim();
-        String nom = fieldNom.getText().trim();
-        String email = fieldEmail.getText().trim();
-        String statut = comboStatut.getValue();
-        String roleVal = comboRole.getValue();
-        String newPwd = fieldNewPassword.getText();
-        String confirm = fieldConfirmPassword.getText();
+        String prenom   = fieldPrenom.getText().trim();
+        String nom      = fieldNom.getText().trim();
+        String email    = fieldEmail.getText().trim();
+        String statut   = comboStatut.getValue();
+        String roleVal  = comboRole.getValue();
+        String newPwd   = fieldNewPassword.getText();
+        String confirm  = fieldConfirmPassword.getText();
 
-        // Validations
-        if (prenom.isEmpty()) {
-            showProfileMsg("Le prénom est obligatoire.", false);
-            return;
-        }
-        if (!prenom.matches("[\\p{L} '\\-]+")) {
-            showProfileMsg("Le prénom ne doit pas contenir de chiffres ou caractères spéciaux.", false);
-            return;
-        }
-        if (nom.isEmpty()) {
-            showProfileMsg("Le nom est obligatoire.", false);
-            return;
-        }
-        if (!nom.matches("[\\p{L} '\\-]+")) {
-            showProfileMsg("Le nom ne doit pas contenir de chiffres ou caractères spéciaux.", false);
-            return;
-        }
-        if (email.isEmpty() || !email.contains("@") || !email.contains(".")) {
-            showProfileMsg("Adresse email invalide.", false);
-            return;
-        }
+        if (prenom.isEmpty())                         { showProfileMsg("Le prénom est obligatoire.", false); return; }
+        if (!prenom.matches("[\\p{L} '\\-]+"))        { showProfileMsg("Le prénom ne doit pas contenir de chiffres ou caractères spéciaux.", false); return; }
+        if (nom.isEmpty())                            { showProfileMsg("Le nom est obligatoire.", false); return; }
+        if (!nom.matches("[\\p{L} '\\-]+"))           { showProfileMsg("Le nom ne doit pas contenir de chiffres ou caractères spéciaux.", false); return; }
+        if (email.isEmpty() || !email.contains("@")) { showProfileMsg("Adresse email invalide.", false); return; }
         if (!newPwd.isEmpty()) {
-            if (newPwd.length() < 8) {
-                showProfileMsg("Mot de passe : 8 caractères minimum.", false);
-                return;
-            }
-            if (!newPwd.equals(confirm)) {
-                showProfileMsg("Les mots de passe ne correspondent pas.", false);
-                return;
-            }
+            if (newPwd.length() < 8)           { showProfileMsg("Mot de passe : 8 caractères minimum.", false); return; }
+            if (!newPwd.equals(confirm))        { showProfileMsg("Les mots de passe ne correspondent pas.", false); return; }
         }
 
         try {
@@ -370,7 +389,6 @@ public class AdminDashboardController implements Initializable {
                 showProfileMsg("Cet email est déjà utilisé par un autre compte.", false);
                 return;
             }
-
             profiledUser.setPrenom(prenom);
             profiledUser.setNom(nom);
             profiledUser.setEmail(email);
@@ -382,17 +400,13 @@ public class AdminDashboardController implements Initializable {
 
             if (heroInitials != null) heroInitials.setText(initials(prenom, nom));
             if (heroFullName != null) heroFullName.setText(prenom + " " + nom);
-            if (heroEmail != null) heroEmail.setText(email);
-            if (fieldNewPassword != null) fieldNewPassword.clear();
+            if (heroEmail    != null) heroEmail.setText(email);
+            if (fieldNewPassword     != null) fieldNewPassword.clear();
             if (fieldConfirmPassword != null) fieldConfirmPassword.clear();
-            if (pwdStrengthBox != null) {
-                pwdStrengthBox.setVisible(false);
-                pwdStrengthBox.setManaged(false);
-            }
+            if (pwdStrengthBox != null) { pwdStrengthBox.setVisible(false); pwdStrengthBox.setManaged(false); }
 
             showProfileMsg("Modifications enregistrées avec succès ✓", true);
             loadUsers();
-
         } catch (SQLException e) {
             showProfileMsg("Erreur SQL : " + e.getMessage(), false);
         }
@@ -413,115 +427,72 @@ public class AdminDashboardController implements Initializable {
     }
 
     // ============================================================
-    // 12. TABLEAU UTILISATEURS
+    // 13. TABLEAU UTILISATEURS  ← apport ami
     // ============================================================
 
     private void initUsersTable() {
         if (usersTable == null) return;
 
         colUserAvatar.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
+            @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
-                    setGraphic(null);
-                    return;
-                }
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) { setGraphic(null); return; }
                 User u = (User) getTableRow().getItem();
-                StackPane av = new StackPane();
-                av.getStyleClass().add("row-avatar");
-                av.setPrefSize(36, 36);
-                Label lbl = new Label(initials(u.getPrenom(), u.getNom()));
-                lbl.getStyleClass().add("row-avatar-text");
+                StackPane av = new StackPane(); av.getStyleClass().add("row-avatar"); av.setPrefSize(36,36);
+                Label lbl = new Label(initials(u.getPrenom(), u.getNom())); lbl.getStyleClass().add("row-avatar-text");
                 av.getChildren().add(lbl);
-                Label name = new Label(u.getPrenom() + " " + u.getNom());
-                name.getStyleClass().add("row-name");
-                HBox cell = new HBox(12, av, name);
-                cell.setAlignment(Pos.CENTER_LEFT);
-                setGraphic(cell);
-                setText(null);
+                Label name = new Label(u.getPrenom() + " " + u.getNom()); name.getStyleClass().add("row-name");
+                HBox cell = new HBox(12, av, name); cell.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(cell); setText(null);
             }
         });
 
         colUserEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         colUserEmail.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
+            @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                    setText(null);
-                    return;
-                }
-                Label l = new Label(item);
-                l.getStyleClass().add("row-email");
-                setGraphic(l);
-                setText(null);
+                if (empty || item == null) { setGraphic(null); setText(null); return; }
+                Label l = new Label(item); l.getStyleClass().add("row-email");
+                setGraphic(l); setText(null);
             }
         });
 
         colUserStatut.setCellValueFactory(new PropertyValueFactory<>("statut"));
         colUserStatut.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
+            @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                    setText(null);
-                    return;
-                }
+                if (empty || item == null) { setGraphic(null); setText(null); return; }
                 Label b = new Label(item);
-                b.getStyleClass().addAll("status-badge",
-                        "actif".equalsIgnoreCase(item) ? "status-actif" : "status-inactif");
-                setGraphic(b);
-                setText(null);
+                b.getStyleClass().addAll("status-badge", "actif".equalsIgnoreCase(item) ? "status-actif" : "status-inactif");
+                setGraphic(b); setText(null);
             }
         });
 
         colUserRoles.setCellValueFactory(new PropertyValueFactory<>("roles"));
         colUserRoles.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
+            @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                    setText(null);
-                    return;
-                }
-                String label;
-                String css;
-                if (item.contains("ROLE_ADMIN")) {
-                    label = "Admin";
-                    css = "role-chip-admin";
-                } else {
-                    label = "Étudiant";
-                    css = "role-chip-user";
-                }
-                Label b = new Label(label);
-                b.getStyleClass().addAll("role-chip", css);
-                setGraphic(b);
-                setText(null);
+                if (empty || item == null) { setGraphic(null); setText(null); return; }
+                String label = item.contains("ROLE_ADMIN") ? "Admin" : "Étudiant";
+                String css   = item.contains("ROLE_ADMIN") ? "role-chip-admin" : "role-chip-user";
+                Label b = new Label(label); b.getStyleClass().addAll("role-chip", css);
+                setGraphic(b); setText(null);
             }
         });
 
         colUserActions.setCellFactory(col -> new TableCell<>() {
             private final Button btnProfile = new Button("👤 Profil");
-            private final Button btnDelete = new Button("🗑");
+            private final Button btnDelete  = new Button("🗑");
             {
                 btnProfile.getStyleClass().add("btn-row-profile");
                 btnDelete.getStyleClass().add("btn-row-delete");
                 btnProfile.setOnAction(e -> openProfileView(getTableView().getItems().get(getIndex())));
-                btnDelete.setOnAction(e -> confirmAndDelete(getTableView().getItems().get(getIndex())));
+                btnDelete.setOnAction(e  -> confirmAndDelete(getTableView().getItems().get(getIndex())));
             }
-            @Override
-            protected void updateItem(Void item, boolean empty) {
+            @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                    return;
-                }
-                HBox box = new HBox(8, btnProfile, btnDelete);
-                box.setAlignment(Pos.CENTER_LEFT);
+                if (empty) { setGraphic(null); return; }
+                HBox box = new HBox(8, btnProfile, btnDelete); box.setAlignment(Pos.CENTER_LEFT);
                 setGraphic(box);
             }
         });
@@ -534,12 +505,9 @@ public class AdminDashboardController implements Initializable {
         try {
             List<User> all = userService.recuperer();
             usersList.setAll(all);
-            if (userCountLabel != null) {
+            if (userCountLabel != null)
                 userCountLabel.setText(all.size() + " utilisateur" + (all.size() > 1 ? "s" : "") + " au total");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     @FXML
@@ -548,37 +516,27 @@ public class AdminDashboardController implements Initializable {
         try {
             List<User> res = kw.isEmpty() ? userService.recuperer() : userService.search(kw);
             usersList.setAll(res);
-            if (userCountLabel != null) {
+            if (userCountLabel != null)
                 userCountLabel.setText(res.size() + " résultat" + (res.size() > 1 ? "s" : ""));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     @FXML
     private void handleNewUser() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/fxml/user-profile-new.fxml")
-            );
+                    getClass().getResource("/com/example/pijava_fluently/fxml/user-profile-new.fxml"));
             Parent root = loader.load();
             UserNewController ctrl = loader.getController();
-            ctrl.setOnSavedCallback(() -> {
-                loadUsers();
-                loadStats();
-            });
+            ctrl.setOnSavedCallback(() -> { loadUsers(); loadStats(); });
             Scene scene = new Scene(root);
             scene.getStylesheets().add(
-                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
-            );
+                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm());
             Stage stage = (Stage) pageTitle.getScene().getWindow();
             stage.setTitle("Fluently - Nouvel utilisateur");
             stage.setScene(scene);
             stage.centerOnScreen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     private void confirmAndDelete(User u) {
@@ -588,22 +546,17 @@ public class AdminDashboardController implements Initializable {
         confirm.setContentText("Cette action est irréversible.");
         Optional<ButtonType> res = confirm.showAndWait();
         if (res.isPresent() && res.get() == ButtonType.YES) {
-            try {
-                userService.supprimer(u.getId());
-                loadUsers();
-                loadStats();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            try { userService.supprimer(u.getId()); loadUsers(); loadStats(); }
+            catch (SQLException e) { e.printStackTrace(); }
         }
     }
 
     // ============================================================
-    // 13. TOGGLE SOUS-MENUS
+    // 14. TOGGLE SOUS-MENUS
     // ============================================================
 
-    @FXML private void toggleLangues() { toggle(languesSubmenu); }
-    @FXML private void toggleTests() { toggle(testsSubmenu); }
+    @FXML private void toggleLangues()  { toggle(languesSubmenu);  }
+    @FXML private void toggleTests()    { toggle(testsSubmenu);    }
     @FXML private void toggleSessions() { toggle(sessionsSubmenu); }
 
     @FXML
@@ -615,19 +568,18 @@ public class AdminDashboardController implements Initializable {
 
     private void toggle(VBox submenu) {
         if (submenu == null) return;
-        boolean nowVisible = !submenu.isVisible();
-        submenu.setVisible(nowVisible);
-        submenu.setManaged(nowVisible);
+        boolean now = !submenu.isVisible();
+        submenu.setVisible(now);
+        submenu.setManaged(now);
     }
 
     // ============================================================
-    // 14. NAVIGATION
+    // 15. NAVIGATION
     // ============================================================
 
     @FXML
     private void showDashboard() {
-        hideAll();
-        show(dashboardView);
+        hideAll(); show(dashboardView);
         setTitle("Dashboard", "Administration › Dashboard");
     }
 
@@ -643,120 +595,73 @@ public class AdminDashboardController implements Initializable {
         setActive(navEtudiants);
     }
 
-    @FXML
-    private void showLangues() {
+    @FXML private void showLangues() {
         hideAll();
         loadPage(languesView, "/com/example/pijava_fluently/fxml/langue-view.fxml");
-        setTitle("Langues", "Administration › Langues");
-        setActive(navLangues);
+        setTitle("Langues", "Administration › Langues"); setActive(navLangues);
     }
 
-    @FXML
-    private void showNiveaux() {
+    @FXML private void showNiveaux() {
         hideAll();
         loadPage(niveauxView, "/com/example/pijava_fluently/fxml/niveau-view.fxml");
         setTitle("Niveaux", "Administration › Langues › Niveaux");
     }
 
-    @FXML
-    private void showCours() {
+    @FXML private void showCours() {
         hideAll();
         loadPage(coursView, "/com/example/pijava_fluently/fxml/cours-view.fxml");
         setTitle("Cours", "Administration › Langues › Cours");
     }
 
-    @FXML
-    private void showUserProgress() {
+    @FXML private void showUserProgress() {
         hideAll();
         loadPage(userProgressView, "/com/example/pijava_fluently/fxml/user-progress.fxml");
         setTitle("Progression des Étudiants", "Administration › Langues › Progression");
         setActive(navUserProgress);
     }
-    // Ajoutez cette déclaration avec les autres @FXML
-    @FXML private Button navLangueStats;
 
-    @FXML
-    private void showLangueStats() {
+    @FXML private void showLangueStats() {
+        hideAll();
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/fxml/langues-stats.fxml")
-            );
+                    getClass().getResource("/com/example/pijava_fluently/fxml/langues-stats.fxml"));
             Node view = loader.load();
-
-            // Cacher toutes les vues existantes
-            hideAll();
-
-            // Vider et ajouter la nouvelle vue dans languesView (qui est un VBox)
             if (languesView != null) {
                 languesView.getChildren().clear();
                 languesView.getChildren().add(view);
                 VBox.setVgrow(view, Priority.ALWAYS);
                 languesView.setVisible(true);
                 languesView.setManaged(true);
-            } else {
-                // Fallback: créer un conteneur temporaire
-                VBox tempContainer = new VBox(view);
-                tempContainer.setStyle("-fx-background-color: #F8FAFC;");
-                tempContainer.setPadding(new Insets(20));
-                VBox.setVgrow(tempContainer, Priority.ALWAYS);
-
-                // Trouver le scrollPane et remplacer son contenu
-                ScrollPane scrollPane = (ScrollPane) pageTitle.getParent().getParent();
-                if (scrollPane != null) {
-                    scrollPane.setContent(tempContainer);
-                }
             }
-
-            setTitle("📊 Statistiques des Langues", "Administration › Langues › Statistiques");
+            setTitle("Statistiques des Langues", "Administration › Langues › Statistiques");
             setActive(navLangueStats);
-
         } catch (IOException e) {
             e.printStackTrace();
-            showAlert("Erreur", "Impossible de charger la page des statistiques: " + e.getMessage());
+            showAlert("Erreur", "Impossible de charger les statistiques : " + e.getMessage());
         }
     }
 
-    // Ajoutez aussi cette méthode showAlert si elle n'existe pas
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.showAndWait();
-    }
-    @FXML
-    private void showTests() {
-        hideAll();
-        loadPage(testsView, "/com/example/pijava_fluently/fxml/tests.fxml");
-        setTitle("Gestion des Tests", "Administration › Tests › Tests");
-        setActive(navTests);
+    @FXML private void showTests() {
+        hideAll(); loadPage(testsView, "/com/example/pijava_fluently/fxml/tests.fxml");
+        setTitle("Gestion des Tests", "Administration › Tests › Tests"); setActive(navTests);
     }
 
-    @FXML
-    private void showQuestions() {
-        hideAll();
-        loadPage(questionsView, "/com/example/pijava_fluently/fxml/questions.fxml");
-        setTitle("Gestion des Questions", "Administration › Tests › Questions");
-        setActive(navQuestions);
+    @FXML private void showQuestions() {
+        hideAll(); loadPage(questionsView, "/com/example/pijava_fluently/fxml/questions.fxml");
+        setTitle("Gestion des Questions", "Administration › Tests › Questions"); setActive(navQuestions);
     }
 
-    @FXML
-    private void showReponses() {
-        hideAll();
-        loadPage(reponsesView, "/com/example/pijava_fluently/fxml/reponses.fxml");
-        setTitle("Gestion des Réponses", "Administration › Tests › Réponses");
-        setActive(navReponses);
+    @FXML private void showReponses() {
+        hideAll(); loadPage(reponsesView, "/com/example/pijava_fluently/fxml/reponses.fxml");
+        setTitle("Gestion des Réponses", "Administration › Tests › Réponses"); setActive(navReponses);
     }
 
-    @FXML
-    private void showPassages() {
-        hideAll();
-        loadPage(passagesView, "/com/example/pijava_fluently/fxml/passages.fxml");
-        setTitle("Passages de Tests", "Administration › Tests › Passages");
-        setActive(navPassages);
+    @FXML private void showPassages() {
+        hideAll(); loadPage(passagesView, "/com/example/pijava_fluently/fxml/passages.fxml");
+        setTitle("Passages de Tests", "Administration › Tests › Passages"); setActive(navPassages);
     }
 
-    @FXML
-    private void showGroupes() {
+    @FXML private void showGroupes() {
         hideAll();
         show(groupesView);
         setTitle("Groupes", "Administration › Groupes");
@@ -764,85 +669,62 @@ public class AdminDashboardController implements Initializable {
         loadGroupes();
     }
 
-    @FXML
-    private void showSessions() {
+    @FXML private void showSessions() {
         hideAll();
-        show(sessionsView);
-        setTitle("Sessions", "Administration › Sessions");
-        setActive(navSessionsList);
+        loadPage(sessionsView, "/com/example/pijava_fluently/fxml/session-admin-view.fxml");
+        setTitle("Sessions", "Administration › Sessions"); setActive(navSessionsList);
     }
 
-    @FXML
-    private void showReservations() {
+    @FXML private void showReservations() {
         hideAll();
-        show(reservationsView);
-        setTitle("Réservations", "Administration › Sessions › Réservations");
-        setActive(navReservations);
+        loadPage(reservationsView, "/com/example/pijava_fluently/fxml/reservation-admin-view.fxml");
+        setTitle("Réservations", "Administration › Sessions › Réservations"); setActive(navReservations);
     }
 
-    @FXML
-    private void showObjectifs() {
-        hideAll();
-        loadPage(objectifsView, "/com/example/pijava_fluently/fxml/ObjectifAdmin-view.fxml");
-        setTitle("Objectifs", "Administration › Objectifs");
-        setActive(navObjectifsList);
+    @FXML private void showObjectifs() {
+        hideAll(); loadPage(objectifsView, "/com/example/pijava_fluently/fxml/ObjectifAdmin-view.fxml");
+        setTitle("Objectifs", "Administration › Objectifs"); setActive(navObjectifsList);
     }
 
-    @FXML
-    private void showTaches() {
-        hideAll();
-        loadPage(tachesView, "/com/example/pijava_fluently/fxml/TacheAdmin-view.fxml");
-        setTitle("Tâches", "Administration › Objectifs › Tâches");
-        setActive(navTaches);
+    @FXML private void showTaches() {
+        hideAll(); loadPage(tachesView, "/com/example/pijava_fluently/fxml/TacheAdmin-view.fxml");
+        setTitle("Tâches", "Administration › Objectifs › Tâches"); setActive(navTaches);
     }
 
     @FXML
     private void handleLogout() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/fxml/login-view.fxml")
-            );
-            Node loginPage = loader.load();
-            if (dashboardView != null && dashboardView.getScene() != null) {
-                dashboardView.getScene().setRoot((javafx.scene.Parent) loginPage);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+                    getClass().getResource("/com/example/pijava_fluently/fxml/login.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(
+                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm());
+            Stage stage = (Stage) pageTitle.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Fluently - Connexion");
+            stage.centerOnScreen();
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     // ============================================================
-    // 15. UTILITAIRES PRIVÉS
+    // 16. UTILITAIRES PRIVÉS
     // ============================================================
 
     private void hideAll() {
-        for (VBox v : allViews) {
-            if (v != null) {
-                v.setVisible(false);
-                v.setManaged(false);
-            }
-        }
+        for (VBox v : allViews) if (v != null) { v.setVisible(false); v.setManaged(false); }
     }
 
     private void show(VBox view) {
-        if (view != null) {
-            view.setVisible(true);
-            view.setManaged(true);
-        }
+        if (view != null) { view.setVisible(true); view.setManaged(true); }
     }
 
     private void showView(VBox view, String title, String breadcrumb) {
-        hideAll();
-        if (view != null) {
-            view.setVisible(true);
-            view.setManaged(true);
-        }
-        if (pageTitle != null) pageTitle.setText(title);
-        if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
+        hideAll(); show(view); setTitle(title, breadcrumb);
     }
 
     private void setTitle(String title, String breadcrumb) {
-        if (pageTitle != null) pageTitle.setText(title);
+        if (pageTitle      != null) pageTitle.setText(title);
         if (pageBreadcrumb != null) pageBreadcrumb.setText(breadcrumb);
     }
 
@@ -850,23 +732,19 @@ public class AdminDashboardController implements Initializable {
         Button[] all = {
                 navEtudiants, navLangues, navTests, navQuestions,
                 navReponses, navPassages, navGroupes, navSessionsList,
-                navReservations, navObjectifsList, navTaches, navUserProgress
+                navReservations, navObjectifsList, navTaches, navUserProgress, navLangueStats
         };
-        for (Button b : all) {
-            if (b != null) b.getStyleClass().remove("nav-active");
-        }
+        for (Button b : all) if (b != null) b.getStyleClass().remove("nav-active");
         if (active != null) active.getStyleClass().add("nav-active");
     }
 
     private void loadPage(VBox container, String fxmlPath) {
         if (container == null) return;
         try {
-            String loadedPath = (String) container.getProperties().get("loadedFxmlPath");
-            if (!fxmlPath.equals(loadedPath)) {
+            String loaded = (String) container.getProperties().get("loadedFxmlPath");
+            if (!fxmlPath.equals(loaded)) {
                 var resource = getClass().getResource(fxmlPath);
-                if (resource == null) {
-                    throw new IOException("Ressource FXML introuvable : " + fxmlPath);
-                }
+                if (resource == null) throw new IOException("Ressource introuvable : " + fxmlPath);
                 FXMLLoader loader = new FXMLLoader(resource);
                 Node page = loader.load();
                 VBox.setVgrow(page, Priority.ALWAYS);
@@ -882,68 +760,49 @@ public class AdminDashboardController implements Initializable {
     }
 
     private void showErrorInContainer(VBox container, String msg) {
-        Label title = new Label("⚠ Erreur de chargement");
+        Label title  = new Label("⚠ Erreur de chargement");
         title.setStyle("-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#991B1B;");
-        Label detail = new Label(msg);
-        detail.setWrapText(true);
+        Label detail = new Label(msg); detail.setWrapText(true);
         detail.setStyle("-fx-font-size:12px;-fx-text-fill:#B91C1C;");
         VBox errorBox = new VBox(8, title, detail);
-        errorBox.setStyle(
-                "-fx-background-color:#FEF2F2;" +
-                        "-fx-border-color:#FECACA;" +
-                        "-fx-border-radius:10;" +
-                        "-fx-background-radius:10;" +
-                        "-fx-padding:20;"
-        );
+        errorBox.setStyle("-fx-background-color:#FEF2F2;-fx-border-color:#FECACA;-fx-border-radius:10;-fx-background-radius:10;-fx-padding:20;");
         container.getChildren().setAll(errorBox);
-        container.setVisible(true);
-        container.setManaged(true);
+        container.setVisible(true); container.setManaged(true);
     }
 
     private void loadStats() {
-        // Utilisateurs
         try {
-            if (statEtudiants != null)
-                statEtudiants.setText(String.valueOf(userService.count()));
+            if (statEtudiants != null) statEtudiants.setText(String.valueOf(userService.count()));
         } catch (SQLException e) {
             if (statEtudiants != null) statEtudiants.setText("?");
         }
-
-        // Tests
         try {
-            TestService ts = new TestService();
-            List<Test> tests = ts.recuperer();
-            if (statTests != null)
-                statTests.setText(String.valueOf(tests.size()));
+            List<Test> tests = new TestService().recuperer();
+            if (statTests != null) statTests.setText(String.valueOf(tests.size()));
 
-            // Passages
-            TestPassageService tps = new TestPassageService();
-            List<TestPassage> passages = tps.recuperer();
-            if (statPassages != null)
-                statPassages.setText(String.valueOf(passages.size()));
+            List<TestPassage> passages = new TestPassageService().recuperer();
+            if (statPassages != null) statPassages.setText(String.valueOf(passages.size()));
 
-            // Score moyen
             if (statScore != null && !passages.isEmpty()) {
                 double avg = passages.stream()
                         .filter(p -> p.getScoreMax() > 0)
                         .mapToDouble(p -> (double) p.getScore() / p.getScoreMax() * 100)
-                        .average()
-                        .orElse(0);
+                        .average().orElse(0);
                 statScore.setText(String.format("%.0f%%", avg));
             } else if (statScore != null) {
                 statScore.setText("—");
             }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
 
-            // Table récents passages (5 derniers)
-            // Si tu as typé recentPassagesTable<TestPassage>, sinon ignore
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.setTitle(title); alert.setHeaderText(null); alert.showAndWait();
     }
 
     private static String initials(String p, String n) {
-        String a = (p != null && !p.isEmpty()) ? p.substring(0, 1).toUpperCase() : "?";
-        String b = (n != null && !n.isEmpty()) ? n.substring(0, 1).toUpperCase() : "?";
+        String a = (p != null && !p.isEmpty()) ? p.substring(0,1).toUpperCase() : "?";
+        String b = (n != null && !n.isEmpty()) ? n.substring(0,1).toUpperCase() : "?";
         return a + b;
     }
 
