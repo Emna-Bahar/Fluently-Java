@@ -51,18 +51,14 @@ public class GroupService implements IService<Groupe> {
 
     @Override
     public void supprimer(int id) throws SQLException {
-        // First, delete related messages (or any other related records)
-        // Assuming there's a 'message' table with 'id_groupe_id' foreign key
         String deleteMessagesQuery = "DELETE FROM `message` WHERE id_groupe_id = ?";
         try (PreparedStatement statement = connection.prepareStatement(deleteMessagesQuery)) {
             statement.setInt(1, id);
             statement.executeUpdate();
         } catch (SQLException e) {
-            // If message table doesn't exist or column is different, just continue
             System.out.println("Note: No messages to delete or table doesn't exist");
         }
         
-        // Now delete the group
         String query = "DELETE FROM `groupe` WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, id);
@@ -209,5 +205,23 @@ public class GroupService implements IService<Groupe> {
             }
         }
         return groupes;
+    }
+
+    public boolean existsByNom(String nom, Integer excludeId) throws SQLException {
+        String query = "SELECT COUNT(*) FROM `groupe` WHERE LOWER(TRIM(nom)) = LOWER(TRIM(?))";
+        if (excludeId != null) {
+            query += " AND id <> ?";
+        }
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, nom);
+            if (excludeId != null) {
+                statement.setInt(2, excludeId);
+            }
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() && resultSet.getInt(1) > 0;
+            }
+        }
     }
 }

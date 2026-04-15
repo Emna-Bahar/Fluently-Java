@@ -221,10 +221,26 @@ public class GroupFormController implements Initializable {
     }
 
     private boolean validateForm() {
-        if (txtNom.getText().trim().isEmpty()) {
+        String nom = txtNom.getText().trim();
+
+        if (nom.isEmpty()) {
             showError("Le nom du groupe est obligatoire");
             txtNom.requestFocus();
             return false;
+        }
+
+        if (groupService != null) {
+            Integer excludeId = (isEditMode && currentGroupe != null) ? currentGroupe.getId() : null;
+            try {
+                if (groupService.existsByNom(nom, excludeId)) {
+                    showError("Un groupe avec ce nom existe deja");
+                    txtNom.requestFocus();
+                    return false;
+                }
+            } catch (SQLException e) {
+                showError("Erreur de verification du nom : " + e.getMessage());
+                return false;
+            }
         }
 
         if (comboStatut.getValue() == null) {

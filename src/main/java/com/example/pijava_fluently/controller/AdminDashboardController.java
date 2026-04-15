@@ -1071,6 +1071,9 @@ public class AdminDashboardController implements Initializable {
             Parent view = loader.load();
             AdminGroupMessagesController ctrl = loader.getController();
             ctrl.setGroupe(groupe);
+            if (currentUser != null) {
+                ctrl.setAdminContext(currentUser.getId(), currentUser.getPrenom() + " " + currentUser.getNom());
+            }
             ctrl.setOnBack(() -> {
                 if (groupFormHost != null) groupFormHost.getChildren().clear();
                 if (groupFormOverlay != null) {

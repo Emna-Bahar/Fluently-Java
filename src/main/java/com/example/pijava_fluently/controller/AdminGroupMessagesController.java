@@ -38,7 +38,6 @@ public class AdminGroupMessagesController implements Initializable {
     // Log table
     @FXML private TableView<MessageLog> logTable;
     @FXML private TableColumn<MessageLog, String> colLogAction;
-    @FXML private TableColumn<MessageLog, String> colLogMsgId;
     @FXML private TableColumn<MessageLog, String> colLogUser;
     @FXML private TableColumn<MessageLog, String> colLogOriginal;
     @FXML private TableColumn<MessageLog, String> colLogNew;
@@ -49,8 +48,8 @@ public class AdminGroupMessagesController implements Initializable {
     private Groupe currentGroupe;
     private Runnable onBack;
 
-    private static final int ADMIN_ID = 0;
-    private static final String ADMIN_NAME = "Admin";
+    private int adminId = 0;
+    private String adminName = "Admin";
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
     @Override
@@ -73,6 +72,13 @@ public class AdminGroupMessagesController implements Initializable {
     /** Callback so the "← Retour" button can pop this view. */
     public void setOnBack(Runnable onBack) {
         this.onBack = onBack;
+    }
+
+    public void setAdminContext(int adminId, String adminName) {
+        this.adminId = adminId;
+        if (adminName != null && !adminName.isBlank()) {
+            this.adminName = adminName;
+        }
     }
 
     @FXML
@@ -162,7 +168,6 @@ public class AdminGroupMessagesController implements Initializable {
             }
         });
 
-        colLogMsgId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getMessageId())));
         colLogUser.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().getUserName() != null ? c.getValue().getUserName() : "User #" + c.getValue().getUserId()
         ));
@@ -192,7 +197,11 @@ public class AdminGroupMessagesController implements Initializable {
         if (choice.isEmpty() || choice.get() != ButtonType.OK) return;
 
         try {
-            messageService.supprimerAvecLog(message, ADMIN_ID, ADMIN_NAME, messageLogService);
+            int performerId = adminId > 0 ? adminId : message.getIdUserId();
+            String performerName = (adminName != null && !adminName.isBlank())
+                    ? adminName
+                    : "User #" + performerId;
+            messageService.supprimerAvecLog(message, performerId, performerName, messageLogService);
             loadMessages();
             loadLog();
         } catch (SQLException e) {
