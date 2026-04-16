@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MesTestsController implements Initializable {
+public class MesTestsController implements Initializable { //initializable
 
     @FXML private VBox      vboxContenu;
     @FXML private TextField searchField;
