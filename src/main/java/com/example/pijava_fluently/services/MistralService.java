@@ -1,5 +1,6 @@
 package com.example.pijava_fluently.services;
 
+import com.example.pijava_fluently.utils.ConfigLoader;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -10,9 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 public class MistralService {
 
-    // Remplacez par VOTRE clé API Mistral
-    // Obtenez une clé gratuite sur : https://console.mistral.ai/
-    private static final String API_KEY = "KaqstOkl7MldWhWPWbo4Zi9qaDX7bQvV";
+    // Récupérer la clé API depuis config.properties
+    private static final String API_KEY = ConfigLoader.getMistralApiKey();
     private static final String API_URL = "https://api.mistral.ai/v1/chat/completions";
 
     private final OkHttpClient client = new OkHttpClient.Builder()
@@ -20,6 +20,13 @@ public class MistralService {
             .writeTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .build();
+
+    // Vérifier si la clé API est disponible
+    static {
+        if (API_KEY == null || API_KEY.isEmpty()) {
+            System.err.println("⚠️ ATTENTION: Clé API Mistral non configurée dans config.properties !");
+        }
+    }
 
     public String genererCours(String langue, String theme, String grammaire,
                                String vocabulaire, int niveauDifficulte) {
@@ -68,6 +75,11 @@ public class MistralService {
     }
 
     private String appelerMistral(String prompt) {
+        // Vérifier si la clé API est configurée
+        if (API_KEY == null || API_KEY.isEmpty()) {
+            return "❌ Clé API Mistral non configurée. Veuillez configurer config.properties";
+        }
+
         try {
             JsonObject message = new JsonObject();
             message.addProperty("role", "user");
@@ -77,7 +89,7 @@ public class MistralService {
             messages.add(message);
 
             JsonObject requestBody = new JsonObject();
-            requestBody.addProperty("model", "mistral-tiny"); // ou mistral-small, mistral-medium
+            requestBody.addProperty("model", "mistral-tiny");
             requestBody.add("messages", messages);
             requestBody.addProperty("temperature", 0.7);
             requestBody.addProperty("max_tokens", 2000);
@@ -111,6 +123,7 @@ public class MistralService {
             return "❌ Erreur lors de l'appel à Mistral : " + e.getMessage();
         }
     }
+
     public String chercherDefinition(String mot, String langue) {
         String prompt = "Tu es un dictionnaire. Donne moi la définition du mot '" + mot + "' en " + langue +
                 ". Réponds UNIQUEMENT au format suivant (sans texte supplémentaire):\n" +

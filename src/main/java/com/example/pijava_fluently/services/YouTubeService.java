@@ -1,5 +1,6 @@
 package com.example.pijava_fluently.services;
 
+import com.example.pijava_fluently.utils.ConfigLoader;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -11,14 +12,27 @@ import java.util.List;
 
 public class YouTubeService {
 
-    // Remplacez par VOTRE clé API YouTube (obtenez-la sur Google Cloud Console)
-    private static final String API_KEY = "AIzaSyBf9zcMxJtNtCOXJxQea1-aqHvUCVwHmIo";
+    // Récupérer la clé API depuis config.properties
+    private static final String API_KEY = ConfigLoader.getYouTubeApiKey();
     private static final String API_URL = "https://www.googleapis.com/youtube/v3/search";
 
     private final OkHttpClient client = new OkHttpClient();
 
+    // Vérifier si la clé API est disponible
+    static {
+        if (API_KEY == null || API_KEY.isEmpty()) {
+            System.err.println("⚠️ ATTENTION: Clé API YouTube non configurée dans config.properties !");
+        }
+    }
+
     public List<VideoInfo> rechercherVideos(String query, int maxResults) {
         List<VideoInfo> videos = new ArrayList<>();
+
+        // Vérifier si la clé API est configurée
+        if (API_KEY == null || API_KEY.isEmpty()) {
+            System.err.println("❌ Recherche YouTube impossible : clé API manquante");
+            return videos;
+        }
 
         try {
             String url = API_URL + "?part=snippet&maxResults=" + maxResults + "&q=" +

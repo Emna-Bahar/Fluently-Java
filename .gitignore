@@ -36,3 +36,11 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Ignorer le fichier de configuration qui contient les clés API
+**/config.properties
+src/main/resources/com/example/pijava_fluently/config.properties
+
+# Fichiers de log
+*.log
+
