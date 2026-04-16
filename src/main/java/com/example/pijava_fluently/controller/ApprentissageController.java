@@ -1,39 +1,37 @@
 package com.example.pijava_fluently.controller;
 
+import com.example.pijava_fluently.entites.QuizQuestion;
 import com.example.pijava_fluently.entites.*;
-import com.example.pijava_fluently.services.CoursService;
-import com.example.pijava_fluently.services.NiveauService;
-import com.example.pijava_fluently.services.TestPassageService;
-import com.example.pijava_fluently.services.TestService;
-import com.example.pijava_fluently.services.UserProgressService;
+import com.example.pijava_fluently.services.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.Node;
-import javafx.scene.layout.StackPane;
-
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
 import java.awt.Desktop;
 import java.io.File;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.Comparator;
-import java.util.Optional;
+
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.properties.TextAlignment;
+import java.io.FileOutputStream;
+import java.time.format.DateTimeFormatter;
 
 public class ApprentissageController {
 
@@ -46,15 +44,105 @@ public class ApprentissageController {
     @FXML private HBox coursA1, coursA2, coursB1, coursB2, coursC1, coursC2;
     @FXML private Label progressA1, progressA2, progressB1, progressB2, progressC1, progressC2;
 
+    // Formulaire de génération de cours
+    @FXML private VBox formCoursContainer;
+    @FXML private ComboBox<String> comboTheme;
+    @FXML private ComboBox<String> comboGrammaire;
+    @FXML private TextField fieldVocabulaire;
+    @FXML private Slider sliderDifficulte;
+    @FXML private TextArea apercuCours;
+    @FXML private Button btnExporterPDF;
+    @FXML private TextField fieldTheme;
+    @FXML private TextField fieldGrammaire;
+    @FXML private Label niveauSelectionneLabel;
+
+    // Cours PDF
+    @FXML private HBox coursPdfContainer;
+    @FXML private ScrollPane coursPdfScroll;
+    @FXML private Label totalCoursCount;
+    @FXML private VBox emptyCoursMessage;
+
+    // YouTube
+    @FXML private TextField youtubeSearchField;
+    @FXML private HBox youtubeLoading;
+    @FXML private ScrollPane youtubeScrollPane;
+    @FXML private VBox youtubeResultsContainer;
+    @FXML private VBox youtubeEmptyMessage;
+
+    // Dictionnaire
+    @FXML private TextField dictionarySearchField;
+    @FXML private HBox dictionaryLoading;
+    @FXML private VBox dictionaryResultContainer;
+    @FXML private Label dictionaryWord;
+    @FXML private Label dictionaryDefinition;
+    @FXML private Label dictionaryExample;
+    @FXML private Label dictionarySynonym;
+    @FXML private VBox dictionaryEmptyMessage;
+
+    // Jeu éducatif
+    @FXML private ComboBox<String> gameTypeCombo;
+    @FXML private ComboBox<String> gameLevelCombo;
+    @FXML private Button startGameBtn;
+    @FXML private HBox gameLoading;
+    @FXML private VBox quizContainer;
+
+    @FXML private VBox matchContainer;
+
+    @FXML private VBox matchWordsContainer;
+    @FXML private VBox matchDefsContainer;
+    @FXML private Label matchScore;
+    @FXML private Label quizScore;
+    @FXML private ProgressBar quizProgress;
+    @FXML private Label quizQuestion;
+    @FXML private VBox quizAnswersContainer;
+    @FXML private Button nextQuestionBtn;
+    @FXML private VBox quizResultContainer;
+    @FXML private Label quizFinalScore;
+    @FXML private Label quizFeedback;
+    @FXML private ProgressIndicator loadingIA;
+    @FXML private Label loadingText;
+
+    // Jeu "Compléter la phrase"
+    @FXML private VBox fillGameContainer;
+    @FXML private Label fillScore;
+    @FXML private ProgressBar fillProgress;
+    @FXML private Label fillQuestion;
+    @FXML private VBox fillOptionsContainer;
+    @FXML private Button fillNextBtn;
+    @FXML private VBox fillResultContainer;
+    @FXML private Label fillFinalScore;
+    @FXML private Label fillFeedback;
+
+    // Variables pour le jeu
+    private List<FillQuestion> fillQuestionsList = new ArrayList<>();
+    private int currentFillIndex = 0;
+    private int currentFillScore = 0;
+    // Variables
+
+    private Map<String, Integer> selectedMatches;
+    private List<QuizQuestion> questionsList = new ArrayList<>();
+    private int currentQuestionIndex = 0;
+    private int currentScore = 0;
+    private ToggleGroup currentToggleGroup;
+    private int motSelectionneIndex = -1;
+    private Button motSelectionneBtn = null;
+
+    private final YouTubeService youTubeService = new YouTubeService();
+    private Map<String, List<Cours>> coursPdfParNiveau = new HashMap<>();
+    private String niveauSelectionne = null;
+    private String dernierCoursGenere;
     private Langue langue;
     private HomeController homeController;
     private Map<String, List<Cours>> coursParNiveau = new HashMap<>();
     private Map<String, Integer> progressionParNiveau = new HashMap<>();
-    private Map<String, Integer> coursCompleteParNiveau = new HashMap<>(); // Stocke les IDs des cours complétés
-    private Map<Integer, Niveau> niveauParDifficulte = new HashMap<>(); // Map niveauKey -> Niveau object
+    private Map<String, Integer> coursCompleteParNiveau = new HashMap<>();
+    private Map<Integer, Niveau> niveauParDifficulte = new HashMap<>();
+    private Map<String, Integer> niveauIdParKey = new HashMap<>();
+    private Map<String, Map<Integer, Boolean>> progressionCoursParNiveau = new HashMap<>();
 
     private User currentUser;
     private UserProgressService userProgressService = new UserProgressService();
+    private final IAService iaService = new IAService();
 
     public void setCurrentUser(User user) {
         this.currentUser = user;
@@ -170,7 +258,6 @@ public class ApprentissageController {
         if (pourcentage >= 50) return "A2";
         return "A1";
     }
-    private Map<String, Integer> niveauIdParKey = new HashMap<>(); // "A1" -> id_niveau
 
     private void chargerCours() {
         new Thread(() -> {
@@ -217,8 +304,6 @@ public class ApprentissageController {
         }).start();
     }
 
-    // Ajoutez ces maps pour stocker la progression par niveau
-    private Map<String, Map<Integer, Boolean>> progressionCoursParNiveau = new HashMap<>();
 
     private void chargerProgressionUtilisateur() {
         if (currentUser == null) return;
@@ -411,6 +496,8 @@ public class ApprentissageController {
         afficherCoursPourNiveau("B2", coursB2, progressB2);
         afficherCoursPourNiveau("C1", coursC1, progressC1);
         afficherCoursPourNiveau("C2", coursC2, progressC2);
+        // Afficher les cours PDF générés
+        afficherCoursPdfGeneres();
     }
 
 
@@ -705,5 +792,1448 @@ public class ApprentissageController {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.showAndWait();
+    }
+    @FXML
+    private void ouvrirFormulaireCours() {
+        formCoursContainer.setVisible(true);
+        formCoursContainer.setManaged(true);
+    }
+
+    @FXML
+    private void fermerFormulaireCours() {
+        formCoursContainer.setVisible(false);
+        formCoursContainer.setManaged(false);
+        effacerFormulaire();
+    }
+    @FXML
+    private void effacerFormulaire() {
+        fieldTheme.clear();           // Nouveau
+        fieldGrammaire.clear();       // Nouveau
+        fieldVocabulaire.clear();
+        niveauSelectionne = null;
+        niveauSelectionneLabel.setText("Niveau sélectionné : Aucun");
+        resetNiveauStyles();          // Reset des styles
+        apercuCours.clear();
+        btnExporterPDF.setDisable(true);
+        dernierCoursGenere = null;
+    }
+
+    @FXML
+    private void genererCours() {
+        // Validation des champs (nouveaux)
+        if (fieldTheme.getText().trim().isEmpty()) {
+            showAlert("Information", "Veuillez entrer un thème.");
+            return;
+        }
+        if (fieldGrammaire.getText().trim().isEmpty()) {
+            showAlert("Information", "Veuillez entrer un point de grammaire.");
+            return;
+        }
+        if (niveauSelectionne == null) {
+            showAlert("Information", "Veuillez sélectionner un niveau (A1 à C2).");
+            return;
+        }
+
+        String theme = fieldTheme.getText().trim();
+        String grammaire = fieldGrammaire.getText().trim();
+        String vocabulaire = fieldVocabulaire.getText().trim();
+        int difficulte = convertirNiveauEnDifficulte(niveauSelectionne);
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+
+        // Désactiver le bouton pendant la génération
+        btnExporterPDF.setDisable(true);
+        showLoading(true);
+
+        new Thread(() -> {
+            try {
+                String coursGenere = iaService.genererCours(
+                        langueNom, theme, grammaire,
+                        vocabulaire.isEmpty() ? "vocabulaire général du thème" : vocabulaire,
+                        difficulte
+                );
+
+                Platform.runLater(() -> {
+                    apercuCours.setText(coursGenere);
+                    dernierCoursGenere = coursGenere;
+                    btnExporterPDF.setDisable(false);
+                    showLoading(false);
+                    showAlert("Succès", "✅ Votre cours personnalisé a été généré par l'IA !");
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    showLoading(false);
+                    genererCoursLocal(theme, grammaire, vocabulaire, difficulte, langueNom);
+                });
+            }
+        }).start();
+    }
+
+    private int convertirNiveauEnDifficulte(String niveau) {
+        switch (niveau) {
+            case "A1": return 1;
+            case "A2": return 2;
+            case "B1": return 3;
+            case "B2": return 4;
+            case "C1": return 4;
+            case "C2": return 5;
+            default: return 3;
+        }
+    }
+
+    // Fallback local (votre ancienne méthode) en cas de panne IA
+    private void genererCoursLocal(String theme, String grammaire, String vocabulaire,
+                                   int difficulte, String langueNom) {
+        StringBuilder cours = new StringBuilder();
+        cours.append("⚠️ MODE DÉGRADÉ - GÉNÉRATION LOCALE ⚠️\n\n");
+        cours.append("L'IA n'est pas disponible. Voici un cours basique.\n\n");
+
+        cours.append("=".repeat(60)).append("\n");
+        cours.append("📚 COURS PERSONNALISÉ - ").append(langueNom.toUpperCase()).append("\n");
+        cours.append("=".repeat(60)).append("\n\n");
+
+        cours.append("🎯 1. INTRODUCTION\n");
+        cours.append("Thème : ").append(theme).append("\n");
+        cours.append("Grammaire : ").append(grammaire).append("\n\n");
+
+        cours.append("📝 2. VOCABULAIRE\n");
+        if (vocabulaire.isEmpty()) {
+            cours.append("- Mot 1\n- Mot 2\n- Mot 3\n");
+        } else {
+            String[] mots = vocabulaire.split(",");
+            for (String mot : mots) {
+                cours.append("- ").append(mot.trim()).append("\n");
+            }
+        }
+
+        cours.append("\n📖 3. GRAMMAIRE : ").append(grammaire).append("\n");
+        cours.append("Révisez la règle de grammaire dans votre manuel.\n\n");
+
+        cours.append("✏️ 4. EXERCICES\n");
+        cours.append("1. Créez 5 phrases avec le vocabulaire appris\n");
+        cours.append("2. Conjuguez 3 verbes au ").append(grammaire).append("\n");
+
+        apercuCours.setText(cours.toString());
+        dernierCoursGenere = cours.toString();
+        btnExporterPDF.setDisable(false);
+        showAlert("Information", "Cours local généré (IA non disponible)");
+    }
+
+    private void showLoading(boolean show) {
+        if (loadingIA != null) {
+            loadingIA.setVisible(show);
+            loadingIA.setManaged(show);
+        }
+        if (loadingText != null) {
+            loadingText.setVisible(show);
+            loadingText.setManaged(show);
+            if (show) {
+                loadingText.setText("🤖 L'IA génère votre cours personnalisé... (10-15 secondes)");
+            }
+        }
+    }
+    private String[] genererVocabulaireParTheme(String theme, String langue) {
+        switch (theme) {
+            case "Voyage et Tourisme":
+                return new String[]{"L'aéroport", "Le billet d'avion", "La valise", "Le passeport",
+                        "L'hôtel", "La réservation", "La chambre", "La destination",
+                        "Le touriste", "La carte touristique"};
+            case "Affaires et Travail":
+                return new String[]{"La réunion", "Le collègue", "Le patron", "L'entreprise",
+                        "Le contrat", "Le projet", "L'échéance", "La négociation",
+                        "Le client", "Le rapport"};
+            case "Culture et Arts":
+                return new String[]{"Le musée", "L'exposition", "Le tableau", "Le peintre",
+                        "La sculpture", "Le concert", "Le théâtre", "La littérature",
+                        "Le poème", "L'œuvre d'art"};
+            case "Vie quotidienne":
+                return new String[]{"La maison", "La famille", "Les courses", "Le travail",
+                        "Les loisirs", "La cuisine", "Le sommeil", "Les transports",
+                        "Les amis", "Les activités"};
+            case "Nourriture et Restaurant":
+                return new String[]{"Le menu", "L'entrée", "Le plat principal", "Le dessert",
+                        "La carte des vins", "Le serveur", "La réservation",
+                        "L'addition", "Le pourboire", "Les spécialités"};
+            default:
+                return new String[]{"Le mot 1", "Le mot 2", "Le mot 3", "Le mot 4", "Le mot 5"};
+        }
+    }
+
+    private String genererExplicationGrammaire(String grammaire, String langue) {
+        switch (grammaire) {
+            case "Présent de l'indicatif":
+                return "Le présent de l'indicatif est utilisé pour exprimer des actions qui se déroulent au moment où l'on parle, des vérités générales ou des habitudes.\n\n" +
+                        "Exemple avec le verbe 'parler' :\n" +
+                        "- Je parle\n- Tu parles\n- Il/Elle parle\n- Nous parlons\n- Vous parlez\n- Ils/Elles parlent";
+            case "Passé composé":
+                return "Le passé composé est utilisé pour exprimer une action achevée dans le passé.\n\n" +
+                        "Il se forme avec l'auxiliaire 'avoir' ou 'être' au présent + le participe passé du verbe.\n\n" +
+                        "Exemple : 'J'ai mangé', 'Tu es allé(e)'";
+            case "Futur simple":
+                return "Le futur simple exprime une action qui se déroulera dans l'avenir.\n\n" +
+                        "Il se forme en ajoutant les terminaisons -ai, -as, -a, -ons, -ez, -ont à l'infinitif du verbe.\n\n" +
+                        "Exemple : 'Je mangerai', 'Tu finiras'";
+            default:
+                return "Explication détaillée du point de grammaire " + grammaire + " avec des exemples concrets pour bien comprendre son utilisation.";
+        }
+    }
+
+    private String genererExercices(String theme, String grammaire, int difficulte) {
+        StringBuilder exos = new StringBuilder();
+
+        exos.append("Exercice 1 : Complétez les phrases avec le vocabulaire du thème '" + theme + "'\n");
+        exos.append("------------------------------------------------------------\n");
+
+        switch (theme) {
+            case "Voyage et Tourisme":
+                exos.append("1. Je dois prendre mon ________ pour partir en vacances.\n");
+                exos.append("2. Nous avons réservé une ________ à l'hôtel.\n");
+                exos.append("3. N'oubliez pas votre ________ pour passer la douane.\n");
+                break;
+            case "Affaires et Travail":
+                exos.append("1. La ________ est prévue à 14h dans la salle de conférence.\n");
+                exos.append("2. Je dois rendre mon ________ avant vendredi.\n");
+                exos.append("3. Mon ________ est très satisfait de mon travail.\n");
+                break;
+            default:
+                exos.append("1. Complétez avec un mot du vocabulaire : __________\n");
+                exos.append("2. Complétez avec un mot du vocabulaire : __________\n");
+                exos.append("3. Complétez avec un mot du vocabulaire : __________\n");
+        }
+
+        exos.append("\nExercice 2 : Conjuguez les verbes au " + grammaire + "\n");
+        exos.append("------------------------------------------------------------\n");
+        exos.append("1. Je (manger) ________ au restaurant ce soir.\n");
+        exos.append("2. Nous (aller) ________ à la plage demain.\n");
+        exos.append("3. Ils (finir) ________ leur travail à 17h.\n");
+
+        if (difficulte >= 4) {
+            exos.append("\nExercice 3 (Avancé) : Rédigez un petit paragraphe sur le thème '" + theme + "'\n");
+            exos.append("en utilisant le " + grammaire + " et au moins 5 mots de vocabulaire.\n");
+            exos.append("------------------------------------------------------------\n");
+            exos.append("Rédigez ici : _____________________________________________\n");
+        }
+
+        return exos.toString();
+    }
+
+    private String genererCorrections(String theme, String grammaire) {
+        StringBuilder corrections = new StringBuilder();
+
+        corrections.append("Correction Exercice 1 :\n");
+        switch (theme) {
+            case "Voyage et Tourisme":
+                corrections.append("1. avion / billet\n2. chambre\n3. passeport\n");
+                break;
+            case "Affaires et Travail":
+                corrections.append("1. réunion\n2. rapport / projet\n3. patron\n");
+                break;
+            default:
+                corrections.append("1. [réponse attendue]\n2. [réponse attendue]\n3. [réponse attendue]\n");
+        }
+
+        corrections.append("\nCorrection Exercice 2 :\n");
+        if (grammaire.equals("Présent de l'indicatif")) {
+            corrections.append("1. mange\n2. allons\n3. finissent\n");
+        } else if (grammaire.equals("Passé composé")) {
+            corrections.append("1. ai mangé\n2. sommes allé(e)s\n3. ont fini\n");
+        } else if (grammaire.equals("Futur simple")) {
+            corrections.append("1. mangerai\n2. irons\n3. finiront\n");
+        } else {
+            corrections.append("1. [conjugaison attendue]\n2. [conjugaison attendue]\n3. [conjugaison attendue]\n");
+        }
+
+        corrections.append("\nNotez-vous vous-même pour l'exercice 3 (10 points maximum).\n");
+        corrections.append("Plus vous pratiquez, plus vous progressez !");
+
+        return corrections.toString();
+    }
+    @FXML
+    private void exporterPDF() {
+        if (dernierCoursGenere == null || dernierCoursGenere.isEmpty()) {
+            showAlert("Information", "Veuillez d'abord générer un cours.");
+            return;
+        }
+
+        if (niveauSelectionne == null) {
+            showAlert("Information", "Veuillez sélectionner un niveau pour le cours.");
+            return;
+        }
+
+        try {
+            String langueNom = this.langue != null ? this.langue.getNom() : "cours";
+            String fileName = "cours_" + niveauSelectionne + "_" + langueNom + "_" +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".pdf";
+
+            // Chemin vers le dossier de la langue spécifique
+            String baseDir = "src/main/resources/com/example/pijava_fluently/cours_pdf/";
+            String langueDir = baseDir + langueNom + "/";
+            File dir = new File(langueDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            String filePath = langueDir + fileName;
+
+            // Création du PDF
+            PdfWriter writer = new PdfWriter(new FileOutputStream(filePath));
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+
+            // Configuration des marges
+            document.setMargins(50, 50, 50, 50);
+
+            // Définir les couleurs
+            com.itextpdf.kernel.colors.DeviceRgb PRIMARY_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(108, 99, 255);
+            com.itextpdf.kernel.colors.DeviceRgb SECONDARY_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(139, 92, 246);
+            com.itextpdf.kernel.colors.DeviceRgb TITLE_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(26, 29, 46);
+            com.itextpdf.kernel.colors.DeviceRgb TEXT_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(74, 77, 106);
+            com.itextpdf.kernel.colors.DeviceRgb ACCENT_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(16, 185, 129);
+            com.itextpdf.kernel.colors.DeviceRgb SECTION_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(245, 158, 11);
+
+            // ========== EN-TÊTE ==========
+            com.itextpdf.layout.element.Table headerTable = new com.itextpdf.layout.element.Table(2);
+            headerTable.setWidth(com.itextpdf.kernel.geom.PageSize.A4.getWidth() - 100);
+            headerTable.setMarginBottom(20);
+
+            // Cellule gauche
+            com.itextpdf.layout.element.Cell titleCell = new com.itextpdf.layout.element.Cell();
+            titleCell.setBackgroundColor(PRIMARY_COLOR);
+            titleCell.setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+            titleCell.setPadding(20);
+            titleCell.setBorderRadius(new com.itextpdf.layout.properties.BorderRadius(10));
+
+            Paragraph titlePara = new Paragraph("📚 " + langueNom.toUpperCase())
+                    .setFontSize(18)
+                    .setBold()
+                    .setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE);
+            titleCell.add(titlePara);
+
+            // Cellule droite
+            com.itextpdf.layout.element.Cell levelCell = new com.itextpdf.layout.element.Cell();
+            levelCell.setBackgroundColor(SECONDARY_COLOR);
+            levelCell.setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+            levelCell.setPadding(20);
+            levelCell.setTextAlignment(TextAlignment.RIGHT);
+            levelCell.setBorderRadius(new com.itextpdf.layout.properties.BorderRadius(10));
+
+            Paragraph levelPara = new Paragraph("Niveau " + niveauSelectionne)
+                    .setFontSize(14)
+                    .setBold()
+                    .setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE);
+            levelCell.add(levelPara);
+
+            headerTable.addCell(titleCell);
+            headerTable.addCell(levelCell);
+            document.add(headerTable);
+
+            // ========== TRAITEMENT DU CONTENU ==========
+            String contenu = dernierCoursGenere;
+
+            // Nettoyer le contenu (supprimer les caractères indésirables)
+            contenu = contenu.replaceAll("\\*\\*", "");      // Supprimer **
+            contenu = contenu.replaceAll("#", "");           // Supprimer #
+            contenu = contenu.replaceAll("--", "");          // Supprimer --
+            contenu = contenu.replaceAll("\\|\\|", "");      // Supprimer ||
+
+            String[] lignes = contenu.split("\n");
+            boolean inTable = false;
+
+            for (String ligne : lignes) {
+                if (ligne.trim().isEmpty()) {
+                    document.add(new Paragraph(" "));
+                    continue;
+                }
+
+                // Détection du début d'un tableau
+                if (ligne.contains("|") && ligne.contains("---")) {
+                    inTable = true;
+                    continue;
+                }
+
+                // Traitement des tableaux
+                if (inTable && ligne.contains("|")) {
+                    String[] cells = ligne.split("\\|");
+                    if (cells.length >= 2) {
+                        com.itextpdf.layout.element.Table pdfTable = new com.itextpdf.layout.element.Table(cells.length - 1);
+                        pdfTable.setWidth(com.itextpdf.kernel.geom.PageSize.A4.getWidth() - 100);
+                        pdfTable.setMarginTop(10);
+                        pdfTable.setMarginBottom(10);
+
+                        for (int i = 1; i < cells.length - 1; i++) {
+                            String cellContent = cells[i].trim();
+                            com.itextpdf.layout.element.Cell pdfCell = new com.itextpdf.layout.element.Cell();
+                            pdfCell.add(new Paragraph(cellContent).setFontSize(10));
+                            pdfCell.setPadding(8);
+
+                            // En-tête du tableau (première ligne)
+                            if (ligne.contains("Word") || ligne.contains("Mot") || ligne.contains("Définition")) {
+                                pdfCell.setBackgroundColor(SECONDARY_COLOR);
+                                pdfCell.setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE);
+                                pdfCell.setBold();
+                            }
+                            pdfTable.addCell(pdfCell);
+                        }
+                        document.add(pdfTable);
+                    }
+                    inTable = false;
+                    continue;
+                }
+
+                // Titre principal (commence par 📚)
+                if (ligne.startsWith("📚")) {
+                    Paragraph p = new Paragraph(ligne)
+                            .setFontSize(24)
+                            .setBold()
+                            .setFontColor(TITLE_COLOR)
+                            .setTextAlignment(TextAlignment.CENTER)
+                            .setMarginTop(20)
+                            .setMarginBottom(10);
+                    document.add(p);
+                }
+                // Sections principales (🎯, 📝, 📖, 💬, ✏️, ✅, 💡, 🚀)
+                else if (ligne.startsWith("🎯") || ligne.startsWith("📝") || ligne.startsWith("📖") ||
+                        ligne.startsWith("💬") || ligne.startsWith("✏️") || ligne.startsWith("✅") ||
+                        ligne.startsWith("💡") || ligne.startsWith("🚀")) {
+
+                    Paragraph p = new Paragraph(ligne)
+                            .setFontSize(16)
+                            .setBold()
+                            .setFontColor(PRIMARY_COLOR)
+                            .setMarginTop(20)
+                            .setMarginBottom(8);
+                    document.add(p);
+                }
+                // Sous-titres (avec ---)
+                else if (ligne.startsWith("---")) {
+                    // Créer une ligne de séparation avec iText 7
+                    com.itextpdf.layout.element.Paragraph linePara = new com.itextpdf.layout.element.Paragraph()
+                            .add(new com.itextpdf.layout.element.Text("_________________________________________"))
+                            .setFontColor(PRIMARY_COLOR)
+                            .setMarginTop(5)
+                            .setMarginBottom(5);
+                    document.add(linePara);
+                }
+                // Liste à puces
+                else if (ligne.trim().startsWith("•") || ligne.trim().startsWith("-") || ligne.trim().startsWith("*")) {
+                    String cleanLine = ligne.trim().replaceFirst("[•\\-*] ", "• ");
+                    Paragraph p = new Paragraph("    " + cleanLine)
+                            .setFontSize(11)
+                            .setFontColor(TEXT_COLOR)
+                            .setMarginLeft(20);
+                    document.add(p);
+                }
+                // Exercices numérotés
+                else if (ligne.matches("\\d+\\..*") || ligne.matches("Exercice \\d+.*")) {
+                    Paragraph p = new Paragraph(ligne)
+                            .setFontSize(12)
+                            .setBold()
+                            .setFontColor(ACCENT_COLOR)
+                            .setMarginTop(12)
+                            .setMarginBottom(4);
+                    document.add(p);
+                }
+                // Questions d'exercices (commencent par des lettres ou chiffres)
+                else if (ligne.matches("^[a-z]\\) .*") || ligne.matches("^[0-9]\\. .*")) {
+                    Paragraph p = new Paragraph("    " + ligne)
+                            .setFontSize(11)
+                            .setFontColor(TEXT_COLOR)
+                            .setMarginLeft(15);
+                    document.add(p);
+                }
+                // Texte normal
+                else {
+                    // Nettoyer la ligne
+                    String cleanLine = ligne.trim();
+                    if (!cleanLine.isEmpty()) {
+                        Paragraph p = new Paragraph(cleanLine)
+                                .setFontSize(11)
+                                .setFontColor(TEXT_COLOR)
+                                .setMarginBottom(4);
+                        document.add(p);
+                    }
+                }
+            }
+
+            // ========== PIED DE PAGE ==========
+            com.itextpdf.layout.element.Table footerTable = new com.itextpdf.layout.element.Table(1);
+            footerTable.setWidth(com.itextpdf.kernel.geom.PageSize.A4.getWidth() - 100);
+            footerTable.setMarginTop(30);
+
+            com.itextpdf.layout.element.Cell footerCell = new com.itextpdf.layout.element.Cell();
+            footerCell.setBackgroundColor(PRIMARY_COLOR);
+            footerCell.setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+            footerCell.setPadding(12);
+            footerCell.setTextAlignment(TextAlignment.CENTER);
+            footerCell.setBorderRadius(new com.itextpdf.layout.properties.BorderRadius(10));
+
+            Paragraph footerPara = new Paragraph("✨ Cours généré par Fluently - " +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")))
+                    .setFontSize(9)
+                    .setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE);
+            footerCell.add(footerPara);
+
+            footerTable.addCell(footerCell);
+            document.add(footerTable);
+
+            document.close();
+
+            // Ajouter le cours dans le cercle du niveau choisi
+            ajouterCoursDansNiveau(niveauSelectionne, fileName, filePath);
+
+            showAlert("Succès", "✅ PDF exporté et ajouté au niveau " + niveauSelectionne + " !\n\nEmplacement : " + filePath);
+            Desktop.getDesktop().open(dir);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible d'exporter le PDF : " + e.getMessage());
+        }
+    }
+
+    private void ajouterCoursDansNiveau(String niveau, String fileName, String filePath) {
+        // Créer un cours virtuel pour l'afficher dans le cercle
+        Cours coursPerso = new Cours();
+        // Correction : cast explicite de long vers int
+        coursPerso.setId(-(int)(System.currentTimeMillis() % Integer.MAX_VALUE));
+        coursPerso.setNumero(getNextCoursNumber(niveau));
+        coursPerso.setRessource(filePath);
+        coursPerso.setDateCreation(LocalDateTime.now().toLocalDate());
+
+        // Ajouter à la map des cours par niveau
+        List<Cours> coursList = coursParNiveau.getOrDefault(niveau, new ArrayList<>());
+        coursList.add(coursPerso);
+        coursParNiveau.put(niveau, coursList);
+
+        // Mettre à jour l'affichage
+        afficherNiveaux();
+    }
+
+    private int getNextCoursNumber(String niveau) {
+        List<Cours> cours = coursParNiveau.getOrDefault(niveau, new ArrayList<>());
+        int maxNumero = 0;
+        for (Cours c : cours) {
+            if (c.getNumero() > maxNumero) maxNumero = c.getNumero();
+        }
+        return maxNumero + 1;
+    }
+    @FXML private void selectionnerNiveauA1() { setNiveauSelectionne("A1"); }
+    @FXML private void selectionnerNiveauA2() { setNiveauSelectionne("A2"); }
+    @FXML private void selectionnerNiveauB1() { setNiveauSelectionne("B1"); }
+    @FXML private void selectionnerNiveauB2() { setNiveauSelectionne("B2"); }
+    @FXML private void selectionnerNiveauC1() { setNiveauSelectionne("C1"); }
+    @FXML private void selectionnerNiveauC2() { setNiveauSelectionne("C2"); }
+
+    private void setNiveauSelectionne(String niveau) {
+        niveauSelectionne = niveau;
+        niveauSelectionneLabel.setText("Niveau sélectionné : " + niveau);
+
+        // Reset styles de tous les cercles
+        resetNiveauStyles();
+
+        // Appliquer le style actif sur le cercle choisi
+        String styleActif = "-fx-background-color: #FFD700; -fx-background-radius: 40; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.6), 12, 0, 0, 4);";
+
+        switch (niveau) {
+            case "A1": updateNiveauStyle(niveauA1Btn, styleActif); break;
+            case "A2": updateNiveauStyle(niveauA2Btn, styleActif); break;
+            case "B1": updateNiveauStyle(niveauB1Btn, styleActif); break;
+            case "B2": updateNiveauStyle(niveauB2Btn, styleActif); break;
+            case "C1": updateNiveauStyle(niveauC1Btn, styleActif); break;
+            case "C2": updateNiveauStyle(niveauC2Btn, styleActif); break;
+        }
+    }
+
+    private void resetNiveauStyles() {
+        String styleParDefaut = "-fx-background-color: #6C63FF; -fx-background-radius: 40; -fx-padding: 15;";
+        updateNiveauStyle(niveauA1Btn, styleParDefaut + " -fx-background-color: #6C63FF;");
+        updateNiveauStyle(niveauA2Btn, styleParDefaut + " -fx-background-color: #8B5CF6;");
+        updateNiveauStyle(niveauB1Btn, styleParDefaut + " -fx-background-color: #F59E0B;");
+        updateNiveauStyle(niveauB2Btn, styleParDefaut + " -fx-background-color: #EF4444;");
+        updateNiveauStyle(niveauC1Btn, styleParDefaut + " -fx-background-color: #EC4899;");
+        updateNiveauStyle(niveauC2Btn, styleParDefaut + " -fx-background-color: #14B8A6;");
+    }
+
+    private void updateNiveauStyle(VBox container, String style) {
+        if (container != null && container.getChildren().size() > 0) {
+            Node circle = container.getChildren().get(0);
+            if (circle instanceof StackPane) {
+                circle.setStyle(style);
+            }
+        }
+    }
+
+    // Ajoutez ces attributs FXML pour les cercles
+    @FXML private VBox niveauA1Btn, niveauA2Btn, niveauB1Btn, niveauB2Btn, niveauC1Btn, niveauC2Btn;
+
+
+
+    /**
+     * Crée une carte design pour un cours PDF
+     */
+    private VBox createPdfCard(Cours cours) {
+        VBox card = new VBox();
+        card.setAlignment(Pos.CENTER);
+        card.setSpacing(10);
+        card.setPrefWidth(180);
+        card.setPrefHeight(160);
+        card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 16; -fx-border-color: #E0E3F0; -fx-border-radius: 16; -fx-border-width: 1; -fx-cursor: hand;");
+
+        // Effet hover
+        card.setOnMouseEntered(e -> {
+            card.setStyle("-fx-background-color: #F0F2FF; -fx-background-radius: 16; -fx-border-color: #6C63FF; -fx-border-radius: 16; -fx-border-width: 2;");
+            card.setTranslateY(-4);
+        });
+        card.setOnMouseExited(e -> {
+            card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 16; -fx-border-color: #E0E3F0; -fx-border-radius: 16; -fx-border-width: 1;");
+            card.setTranslateY(0);
+        });
+
+        // Icône PDF
+        StackPane iconContainer = new StackPane();
+        iconContainer.setPrefSize(60, 60);
+        iconContainer.setStyle("-fx-background-color: #FFE4E6; -fx-background-radius: 30;");
+        Label pdfIcon = new Label("📄");
+        pdfIcon.setStyle("-fx-font-size: 32px;");
+        iconContainer.getChildren().add(pdfIcon);
+
+        // Niveau du cours
+        String niveau = trouverNiveauDuCours(cours);
+        Label niveauBadge = new Label(niveau != null ? niveau : "Cours");
+        niveauBadge.setStyle("-fx-background-color: " + getCouleurNiveau(niveau) + "; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 3 10 3 10;");
+
+        // Numéro du cours
+        Label numeroLabel = new Label("Cours N°" + cours.getNumero());
+        numeroLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;");
+
+        // Date
+        String dateStr = cours.getDateCreation() != null ? cours.getDateCreation().toString() : "";
+        Label dateLabel = new Label(dateStr);
+        dateLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #8A8FA8;");
+
+        // Bouton ouvrir
+        Button openBtn = new Button("📖 Ouvrir");
+        openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;");
+        openBtn.setOnMouseEntered(e -> openBtn.setStyle("-fx-background-color: #5849C4; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;"));
+        openBtn.setOnMouseExited(e -> openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;"));
+        openBtn.setOnAction(e -> ouvrirPdfCours(cours));
+
+        card.getChildren().addAll(iconContainer, niveauBadge, numeroLabel, dateLabel, openBtn);
+        VBox.setMargin(iconContainer, new Insets(10, 0, 0, 0));
+
+        return card;
+    }
+
+    /**
+     * Ouvre un cours PDF
+     */
+    private void ouvrirPdfCours(Cours cours) {
+        if (cours.getRessource() != null) {
+            File pdfFile = new File(cours.getRessource());
+            if (pdfFile.exists()) {
+                try {
+                    Desktop.getDesktop().open(pdfFile);
+                } catch (IOException e) {
+                    showAlert("Erreur", "Impossible d'ouvrir le PDF : " + e.getMessage());
+                }
+            } else {
+                showAlert("Erreur", "Fichier PDF introuvable : " + cours.getRessource());
+            }
+        }
+    }
+
+    /**
+     * Retourne la couleur associée au niveau
+     */
+    private String getCouleurNiveau(String niveau) {
+        if (niveau == null) return "#6C63FF";
+        switch (niveau) {
+            case "A1": return "#6C63FF";
+            case "A2": return "#8B5CF6";
+            case "B1": return "#F59E0B";
+            case "B2": return "#EF4444";
+            case "C1": return "#EC4899";
+            case "C2": return "#14B8A6";
+            default: return "#6C63FF";
+        }
+    }
+
+    /**
+     * Trouve le niveau d'un cours
+     */
+    private String trouverNiveauDuCours(Cours cours) {
+        for (Map.Entry<String, List<Cours>> entry : coursParNiveau.entrySet()) {
+            if (entry.getValue().contains(cours)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+    /**
+     * Affiche tous les cours PDF générés en lisant directement le dossier ressources
+     */
+    private void afficherCoursPdfGeneres() {
+        if (coursPdfContainer == null) return;
+
+        coursPdfContainer.getChildren().clear();
+
+        // Récupérer le nom de la langue actuelle
+        String langueActuelle = this.langue != null ? this.langue.getNom() : null;
+        if (langueActuelle == null) {
+            emptyCoursMessage.setVisible(true);
+            emptyCoursMessage.setManaged(true);
+            coursPdfScroll.setVisible(false);
+            coursPdfScroll.setManaged(false);
+            totalCoursCount.setText("0 cours");
+            return;
+        }
+
+        // Chemin vers le dossier de la langue spécifique
+        String langueDir = "src/main/resources/com/example/pijava_fluently/cours_pdf/" + langueActuelle + "/";
+        File dossierLangue = new File(langueDir);
+
+        List<File> fichiersPdf = new ArrayList<>();
+
+        if (dossierLangue.exists() && dossierLangue.isDirectory()) {
+            File[] fichiers = dossierLangue.listFiles((dir, name) -> name.toLowerCase().endsWith(".pdf"));
+            if (fichiers != null) {
+                fichiersPdf = Arrays.asList(fichiers);
+                // Trier par date de modification (plus récent d'abord)
+                fichiersPdf.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+            }
+        }
+
+        int total = fichiersPdf.size();
+        totalCoursCount.setText(total + " cours");
+
+        if (total == 0) {
+            emptyCoursMessage.setVisible(true);
+            emptyCoursMessage.setManaged(true);
+            coursPdfScroll.setVisible(false);
+            coursPdfScroll.setManaged(false);
+            return;
+        }
+
+        emptyCoursMessage.setVisible(false);
+        emptyCoursMessage.setManaged(false);
+        coursPdfScroll.setVisible(true);
+        coursPdfScroll.setManaged(true);
+
+        // Créer une carte pour chaque fichier PDF
+        for (File pdfFile : fichiersPdf) {
+            VBox card = createPdfCardFromFile(pdfFile);
+            coursPdfContainer.getChildren().add(card);
+        }
+    }
+
+    /**
+     * Crée une carte design pour un fichier PDF
+     */
+    private VBox createPdfCardFromFile(File pdfFile) {
+        String fileName = pdfFile.getName();
+        // Extraire le niveau du nom du fichier (ex: cours_A1_Anglais_20250415_...pdf)
+        String niveau = extraireNiveauFromFileName(fileName);
+        // Extraire la date
+        String dateStr = extraireDateFromFileName(fileName);
+        // Extraire le numéro du cours
+        int numero = extraireNumeroFromFileName(fileName);
+
+        VBox card = new VBox();
+        card.setAlignment(Pos.CENTER);
+        card.setSpacing(10);
+        card.setPrefWidth(180);
+        card.setPrefHeight(160);
+        card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 16; -fx-border-color: #E0E3F0; -fx-border-radius: 16; -fx-border-width: 1; -fx-cursor: hand;");
+
+        // Effet hover
+        card.setOnMouseEntered(e -> {
+            card.setStyle("-fx-background-color: #F0F2FF; -fx-background-radius: 16; -fx-border-color: #6C63FF; -fx-border-radius: 16; -fx-border-width: 2;");
+            card.setTranslateY(-4);
+        });
+        card.setOnMouseExited(e -> {
+            card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 16; -fx-border-color: #E0E3F0; -fx-border-radius: 16; -fx-border-width: 1;");
+            card.setTranslateY(0);
+        });
+
+        // Icône PDF
+        StackPane iconContainer = new StackPane();
+        iconContainer.setPrefSize(60, 60);
+        iconContainer.setStyle("-fx-background-color: #FFE4E6; -fx-background-radius: 30;");
+        Label pdfIcon = new Label("📄");
+        pdfIcon.setStyle("-fx-font-size: 32px;");
+        iconContainer.getChildren().add(pdfIcon);
+
+        // Niveau du cours
+        Label niveauBadge = new Label(niveau != null ? niveau : "Cours");
+        niveauBadge.setStyle("-fx-background-color: " + getCouleurNiveau(niveau) + "; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 3 10 3 10;");
+
+        // Nom du fichier (tronqué)
+        String displayName = fileName.length() > 25 ? fileName.substring(0, 22) + "..." : fileName;
+        Label nameLabel = new Label(displayName);
+        nameLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;");
+        nameLabel.setWrapText(true);
+        nameLabel.setMaxWidth(160);
+
+        // Date
+        Label dateLabel = new Label(dateStr);
+        dateLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #8A8FA8;");
+
+        // Bouton ouvrir
+        Button openBtn = new Button("📖 Ouvrir");
+        openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;");
+        openBtn.setOnMouseEntered(e -> openBtn.setStyle("-fx-background-color: #5849C4; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;"));
+        openBtn.setOnMouseExited(e -> openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;"));
+        openBtn.setOnAction(e -> {
+            try {
+                Desktop.getDesktop().open(pdfFile);
+            } catch (IOException ex) {
+                showAlert("Erreur", "Impossible d'ouvrir le PDF : " + ex.getMessage());
+            }
+        });
+
+        card.getChildren().addAll(iconContainer, niveauBadge, nameLabel, dateLabel, openBtn);
+        VBox.setMargin(iconContainer, new Insets(10, 0, 0, 0));
+
+        return card;
+    }
+
+    /**
+     * Extrait le niveau du nom du fichier (ex: cours_A1_Anglais_... -> A1)
+     */
+    private String extraireNiveauFromFileName(String fileName) {
+        if (fileName.startsWith("cours_")) {
+            String[] parts = fileName.split("_");
+            if (parts.length >= 2) {
+                String niveau = parts[1];
+                if (niveau.matches("A1|A2|B1|B2|C1|C2")) {
+                    return niveau;
+                }
+            }
+        }
+        return "Cours";
+    }
+
+    /**
+     * Extrait la date du nom du fichier
+     */
+    private String extraireDateFromFileName(String fileName) {
+        try {
+            // Format: cours_A1_Anglais_20250415_143022.pdf
+            String[] parts = fileName.split("_");
+            if (parts.length >= 4) {
+                String datePart = parts[3];
+                if (datePart.length() == 8) {
+                    return datePart.substring(0, 4) + "-" + datePart.substring(4, 6) + "-" + datePart.substring(6, 8);
+                }
+            }
+        } catch (Exception e) {}
+
+        // Sinon, utiliser la date de modification du fichier
+        return "";
+    }
+
+    /**
+     * Extrait le numéro du cours (ordre)
+     */
+    private int extraireNumeroFromFileName(String fileName) {
+        // Par défaut, retourner un numéro basé sur la position
+        return 1;
+    }
+    @FXML
+    private void rechercherVideosYouTube() {
+        String query = youtubeSearchField.getText().trim();
+
+        if (query.isEmpty()) {
+            showAlert("Information", "Veuillez entrer un mot-clé pour la recherche.");
+            return;
+        }
+
+        // Ajouter la langue à la recherche
+        String langueNom = this.langue != null ? this.langue.getNom() : "";
+        String rechercheComplet = query + " " + langueNom + " cours";
+
+        // Afficher le chargement
+        youtubeLoading.setVisible(true);
+        youtubeLoading.setManaged(true);
+        youtubeScrollPane.setVisible(false);
+        youtubeScrollPane.setManaged(false);
+        youtubeEmptyMessage.setVisible(false);
+        youtubeEmptyMessage.setManaged(false);
+
+        // Vider les résultats précédents
+        youtubeResultsContainer.getChildren().clear();
+
+        // Lancer la recherche dans un thread
+        new Thread(() -> {
+            try {
+                List<YouTubeService.VideoInfo> videos = youTubeService.rechercherVideos(rechercheComplet, 10);
+
+                Platform.runLater(() -> {
+                    youtubeLoading.setVisible(false);
+                    youtubeLoading.setManaged(false);
+
+                    if (videos.isEmpty()) {
+                        youtubeEmptyMessage.setVisible(true);
+                        youtubeEmptyMessage.setManaged(true);
+                        youtubeScrollPane.setVisible(false);
+                        youtubeScrollPane.setManaged(false);
+                    } else {
+                        youtubeEmptyMessage.setVisible(false);
+                        youtubeEmptyMessage.setManaged(false);
+                        youtubeScrollPane.setVisible(true);
+                        youtubeScrollPane.setManaged(true);
+
+                        for (YouTubeService.VideoInfo video : videos) {
+                            VBox videoCard = createYouTubeCard(video);
+                            youtubeResultsContainer.getChildren().add(videoCard);
+                        }
+                    }
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    youtubeLoading.setVisible(false);
+                    youtubeLoading.setManaged(false);
+                    showAlert("Erreur", "Impossible de rechercher les vidéos : " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    private VBox createYouTubeCard(YouTubeService.VideoInfo video) {
+        VBox card = new VBox();
+        card.setSpacing(10);
+        card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 12; -fx-border-color: #E0E3F0; -fx-border-radius: 12; -fx-padding: 12; -fx-cursor: hand;");
+
+        // Effet hover
+        card.setOnMouseEntered(e -> {
+            card.setStyle("-fx-background-color: #F0F2FF; -fx-background-radius: 12; -fx-border-color: #6C63FF; -fx-border-radius: 12; -fx-border-width: 2; -fx-padding: 12;");
+        });
+        card.setOnMouseExited(e -> {
+            card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 12; -fx-border-color: #E0E3F0; -fx-border-radius: 12; -fx-padding: 12;");
+        });
+
+        // Titre
+        Label titleLabel = new Label(video.getTitle());
+        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;");
+        titleLabel.setWrapText(true);
+
+        // Description
+        String desc = video.getDescription();
+        if (desc.length() > 100) {
+            desc = desc.substring(0, 100) + "...";
+        }
+        Label descLabel = new Label(desc);
+        descLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8FA8;");
+        descLabel.setWrapText(true);
+
+        // Bouton Regarder
+        Button watchBtn = new Button("▶ Regarder");
+        watchBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 6 16 6 16; -fx-cursor: hand;");
+        watchBtn.setOnAction(e -> ouvrirVideoYouTube(video.getVideoUrl()));
+
+        card.getChildren().addAll(titleLabel, descLabel, watchBtn);
+
+        return card;
+    }
+
+    private void ouvrirVideoYouTube(String url) {
+        try {
+            Desktop.getDesktop().browse(new URI(url));
+        } catch (IOException | URISyntaxException e) {
+            showAlert("Erreur", "Impossible d'ouvrir la vidéo");
+        }
+    }
+    @FXML
+    private void chercherMotDictionnaire() {
+        String mot = dictionarySearchField.getText().trim();
+        if (mot.isEmpty()) {
+            showAlert("Information", "Veuillez entrer un mot à définir.");
+            return;
+        }
+
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+
+        dictionaryLoading.setVisible(true);
+        dictionaryLoading.setManaged(true);
+        dictionaryResultContainer.setVisible(false);
+        dictionaryResultContainer.setManaged(false);
+        dictionaryEmptyMessage.setVisible(false);
+        dictionaryEmptyMessage.setManaged(false);
+
+        new Thread(() -> {
+            try {
+                // Appel à la nouvelle méthode du dictionnaire
+                String resultat = iaService.chercherDefinition(mot, langueNom);
+
+                Platform.runLater(() -> {
+                    dictionaryLoading.setVisible(false);
+                    dictionaryLoading.setManaged(false);
+
+                    if (resultat != null && !resultat.startsWith("❌")) {
+                        afficherResultatDictionnaire(mot, resultat);
+                    } else {
+                        dictionaryEmptyMessage.setVisible(true);
+                        dictionaryEmptyMessage.setManaged(true);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    dictionaryLoading.setVisible(false);
+                    dictionaryLoading.setManaged(false);
+                    dictionaryEmptyMessage.setVisible(true);
+                    dictionaryEmptyMessage.setManaged(true);
+                    showAlert("Erreur", "Impossible de trouver la définition : " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    private void afficherResultatDictionnaire(String mot, String resultat) {
+        // Parser le résultat formaté
+        String definition = resultat;
+        String exemple = "";
+        String synonymes = "";
+
+        // Extraction des différentes parties
+        if (resultat.contains("📝 DÉFINITION:")) {
+            String[] parts = resultat.split("📝 DÉFINITION:");
+            if (parts.length > 1) {
+                definition = parts[1].split("📌 EXEMPLE:")[0].trim();
+            }
+        }
+        if (resultat.contains("📌 EXEMPLE:")) {
+            String[] parts = resultat.split("📌 EXEMPLE:");
+            if (parts.length > 1) {
+                exemple = parts[1].split("🔗 SYNONYMES:")[0].trim();
+            }
+        }
+        if (resultat.contains("🔗 SYNONYMES:")) {
+            String[] parts = resultat.split("🔗 SYNONYMES:");
+            if (parts.length > 1) {
+                synonymes = parts[1].trim();
+            }
+        }
+
+        dictionaryWord.setText("📖 " + mot.toUpperCase());
+        dictionaryDefinition.setText(definition);
+
+        if (!exemple.isEmpty()) {
+            dictionaryExample.setText("📌 Exemple : " + exemple);
+            dictionaryExample.setVisible(true);
+            dictionaryExample.setManaged(true);
+        } else {
+            dictionaryExample.setVisible(false);
+            dictionaryExample.setManaged(false);
+        }
+
+        if (!synonymes.isEmpty()) {
+            dictionarySynonym.setText("🔗 Synonymes : " + synonymes);
+            dictionarySynonym.setVisible(true);
+            dictionarySynonym.setManaged(true);
+        } else {
+            dictionarySynonym.setVisible(false);
+            dictionarySynonym.setManaged(false);
+        }
+
+        dictionaryResultContainer.setVisible(true);
+        dictionaryResultContainer.setManaged(true);
+    }
+    @FXML
+    private void genererQuiz() {
+        String niveau = gameLevelCombo.getValue();
+        if (niveau == null) {
+            showAlert("Information", "Veuillez sélectionner un niveau pour le quiz.");
+            return;
+        }
+
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+
+        // Afficher le chargement
+        gameLoading.setVisible(true);
+        gameLoading.setManaged(true);
+        quizContainer.setVisible(false);
+        quizContainer.setManaged(false);
+
+        new Thread(() -> {
+            try {
+                String prompt = "Génère un quiz de vocabulaire en " + langueNom + " pour un niveau " + niveau +
+                        ". Format attendu (5 questions):\n" +
+                        "Q1: [question]?|Option1|Option2|Option3|Option4|Réponse correcte (1-4)\n" +
+                        "Q2: [question]?|Option1|Option2|Option3|Option4|Réponse correcte\n" +
+                        "...";
+
+                String resultat = iaService.genererCours(langueNom, "quiz", prompt, "", 3);
+
+                Platform.runLater(() -> {
+                    gameLoading.setVisible(false);
+                    gameLoading.setManaged(false);
+                    parserQuiz(resultat);
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    gameLoading.setVisible(false);
+                    gameLoading.setManaged(false);
+                    showAlert("Erreur", "Impossible de générer le quiz : " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    private void parserQuiz(String quizText) {
+        questionsList.clear();
+        String[] lignes = quizText.split("\n");
+
+        for (String ligne : lignes) {
+            if (ligne.trim().isEmpty()) continue;
+
+            // Format: Q1: Quelle est la traduction de "chat"?|dog|cat|bird|fish|2
+            if (ligne.contains("|")) {
+                String[] parts = ligne.split("\\|");
+                if (parts.length >= 6) {
+                    String question = parts[0].replaceFirst("Q\\d+:", "").trim();
+                    String[] options = Arrays.copyOfRange(parts, 1, 5);
+                    int correctAnswer = Integer.parseInt(parts[5].trim());
+                    questionsList.add(new QuizQuestion(question, options, correctAnswer));
+                }
+            }
+        }
+
+        if (questionsList.isEmpty()) {
+            // Quiz de secours en cas d'échec du parsing
+            creerQuizSecours();
+        }
+
+        currentQuestionIndex = 0;
+        currentScore = 0;
+        startQuiz();
+    }
+
+    private void creerQuizSecours() {
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        questionsList.clear();
+
+        if (langueNom.equalsIgnoreCase("Anglais")) {
+            questionsList.add(new QuizQuestion("What is the translation of 'Bonjour'?",
+                    new String[]{"Goodbye", "Hello", "Thank you", "Please"}, 2));
+            questionsList.add(new QuizQuestion("What does 'Chien' mean in English?",
+                    new String[]{"Cat", "Bird", "Dog", "Fish"}, 3));
+            questionsList.add(new QuizQuestion("Translate 'Rouge' to English",
+                    new String[]{"Blue", "Green", "Yellow", "Red"}, 4));
+            questionsList.add(new QuizQuestion("What is 'Maison' in English?",
+                    new String[]{"Car", "House", "School", "Garden"}, 2));
+            questionsList.add(new QuizQuestion("Translate 'Manger' to English",
+                    new String[]{"To drink", "To sleep", "To eat", "To run"}, 3));
+        } else {
+            questionsList.add(new QuizQuestion("Quelle est la traduction de 'Hello' en français ?",
+                    new String[]{"Au revoir", "Bonjour", "Merci", "S'il vous plaît"}, 2));
+            questionsList.add(new QuizQuestion("Que signifie 'Dog' en français ?",
+                    new String[]{"Chat", "Oiseau", "Chien", "Poisson"}, 3));
+            questionsList.add(new QuizQuestion("Traduisez 'Blue' en français",
+                    new String[]{"Rouge", "Vert", "Jaune", "Bleu"}, 4));
+            questionsList.add(new QuizQuestion("Que veut dire 'Car' en français ?",
+                    new String[]{"Maison", "Voiture", "École", "Jardin"}, 2));
+            questionsList.add(new QuizQuestion("Traduisez 'To eat' en français",
+                    new String[]{"Boire", "Dormir", "Manger", "Courir"}, 3));
+        }
+    }
+
+    private void startQuiz() {
+        currentToggleGroup = new ToggleGroup();
+        quizAnswersContainer.getChildren().clear();
+        quizResultContainer.setVisible(false);
+        quizResultContainer.setManaged(false);
+        nextQuestionBtn.setVisible(true);
+        nextQuestionBtn.setManaged(true);
+
+        afficherQuestion();
+
+        quizContainer.setVisible(true);
+        quizContainer.setManaged(true);
+    }
+
+    private void afficherQuestion() {
+        if (currentQuestionIndex >= questionsList.size()) {
+            terminerQuiz();
+            return;
+        }
+
+        QuizQuestion q = questionsList.get(currentQuestionIndex);
+        quizQuestion.setText((currentQuestionIndex + 1) + ". " + q.getQuestion());
+        quizProgress.setProgress((double) currentQuestionIndex / questionsList.size());
+        quizScore.setText("Score: " + currentScore);
+
+        // Nettoyer les anciennes réponses
+        quizAnswersContainer.getChildren().clear();
+        currentToggleGroup = new ToggleGroup();
+
+        // Ajouter les options
+        for (int i = 0; i < q.getOptions().length; i++) {
+            RadioButton rb = new RadioButton(q.getOptions()[i]);
+            rb.setToggleGroup(currentToggleGroup);
+            rb.setUserData(i + 1);
+            rb.setStyle("-fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8;");
+            rb.setOnAction(e -> verifierReponse((int) rb.getUserData()));
+            quizAnswersContainer.getChildren().add(rb);
+        }
+    }
+
+    private void verifierReponse(int reponseChoisie) {
+        QuizQuestion q = questionsList.get(currentQuestionIndex);
+
+        if (reponseChoisie == q.getCorrectAnswer()) {
+            currentScore += 10;
+            showFeedback("✅ Bonne réponse ! +10 points");
+        } else {
+            String bonneReponse = q.getOptions()[q.getCorrectAnswer() - 1];
+            showFeedback("❌ Mauvaise réponse. La bonne réponse était : " + bonneReponse);
+        }
+
+        // Désactiver les radios après réponse
+        for (Node node : quizAnswersContainer.getChildren()) {
+            if (node instanceof RadioButton) {
+                ((RadioButton) node).setDisable(true);
+            }
+        }
+
+        currentQuestionIndex++;
+        quizScore.setText("Score: " + currentScore);
+
+        if (currentQuestionIndex >= questionsList.size()) {
+            terminerQuiz();
+        }
+    }
+
+    private void showFeedback(String message) {
+        Label feedback = new Label(message);
+        feedback.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 12px; -fx-padding: 5;");
+        quizAnswersContainer.getChildren().add(feedback);
+
+        new Thread(() -> {
+            try { Thread.sleep(1500); } catch (InterruptedException e) {}
+            Platform.runLater(() -> quizAnswersContainer.getChildren().remove(feedback));
+        }).start();
+    }
+
+    @FXML
+    private void nextQuestion() {
+        afficherQuestion();
+    }
+
+    private void terminerQuiz() {
+        nextQuestionBtn.setVisible(false);
+        nextQuestionBtn.setManaged(false);
+
+        int totalPoints = questionsList.size() * 10;
+        double pourcentage = (double) currentScore / totalPoints * 100;
+
+        quizFinalScore.setText("🎉 Score final : " + currentScore + "/" + totalPoints + " (" + (int)pourcentage + "%)");
+
+        String appreciation;
+        if (pourcentage >= 80) appreciation = "Excellent ! Vous maîtrisez très bien ce niveau ! 🏆";
+        else if (pourcentage >= 60) appreciation = "Très bien ! Continuez à pratiquer ! 👍";
+        else if (pourcentage >= 40) appreciation = "Pas mal ! Révisez un peu et réessayez ! 📚";
+        else appreciation = "Continuez vos efforts ! Refaites le quiz après révision ! 💪";
+
+        quizFeedback.setText(appreciation);
+        quizResultContainer.setVisible(true);
+        quizResultContainer.setManaged(true);
+    }
+    @FXML
+    private void startGame() {
+        String gameType = gameTypeCombo.getValue();
+        String niveau = gameLevelCombo.getValue();
+
+        if (gameType == null) {
+            showAlert("Information", "Veuillez sélectionner un type de jeu.");
+            return;
+        }
+        if (niveau == null) {
+            showAlert("Information", "Veuillez sélectionner un niveau.");
+            return;
+        }
+
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+
+        // Cacher tous les conteneurs
+        quizContainer.setVisible(false); quizContainer.setManaged(false);
+        fillGameContainer.setVisible(false); fillGameContainer.setManaged(false);
+
+        gameLoading.setVisible(true); gameLoading.setManaged(true);
+
+        new Thread(() -> {
+            try {
+                String prompt = genererPromptJeu(gameType, langueNom, niveau);
+                String resultat = iaService.genererCours(langueNom, "jeu", prompt, "", 3);
+
+                Platform.runLater(() -> {
+                    gameLoading.setVisible(false); gameLoading.setManaged(false);
+
+                    if (gameType.contains("Quiz")) {
+                        parserQuiz(resultat);
+                    } else if (gameType.contains("Compléter")) {
+                        parserFillGame(resultat);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    gameLoading.setVisible(false); gameLoading.setManaged(false);
+                    showAlert("Erreur", "Impossible de générer le jeu : " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+    private String genererPromptJeu(String gameType, String langue, String niveau) {
+        if (gameType.contains("Quiz")) {
+            return "Génère un quiz de vocabulaire en " + langue + " pour niveau " + niveau +
+                    ". Format: Q1: question?|opt1|opt2|opt3|opt4|numero_reponse(1-4)\n(5 questions)";
+        } else {
+            return "Génère 5 questions à trous en " + langue + " pour niveau " + niveau +
+                    ". Format: PHRASE avec un ____|Option1|Option2|Option3|Option4|numero_reponse(1-4)\n" +
+                    "Exemple: Je ____ à l'école.|vais|vont|allez|allons|1";
+        }
+    }
+
+
+
+    private void parserFillGame(String data) {
+        fillQuestionsList.clear();
+        String[] lignes = data.split("\n");
+
+        for (String ligne : lignes) {
+            if (ligne.trim().isEmpty() || !ligne.contains("|")) continue;
+            String[] parts = ligne.split("\\|");
+            if (parts.length >= 6) {
+                String phrase = parts[0].trim();
+                String[] options = Arrays.copyOfRange(parts, 1, 5);
+                int correctAnswer = Integer.parseInt(parts[5].trim());
+                fillQuestionsList.add(new FillQuestion(phrase, options, correctAnswer));
+            }
+        }
+
+        if (fillQuestionsList.isEmpty()) {
+            creerFillGameSecours();
+        }
+
+        currentFillIndex = 0;
+        currentFillScore = 0;
+        startFillGame();
+    }
+
+    private void creerFillGameSecours() {
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        fillQuestionsList.clear();
+
+        if (langueNom.equalsIgnoreCase("Anglais")) {
+            fillQuestionsList.add(new FillQuestion("I ____ to school every day.", new String[]{"go", "goes", "going", "went"}, 1));
+            fillQuestionsList.add(new FillQuestion("She ____ eating an apple.", new String[]{"am", "are", "is", "be"}, 3));
+            fillQuestionsList.add(new FillQuestion("They ____ playing football now.", new String[]{"am", "is", "are", "be"}, 3));
+            fillQuestionsList.add(new FillQuestion("He ____ to the cinema yesterday.", new String[]{"go", "goes", "went", "going"}, 3));
+            fillQuestionsList.add(new FillQuestion("We ____ happy.", new String[]{"am", "is", "are", "be"}, 3));
+        } else {
+            fillQuestionsList.add(new FillQuestion("Je ____ à l'école.", new String[]{"vais", "vont", "allez", "allons"}, 1));
+            fillQuestionsList.add(new FillQuestion("Elle ____ une pomme.", new String[]{"mange", "manges", "mangent", "mangeons"}, 1));
+            fillQuestionsList.add(new FillQuestion("Ils ____ au parc.", new String[]{"vais", "va", "vont", "allons"}, 3));
+            fillQuestionsList.add(new FillQuestion("Nous ____ contents.", new String[]{"sommes", "êtes", "sont", "est"}, 1));
+            fillQuestionsList.add(new FillQuestion("Tu ____ fatigué.", new String[]{"suis", "es", "est", "sommes"}, 2));
+        }
+    }
+
+    private void startFillGame() {
+        fillOptionsContainer.getChildren().clear();
+        fillResultContainer.setVisible(false); fillResultContainer.setManaged(false);
+        fillNextBtn.setVisible(true); fillNextBtn.setManaged(true);
+        afficherFillQuestion();
+        fillGameContainer.setVisible(true); fillGameContainer.setManaged(true);
+    }
+
+    private void afficherFillQuestion() {
+        if (currentFillIndex >= fillQuestionsList.size()) {
+            terminerFillGame();
+            return;
+        }
+
+        FillQuestion q = fillQuestionsList.get(currentFillIndex);
+        fillQuestion.setText((currentFillIndex + 1) + ". " + q.getPhrase());
+        fillProgress.setProgress((double) currentFillIndex / fillQuestionsList.size());
+        fillScore.setText("Score: " + currentFillScore);
+
+        fillOptionsContainer.getChildren().clear();
+
+        for (int i = 0; i < q.getOptions().length; i++) {
+            Button optionBtn = new Button(q.getOptions()[i]);
+            final int answerIndex = i + 1;
+            optionBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 10 15; -fx-cursor: hand;");
+            optionBtn.setOnAction(e -> verifierFillReponse(answerIndex, optionBtn));
+            fillOptionsContainer.getChildren().add(optionBtn);
+        }
+    }
+
+    private void verifierFillReponse(int reponseChoisie, Button btn) {
+        FillQuestion q = fillQuestionsList.get(currentFillIndex);
+
+        // Désactiver tous les boutons
+        for (Node node : fillOptionsContainer.getChildren()) {
+            if (node instanceof Button) {
+                ((Button) node).setDisable(true);
+            }
+        }
+
+        if (reponseChoisie == q.getCorrectAnswer()) {
+            currentFillScore += 10;
+            btn.setStyle("-fx-background-color: #22C55E; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 10 15;");
+            showFillFeedback("✅ Bonne réponse ! +10 points", true);
+        } else {
+            btn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 10 15;");
+            String bonneReponse = q.getOptions()[q.getCorrectAnswer() - 1];
+            showFillFeedback("❌ Mauvaise réponse. La bonne réponse était : " + bonneReponse, false);
+
+            // Mettre en vert la bonne réponse
+            for (int i = 0; i < fillOptionsContainer.getChildren().size(); i++) {
+                Node node = fillOptionsContainer.getChildren().get(i);
+                if (node instanceof Button && (i + 1) == q.getCorrectAnswer()) {
+                    ((Button) node).setStyle("-fx-background-color: #22C55E; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 10 15;");
+                    break;
+                }
+            }
+        }
+
+        fillScore.setText("Score: " + currentFillScore);
+        currentFillIndex++;
+
+        if (currentFillIndex >= fillQuestionsList.size()) {
+            terminerFillGame();
+        }
+    }
+
+    private void showFillFeedback(String message, boolean isCorrect) {
+        Label feedback = new Label(message);
+        feedback.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 12px; -fx-padding: 5;");
+        fillOptionsContainer.getChildren().add(feedback);
+
+        new Thread(() -> {
+            try { Thread.sleep(1500); } catch (InterruptedException e) {}
+            Platform.runLater(() -> fillOptionsContainer.getChildren().remove(feedback));
+        }).start();
+    }
+
+    @FXML
+    private void nextFillQuestion() {
+        afficherFillQuestion();
+    }
+
+    private void terminerFillGame() {
+        fillNextBtn.setVisible(false); fillNextBtn.setManaged(false);
+
+        int totalPoints = fillQuestionsList.size() * 10;
+        double pourcentage = (double) currentFillScore / totalPoints * 100;
+
+        fillFinalScore.setText("🎉 Score final : " + currentFillScore + "/" + totalPoints + " (" + (int)pourcentage + "%)");
+
+        String appreciation;
+        if (pourcentage >= 80) appreciation = "Excellent ! Vous maîtrisez très bien ce niveau ! 🏆";
+        else if (pourcentage >= 60) appreciation = "Très bien ! Continuez à pratiquer ! 👍";
+        else if (pourcentage >= 40) appreciation = "Pas mal ! Révisez un peu et réessayez ! 📚";
+        else appreciation = "Continuez vos efforts ! Refaites le jeu après révision ! 💪";
+
+        fillFeedback.setText(appreciation);
+        fillResultContainer.setVisible(true); fillResultContainer.setManaged(true);
     }
 }
