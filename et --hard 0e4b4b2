@@ -1,0 +1,62 @@
+[33mac0bf5a[m Initial commit
+[33mabc2b57[m init:structure du projet
+[33md4dfaa1[m Merge branch 'main' of https://github.com/Emna-Bahar/Fluently-Java
+[33me6c8f58[m Correction MyDatabase et packages
+[33m7bdbd0f[m Add IService
+[33m36a7611[m CRUD Gestion Langue
+[33m2c3a895[m interface Back office
+[33m6857a17[m CRUD
+[33m7bb1e13[m interface Front office
+[33m0ff9a27[m Cntrl de saisie + partie front
+[33me17b99b[m CRUD entite objectif
+[33m26da39f[m CRUD entite tache
+[33m15677a1[m controle de saisie
+[33m3f3b4fe[m commit
+[33m352e055[m integration gestion langue-test
+[33mab62e9b[m integration gestion langue-test
+[33m53e0deb[m integration langue
+[33mcbdca1b[m integration langue
+[33m9ac369d[m correction erreur langue
+[33m5465689[m Amelioration interface dashboard et formulaire et ajout du test de niveau dans langue
+[33m16fb2f6[m Amelioration interface dashboard et formulaire et ajout du test de niveau dans langue
+[33mc36c165[m Merge branch 'gestion_test'
+[33m274ccc8[m Amelioration voir details et test partie front
+[33md6c7377[m Merge branch 'gestion_test'
+[33m864e59f[m amelioration affichage voir details
+[33m7e12fb3[m Merge branch 'gestion_test'
+[33m096bb86[m modification design
+[33m853d1fe[m changement userId
+[33mc43b258[m Backoffice
+[33m3e95998[m integration gestion objectifs taches
+[33mf270e78[m integration avec Gestion User
+[33m33ccbe4[m integration avec Gestion User
+[33me371538[m integration avec Gestion User
+[33m8d74357[m User Progress
+[33mf1c9c17[m integration
+[33m9e81511[m CRUD COMPLET access
+[33maef1b58[m integration user
+[33m25fe1c6[m modification
+[33mcc617a4[m integration
+[33m1fc37e7[m modification
+[33m4dc4b02[m integration
+[33m15f8ca6[m correction attribution de niveau
+[33m0fdcacf[m ajout de stats et recommandations et export csv
+[33m217a380[m ajout de stat
+[33m46ca0d4[m des fonctionalites stats filtre pagination
+[33m2bc1a26[m integration filtre stats pagination
+[33m99ff1df[m Merge branch 'gestion_tache' of https://github.com/Emna-Bahar/Fluently-Java into gestion_tache
+[33m06157ee[m Merge branch 'gestion_tache'
+[33m3ec1383[m ajoute de fonctionnalites
+[33m3686283[m first commit
+[33m998ab28[m integration
+[33m47772c7[m integration shiha
+[33m031a689[m crud messages/groupes front & back
+[33mdcca032[m integration avec session
+[33mbfaf9bd[m[33m ([m[1;32mgestion_test[m[33m)[m ajout design Home
+[33m0e4b4b2[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/gestion_test[m[33m, [m[1;31morigin/gestion_tache[m[33m, [m[1;31morigin/HEAD[m[33m)[m correction home
+[33m3b29e31[m CSS back w front | message logs feature added
+[33m6273efd[m merge m3a jme3a
+[33m5829882[m fix 9bal validation el m3alem
+[33m98c9cc9[m fix o5ra XD
+[33mf27c8d5[m Merge remote-tracking branch 'origin/main' into gestion-groupe
+[33mfcedf42[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/gestion-user[m[33m, [m[1;31morigin/gestion-groupe[m[33m)[m chore: stop tracking generated build outputs
