@@ -15,7 +15,7 @@ public class ConfigLoader {
         System.out.println("=== DEBUG CONFIG LOADER ===");
 
         // Méthode 1: Chemin normal
-        String normalPath = "com/example/pijava_fluently/config.properties";
+        String normalPath = "config.properties";
         System.out.println("Recherche avec: " + normalPath);
 
         try (InputStream input = ConfigLoader.class.getClassLoader()
@@ -25,7 +25,7 @@ public class ConfigLoader {
                 System.err.println("❌ Fichier non trouvé au chemin: " + normalPath);
 
                 // Méthode 2: Essayer avec un slash au début
-                String altPath = "/com/example/pijava_fluently/config.properties";
+                String altPath = "/config.properties";
                 System.out.println("Essai avec: " + altPath);
 
                 try (InputStream input2 = ConfigLoader.class.getResourceAsStream(altPath)) {
@@ -39,7 +39,7 @@ public class ConfigLoader {
                             if (input3 == null) {
                                 System.err.println("❌ Fichier introuvable partout !");
                                 System.err.println("Vérifiez que le fichier existe exactement à:");
-                                System.err.println("src/main/resources/com/example/pijava_fluently/config.properties");
+                                System.err.println("src/main/resources/config.properties");
                             } else {
                                 properties.load(input3);
                                 System.out.println("✅ Configuration chargée depuis la racine !");
