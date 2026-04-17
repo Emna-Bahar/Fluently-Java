@@ -31,6 +31,7 @@ public class MesTestsController implements Initializable { //initializable
     @FXML private VBox      vboxContenu;
     @FXML private TextField searchField;
     @FXML private Label     labelResultat;
+    @FXML private StackPane contentArea;
 
     private final TestService        testService        = new TestService();
     private final TestPassageService testPassageService = new TestPassageService();
@@ -773,4 +774,34 @@ public class MesTestsController implements Initializable { //initializable
         };
     }
 
+    @FXML
+    private void handlePerformances() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/performance-analyzer.fxml"));
+            Node vue = loader.load();
+
+            PerformanceAnalyzerController ctrl = loader.getController();
+            ctrl.setCurrentUser(currentUser);
+
+            // Remplacer par vboxContenu au lieu de contentArea
+            if (vboxContenu != null) {
+                vboxContenu.getChildren().clear();
+                vboxContenu.getChildren().add(vue);
+            } else {
+                System.err.println("vboxContenu is null!");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger l'analyseur de performances");
+        }
+    }
+    private void showAlert(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
+    }
 }

@@ -64,4 +64,25 @@ public class TestService implements IService<Test> {
         }
         return list;
     }
+    public Test recupererParId(int id) throws SQLException {
+        String sql = "SELECT * FROM test WHERE id = ?";
+        PreparedStatement ps = cnx.prepareStatement(sql);
+        ps.setInt(1, id);
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) {
+            return mapResultSetToTest(rs);
+        }
+        return null;
+    }
+    private Test mapResultSetToTest(ResultSet rs) throws SQLException {
+        Test t = new Test();
+        t.setId(rs.getInt("id"));
+        t.setType(rs.getString("type"));
+        t.setTitre(rs.getString("titre"));
+        t.setDureeEstimee(rs.getInt("duree_estimee"));
+        t.setLangueId(rs.getInt("langue_id"));
+        t.setNiveauId(rs.getInt("niveau_id"));
+        return t;
+    }
 }

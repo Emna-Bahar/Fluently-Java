@@ -101,4 +101,42 @@ public class TestPassageService implements IService<TestPassage> {
         }
         return list;
     }
+    private TestPassage mapResultSetToTestPassage(ResultSet rs) throws SQLException {
+        TestPassage tp = new TestPassage();
+        tp.setId(rs.getInt("id"));
+        Timestamp dd = rs.getTimestamp("date_debut");
+        if (dd != null) tp.setDateDebut(dd.toLocalDateTime());
+        Timestamp df = rs.getTimestamp("date_fin");
+        if (df != null) tp.setDateFin(df.toLocalDateTime());
+        tp.setResultat(rs.getDouble("resultat"));
+        tp.setScore(rs.getInt("score"));
+        tp.setScoreMax(rs.getInt("score_max"));
+        tp.setStatut(rs.getString("statut"));
+        tp.setTempsPasse(rs.getInt("temps_passe"));
+        tp.setTestId(rs.getInt("test_id"));
+        tp.setUserId(rs.getInt("user_id"));
+        return tp;
+    }
+    public List<TestPassage> recupererParUserEtLangue(int userId, int langueId) throws SQLException {
+        String sql = "SELECT tp.* FROM test_passage tp " +
+                "JOIN test t ON tp.test_id = t.id " +
+                "WHERE tp.user_id = ? AND t.langue_id = ? " +
+                "ORDER BY tp.date_debut DESC";
+
+        List<TestPassage> passages = new ArrayList<>();
+
+        try (PreparedStatement pstmt = cnx.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2, langueId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    passages.add(mapResultSetToTestPassage(rs));
+                }
+            }
+        }
+
+        return passages;
+    }
+
 }
