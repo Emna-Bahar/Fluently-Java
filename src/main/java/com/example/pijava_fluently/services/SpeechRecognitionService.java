@@ -1,34 +1,49 @@
 package com.example.pijava_fluently.services;
 
+import com.example.pijava_fluently.utils.ConfigLoader;
 import com.example.pijava_fluently.utils.LoggerUtil;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import org.vosk.Model;
-import org.vosk.Recognizer;
 
 import javax.sound.sampled.*;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
+import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+/**
+ * Reconnaissance vocale via Whisper (Groq API) - 100% gratuit.
+ * Enregistre le micro en WAV, envoie à l'API Groq Whisper, reçoit le texte.
+ * Fonctionne en FR, EN, ES, DE, AR et +95 langues.
+ * Aucun module JavaFX supplémentaire requis.
+ */
 public class SpeechRecognitionService {
 
-    private TargetDataLine microphone;
-    private final AudioFormat format = new AudioFormat(16000.0f, 16, 1, true, false);
-    private boolean isRecording = false;
+    private static final String GROQ_WHISPER_URL =
+            "https://api.groq.com/openai/v1/audio/transcriptions";
+    private static final String API_KEY =
+            ConfigLoader.get("groq.api.key", "");
+
+    private TargetDataLine     microphone;
+    private final AudioFormat  format      =
+            new AudioFormat(16000.0f, 16, 1, true, false);
+    private boolean            isRecording = false;
     private ByteArrayOutputStream audioBuffer;
-    private Thread recordingThread;
-    private Consumer<String> onResultCallback;
-    private String langue = "fr";
+    private Thread             recordingThread;
+    private Consumer<String>   onResultCallback;
+    private String             langueCode;
 
-    public SpeechRecognitionService() {}
-
-    public SpeechRecognitionService(String langue) {
-        this.langue = langue;
+    public SpeechRecognitionService() {
+        this.langueCode = "fr";
     }
 
+    public SpeechRecognitionService(String langueCode) {
+        this.langueCode = langueCode != null ? langueCode : "fr";
+    }
+
+    // ── Démarrer l'enregistrement ─────────────────────────────────
     public void startRecording(Consumer<String> onResult) {
         if (isRecording) return;
         this.onResultCallback = onResult;
@@ -36,7 +51,8 @@ public class SpeechRecognitionService {
         try {
             DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
             if (!AudioSystem.isLineSupported(info)) {
-                Platform.runLater(() -> showError("Microphone non supporté sur ce système."));
+                Platform.runLater(() ->
+                        showError("Microphone non supporté sur ce système."));
                 if (onResultCallback != null) onResultCallback.accept("");
                 return;
             }
@@ -45,8 +61,8 @@ public class SpeechRecognitionService {
             microphone.open(format);
             microphone.start();
 
-            isRecording = true;
-            audioBuffer = new ByteArrayOutputStream();
+            isRecording   = true;
+            audioBuffer   = new ByteArrayOutputStream();
 
             recordingThread = new Thread(() -> {
                 byte[] buffer = new byte[4096];
@@ -60,11 +76,12 @@ public class SpeechRecognitionService {
             recordingThread.setDaemon(true);
             recordingThread.start();
 
-            LoggerUtil.info("Recording started");
+            LoggerUtil.info("Recording started", "langue", langueCode);
 
         } catch (LineUnavailableException e) {
             LoggerUtil.error("Microphone unavailable", e);
-            Platform.runLater(() -> showError("Microphone non disponible : " + e.getMessage()));
+            Platform.runLater(() ->
+                    showError("Microphone non disponible : " + e.getMessage()));
             if (onResultCallback != null) onResultCallback.accept("");
         }
     }
@@ -73,11 +90,12 @@ public class SpeechRecognitionService {
         startRecording(null);
     }
 
+    // ── Arrêter et transcrire ─────────────────────────────────────
     public CompletableFuture<String> stopRecordingAndRecognize() {
         CompletableFuture<String> future = new CompletableFuture<>();
 
         if (!isRecording || microphone == null) {
-            LoggerUtil.warning("stopRecordingAndRecognize called but not recording");
+            LoggerUtil.warning("Not recording, nothing to transcribe");
             future.complete("");
             return future;
         }
@@ -86,34 +104,31 @@ public class SpeechRecognitionService {
 
         new Thread(() -> {
             try {
-                if (recordingThread != null) {
-                    recordingThread.join(2000);
-                }
-
+                if (recordingThread != null) recordingThread.join(2000);
                 microphone.stop();
                 microphone.close();
 
                 byte[] audioData = audioBuffer.toByteArray();
-                LoggerUtil.info("Audio captured", "bytes", String.valueOf(audioData.length));
+                LoggerUtil.info("Audio captured",
+                        "bytes", String.valueOf(audioData.length));
 
-                if (audioData.length < 2000) {
-                    LoggerUtil.warning("Audio too short, skipping recognition");
+                if (audioData.length < 8000) {
+                    LoggerUtil.warning("Audio too short");
                     future.complete("");
                     if (onResultCallback != null)
                         Platform.runLater(() -> onResultCallback.accept(""));
                     return;
                 }
 
-                String recognizedText = recognizeWithVosk(audioData);
-                LoggerUtil.info("Recognized text", "result", recognizedText);
+                String result = transcribeWithWhisper(audioData);
+                LoggerUtil.info("Whisper result", "text", result);
 
-                future.complete(recognizedText);
-                if (onResultCallback != null) {
-                    Platform.runLater(() -> onResultCallback.accept(recognizedText));
-                }
+                future.complete(result);
+                if (onResultCallback != null)
+                    Platform.runLater(() -> onResultCallback.accept(result));
 
             } catch (Exception e) {
-                LoggerUtil.error("Error during recognition", e);
+                LoggerUtil.error("Error during transcription", e);
                 future.complete("");
                 if (onResultCallback != null)
                     Platform.runLater(() -> onResultCallback.accept(""));
@@ -123,79 +138,157 @@ public class SpeechRecognitionService {
         return future;
     }
 
-    private String recognizeWithVosk(byte[] audioData) {
-        // Choisir le bon dossier modèle selon la langue
-        // IMPORTANT : dans ton projet le dossier s'appelle "model" (pas "models")
-        String modelFolder = langue.equals("fr")
-                ? "model/vosk-model-small-fr-0.22"
-                : "model/vosk-model-small-en-us-0.15";
+    // ── Envoi à Groq Whisper ──────────────────────────────────────
+    private String transcribeWithWhisper(byte[] audioData) throws IOException {
+        // Convertir les données PCM brutes en fichier WAV valide
+        byte[] wavData = pcmToWav(audioData, 16000, 1, 16);
 
-        LoggerUtil.info("Looking for Vosk model", "folder", modelFolder);
+        // Boundary pour multipart/form-data
+        String boundary = "fluently_boundary_" + System.currentTimeMillis();
 
-        try {
-            // Méthode 1 : via ClassLoader (fonctionne avec Maven resources)
-            URL modelUrl = getClass().getClassLoader().getResource(modelFolder);
+        URL url = new URL(GROQ_WHISPER_URL);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Authorization", "Bearer " + API_KEY);
+        conn.setRequestProperty("Content-Type",
+                "multipart/form-data; boundary=" + boundary);
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(30000);
+        conn.setDoOutput(true);
 
-            if (modelUrl == null) {
-                LoggerUtil.error("Vosk model not found via ClassLoader: " + modelFolder);
-                // Méthode 2 : chemin absolu relatif au projet
-                File modelFile = new File("src/main/resources/" + modelFolder);
-                if (!modelFile.exists()) {
-                    LoggerUtil.error("Vosk model not found at: " + modelFile.getAbsolutePath());
-                    return "";
-                }
-                return runVosk(modelFile.getAbsolutePath(), audioData);
+        try (OutputStream os = conn.getOutputStream();
+             PrintWriter writer = new PrintWriter(
+                     new OutputStreamWriter(os, StandardCharsets.UTF_8), true)) {
+
+            // -- Fichier audio
+            writer.println("--" + boundary);
+            writer.println("Content-Disposition: form-data; " +
+                    "name=\"file\"; filename=\"audio.wav\"");
+            writer.println("Content-Type: audio/wav");
+            writer.println();
+            writer.flush();
+            os.write(wavData);
+            os.flush();
+            writer.println();
+
+            // -- Modèle Whisper
+            writer.println("--" + boundary);
+            writer.println("Content-Disposition: form-data; name=\"model\"");
+            writer.println();
+            writer.println("whisper-large-v3-turbo");
+
+            // -- Langue (optionnel mais améliore la précision)
+            writer.println("--" + boundary);
+            writer.println("Content-Disposition: form-data; name=\"language\"");
+            writer.println();
+            writer.println(langueCode);
+
+            // -- Format de réponse
+            writer.println("--" + boundary);
+            writer.println("Content-Disposition: form-data; name=\"response_format\"");
+            writer.println();
+            writer.println("json");
+
+            // -- Fermeture
+            writer.println("--" + boundary + "--");
+            writer.flush();
+        }
+
+        int status = conn.getResponseCode();
+        LoggerUtil.info("Whisper API status", "code", String.valueOf(status));
+
+        if (status != 200) {
+            // Lire l'erreur
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getErrorStream(),
+                            StandardCharsets.UTF_8))) {
+                StringBuilder err = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) err.append(line);
+                LoggerUtil.error("Whisper API error", "body", err.toString());
             }
-
-            File modelFile = new File(modelUrl.toURI());
-            LoggerUtil.info("Vosk model found", "path", modelFile.getAbsolutePath());
-            return runVosk(modelFile.getAbsolutePath(), audioData);
-
-        } catch (Exception e) {
-            LoggerUtil.error("Vosk recognition failed", e);
             return "";
+        }
+
+        // Lire la réponse JSON : {"text": "le texte transcrit"}
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(conn.getInputStream(),
+                        StandardCharsets.UTF_8))) {
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) response.append(line);
+
+            String body = response.toString();
+            LoggerUtil.info("Whisper response", "body", body);
+
+            return extractTextField(body);
         }
     }
 
-    private String runVosk(String modelPath, byte[] audioData) {
-        try (Model model = new Model(modelPath);
-             Recognizer recognizer = new Recognizer(model, 16000)) {
+    // ── Conversion PCM brut → WAV ─────────────────────────────────
+    private byte[] pcmToWav(byte[] pcmData, int sampleRate,
+                            int channels, int bitsPerSample) throws IOException {
+        ByteArrayOutputStream wavOut = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(wavOut);
 
-            // Traiter l'audio par chunks
-            int chunkSize = 4096;
-            for (int i = 0; i < audioData.length; i += chunkSize) {
-                int end = Math.min(i + chunkSize, audioData.length);
-                byte[] chunk = new byte[end - i];
-                System.arraycopy(audioData, i, chunk, 0, chunk.length);
-                recognizer.acceptWaveForm(chunk, chunk.length);
-            }
+        int byteRate    = sampleRate * channels * bitsPerSample / 8;
+        int blockAlign  = channels * bitsPerSample / 8;
+        int dataSize    = pcmData.length;
+        int chunkSize   = 36 + dataSize;
 
-            String finalResult = recognizer.getFinalResult();
-            LoggerUtil.info("Vosk raw result", "json", finalResult);
-            return parseVoskResult(finalResult);
+        // RIFF header
+        dos.writeBytes("RIFF");
+        writeIntLE(dos, chunkSize);
+        dos.writeBytes("WAVE");
 
-        } catch (Exception e) {
-            LoggerUtil.error("Error running Vosk", e);
-            return "";
-        }
+        // fmt chunk
+        dos.writeBytes("fmt ");
+        writeIntLE(dos, 16);                  // chunk size
+        writeShortLE(dos, (short) 1);         // PCM format
+        writeShortLE(dos, (short) channels);
+        writeIntLE(dos, sampleRate);
+        writeIntLE(dos, byteRate);
+        writeShortLE(dos, (short) blockAlign);
+        writeShortLE(dos, (short) bitsPerSample);
+
+        // data chunk
+        dos.writeBytes("data");
+        writeIntLE(dos, dataSize);
+        dos.write(pcmData);
+        dos.flush();
+
+        return wavOut.toByteArray();
     }
 
-    private String parseVoskResult(String jsonResult) {
-        if (jsonResult == null || jsonResult.isEmpty()) return "";
+    private void writeIntLE(DataOutputStream dos, int v) throws IOException {
+        dos.write(v & 0xFF);
+        dos.write((v >> 8) & 0xFF);
+        dos.write((v >> 16) & 0xFF);
+        dos.write((v >> 24) & 0xFF);
+    }
+
+    private void writeShortLE(DataOutputStream dos, short v) throws IOException {
+        dos.write(v & 0xFF);
+        dos.write((v >> 8) & 0xFF);
+    }
+
+    // ── Extraire "text" du JSON sans dépendance ───────────────────
+    private String extractTextField(String json) {
+        if (json == null || json.isEmpty()) return "";
         try {
             com.fasterxml.jackson.databind.ObjectMapper mapper =
                     new com.fasterxml.jackson.databind.ObjectMapper();
-            java.util.Map<?, ?> map = mapper.readValue(jsonResult, java.util.Map.class);
+            java.util.Map<?, ?> map = mapper.readValue(json, java.util.Map.class);
             Object text = map.get("text");
             return text != null ? text.toString().trim() : "";
         } catch (Exception e) {
-            // Fallback manuel
-            int start = jsonResult.indexOf("\"text\"");
-            if (start == -1) return "";
-            int q1 = jsonResult.indexOf('"', start + 7);
-            int q2 = jsonResult.indexOf('"', q1 + 1);
+            // Fallback regex
+            int idx = json.indexOf("\"text\"");
+            if (idx == -1) return "";
+            int q1 = json.indexOf('"', idx + 7);
+            int q2 = json.indexOf('"', q1 + 1);
             if (q1 == -1 || q2 == -1) return "";
-            return jsonResult.substring(q1 + 1, q2).trim();
+            return json.substring(q1 + 1, q2).trim();
         }
     }
 

@@ -43,15 +43,235 @@ public class AITextCorrectionService {
     // ── Recommandations IA ────────────────────────────────────────
     public Map<String, Object> generateRecommendations(String prompt) {
         try {
-            String rawResponse = callGroq(prompt);
-            String cleanJson = cleanJsonResponse(rawResponse);
-            return parseJsonSafely(cleanJson);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", MODEL);
+            requestBody.put("temperature", 0.3);
+            requestBody.put("max_tokens", 2000);
+
+            List<Map<String, String>> messages = new ArrayList<>();
+
+            Map<String, String> systemMsg = new HashMap<>();
+            systemMsg.put("role", "system");
+            systemMsg.put("content",
+                    "Tu es un conseiller pedagogique. " +
+                            "Tu reponds UNIQUEMENT en JSON valide. " +
+                            "TOUTES les valeurs des chaines DOIVENT etre entre guillemets doubles. " +
+                            "Exemple valide: {\"titre\": \"Mon titre\", \"score\": 75}. " +
+                            "Commence par { et termine par }. Aucun texte avant ou apres.");
+            messages.add(systemMsg);
+
+            Map<String, String> userMsg = new HashMap<>();
+            userMsg.put("role", "user");
+            userMsg.put("content", prompt);
+            messages.add(userMsg);
+
+            requestBody.put("messages", messages);
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer " + ConfigLoader.get("groq.api.key"));
+            headers.put("Content-Type", "application/json");
+
+            Map<String, Object> response =
+                    HttpClientUtil.postJson(GROQ_API_URL, requestBody, headers);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> choices =
+                    (List<Map<String, Object>>) response.get("choices");
+
+            if (choices == null || choices.isEmpty())
+                return getDefaultRecommendations();
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> message =
+                    (Map<String, Object>) choices.get(0).get("message");
+            String content = (String) message.get("content");
+
+            LoggerUtil.info("Raw AI response",
+                    "content", content.substring(0, Math.min(300, content.length())));
+
+            String cleanJson = cleanJsonResponse(content);
+            LoggerUtil.info("Clean JSON",
+                    "preview", cleanJson.substring(0, Math.min(200, cleanJson.length())));
+
+            // Tentative de parsing Jackson
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> result = MAPPER.readValue(cleanJson, Map.class);
+                if (result.containsKey("recommandations")) {
+                    LoggerUtil.info("AI recommendations parsed successfully");
+                    return result;
+                }
+            } catch (Exception e) {
+                LoggerUtil.warning("Jackson failed: " + e.getMessage());
+            }
+
+            // Fallback : parser manuellement les recommandations
+            return parseRecommendationsManually(cleanJson);
+
         } catch (Exception e) {
             LoggerUtil.error("Error generating recommendations", e);
             return getDefaultRecommendations();
         }
     }
+    /**
+     * Parse manuellement le JSON de recommandations quand Jackson échoue.
+     * Gère les cas où l'IA oublie des guillemets.
+     */
+    private Map<String, Object> parseRecommendationsManually(String json) {
+        LoggerUtil.info("Attempting manual recommendations parse");
 
+        List<Map<String, Object>> recommandations = new ArrayList<>();
+
+        // Extraire tous les blocs {...} à l'intérieur du tableau recommandations
+        // On cherche d'abord le tableau
+        int arrayStart = json.indexOf("\"recommandations\"");
+        if (arrayStart == -1) {
+            arrayStart = json.indexOf("recommandations");
+        }
+
+        if (arrayStart != -1) {
+            int bracketOpen = json.indexOf('[', arrayStart);
+            int bracketClose = json.lastIndexOf(']');
+
+            if (bracketOpen != -1 && bracketClose != -1 && bracketClose > bracketOpen) {
+                String arrayContent = json.substring(bracketOpen + 1, bracketClose);
+
+                // Extraire chaque bloc d'objet {}
+                List<String> blocks = extractObjectBlocks(arrayContent);
+
+                for (String block : blocks) {
+                    Map<String, Object> rec = new HashMap<>();
+
+                    // Extraire titre
+                    String titre = extractValueFlexible(block, "titre");
+                    rec.put("titre", titre.isEmpty() ? "Conseil" : titre);
+
+                    // Extraire description
+                    String description = extractValueFlexible(block, "description");
+                    rec.put("description", description.isEmpty()
+                            ? "Continuez vos efforts." : description);
+
+                    // Extraire priorite
+                    String priorite = extractValueFlexible(block, "priorite");
+                    rec.put("priorite", priorite.isEmpty() ? "moyenne" : priorite);
+
+                    // Extraire actions
+                    List<String> actions = extractActionsFlexible(block);
+                    if (actions.isEmpty()) {
+                        actions = List.of("Pratiquer régulièrement",
+                                "Revoir les erreurs");
+                    }
+                    rec.put("actions", actions);
+
+                    if (!titre.isEmpty()) {
+                        recommandations.add(rec);
+                    }
+                }
+            }
+        }
+
+        // Extraire message_encouragement
+        String msg = extractValueFlexible(json, "message_encouragement");
+        if (msg.isEmpty()) msg = "Continue comme ça ! 💪";
+
+        if (!recommandations.isEmpty()) {
+            LoggerUtil.info("Manual parse success",
+                    "count", String.valueOf(recommandations.size()));
+            Map<String, Object> result = new HashMap<>();
+            result.put("recommandations", recommandations);
+            result.put("message_encouragement", msg);
+            return result;
+        }
+
+        LoggerUtil.warning("Manual parse found no recommendations, using default");
+        return getDefaultRecommendations();
+    }
+
+    /**
+     * Extrait les blocs {} d'une chaîne (niveau 1 uniquement).
+     */
+    private List<String> extractObjectBlocks(String content) {
+        List<String> blocks = new ArrayList<>();
+        int depth = 0;
+        int start = -1;
+
+        for (int i = 0; i < content.length(); i++) {
+            char c = content.charAt(i);
+            if (c == '{') {
+                if (depth == 0) start = i;
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0 && start != -1) {
+                    blocks.add(content.substring(start, i + 1));
+                    start = -1;
+                }
+            }
+        }
+        return blocks;
+    }
+
+    /**
+     * Extrait une valeur de façon flexible :
+     * gère "key": "value", "key": value, key: "value", key: value.
+     */
+    private String extractValueFlexible(String json, String key) {
+        // Pattern 1 : "key": "value" (standard)
+        java.util.regex.Pattern p1 = java.util.regex.Pattern.compile(
+                "\"?" + key + "\"?\\s*:\\s*\"([^\"]+)\"");
+        java.util.regex.Matcher m1 = p1.matcher(json);
+        if (m1.find()) return m1.group(1).trim();
+
+        // Pattern 2 : "key": value_sans_guillemets (jusqu'à , ou } ou \n)
+        java.util.regex.Pattern p2 = java.util.regex.Pattern.compile(
+                "\"?" + key + "\"?\\s*:\\s*([^\"\\[\\]{},\\n]+)");
+        java.util.regex.Matcher m2 = p2.matcher(json);
+        if (m2.find()) {
+            String val = m2.group(1).trim();
+            // Ignorer si c'est un chiffre (score etc.)
+            if (!val.matches("\\d+")) return val;
+        }
+
+        return "";
+    }
+
+    /**
+     * Extrait les actions d'un bloc de façon flexible.
+     */
+    private List<String> extractActionsFlexible(String block) {
+        List<String> actions = new ArrayList<>();
+
+        // Trouver le tableau actions
+        int actionsIdx = block.indexOf("\"actions\"");
+        if (actionsIdx == -1) actionsIdx = block.indexOf("actions");
+        if (actionsIdx == -1) return actions;
+
+        int arrStart = block.indexOf('[', actionsIdx);
+        int arrEnd   = block.indexOf(']', actionsIdx);
+        if (arrStart == -1 || arrEnd == -1 || arrEnd <= arrStart) return actions;
+
+        String arrContent = block.substring(arrStart + 1, arrEnd);
+
+        // Pattern 1 : "action en guillemets"
+        java.util.regex.Pattern pQuoted =
+                java.util.regex.Pattern.compile("\"([^\"]+)\"");
+        java.util.regex.Matcher mQuoted = pQuoted.matcher(arrContent);
+        while (mQuoted.find()) {
+            String action = mQuoted.group(1).trim();
+            if (!action.isEmpty()) actions.add(action);
+        }
+
+        // Si aucune action avec guillemets, essayer sans guillemets
+        if (actions.isEmpty()) {
+            String[] parts = arrContent.split(",");
+            for (String part : parts) {
+                String cleaned = part.replaceAll("[\\[\\]\"'{}]", "").trim();
+                if (!cleaned.isEmpty()) actions.add(cleaned);
+            }
+        }
+
+        return actions;
+    }
     // ── Appel API Groq ────────────────────────────────────────────
     private String callGroq(String userPrompt) throws Exception {
         Map<String, Object> requestBody = new HashMap<>();

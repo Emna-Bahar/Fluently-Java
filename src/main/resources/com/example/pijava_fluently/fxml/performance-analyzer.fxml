@@ -4,119 +4,163 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.pijava_fluently.controller.PerformanceAnalyzerController"
-      spacing="20"
-      style="-fx-background-color:#F5F7FF;-fx-padding:30;">
+<ScrollPane
+        xmlns="http://javafx.com/javafx/17"
+        xmlns:fx="http://javafx.com/fxml/1"
+        fx:controller="com.example.pijava_fluently.controller.PerformanceAnalyzerController"
+        fitToWidth="true"
+        style="-fx-background:transparent;-fx-background-color:transparent;-fx-border-color:transparent;">
 
-    <!-- En-tête -->
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="📊 Analyse de Performance"
-               style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <ComboBox fx:id="langueComboBox" prefWidth="180"
-                  style="-fx-background-radius:10;-fx-font-size:14px;"/>
-        <ProgressIndicator fx:id="loadingIndicator"
-                           prefWidth="30" prefHeight="30" visible="false"/>
-    </HBox>
+    <VBox spacing="24" style="-fx-background-color:#F0F2FF;-fx-padding:32;">
 
-    <!-- 5 Cartes statistiques -->
-    <HBox spacing="12">
-        <!-- Tests Passés -->
-        <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="6"
-              style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:18;
-                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-            <Label text="Tests Passés"
-                   style="-fx-text-fill:#8A8FA8;-fx-font-size:12px;"/>
-            <Label fx:id="testsPassesLabel" text="0"
-                   style="-fx-font-size:32px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
-        </VBox>
-        <!-- Score Moyen -->
-        <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="6"
-              style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:18;
-                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-            <Label text="Score Moyen"
-                   style="-fx-text-fill:#8A8FA8;-fx-font-size:12px;"/>
-            <Label fx:id="scoreMoyenLabel" text="0%"
-                   style="-fx-font-size:32px;-fx-font-weight:bold;-fx-text-fill:#059669;"/>
-        </VBox>
-        <!-- Meilleur Score -->
-        <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="6"
-              style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:18;
-                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-            <Label text="Meilleur Score"
-                   style="-fx-text-fill:#8A8FA8;-fx-font-size:12px;"/>
-            <Label fx:id="meilleurScoreLabel" text="0%"
-                   style="-fx-font-size:32px;-fx-font-weight:bold;-fx-text-fill:#F59E0B;"/>
-        </VBox>
-        <!-- Dernier Score -->
-        <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="6"
-              style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:18;
-                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-            <Label text="Dernier Score"
-                   style="-fx-text-fill:#8A8FA8;-fx-font-size:12px;"/>
-            <Label fx:id="dernierScoreLabel" text="0%"
-                   style="-fx-font-size:32px;-fx-font-weight:bold;-fx-text-fill:#3B82F6;"/>
-        </VBox>
-        <!-- Progression -->
-        <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="6"
-              style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:18;
-                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-            <Label text="Progression"
-                   style="-fx-text-fill:#8A8FA8;-fx-font-size:12px;"/>
-            <Label fx:id="progressionLabel" text="—"
-                   style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#6B7280;"/>
-        </VBox>
-    </HBox>
+        <!-- ══ EN-TÊTE ══════════════════════════════════════════════ -->
+        <HBox alignment="CENTER_LEFT" spacing="16">
+            <VBox HBox.hgrow="ALWAYS" spacing="4">
+                <Label text="📊 Analyse de Performance"
+                       style="-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                <Label text="Suivez votre progression et recevez des conseils personnalisés"
+                       style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;"/>
+            </VBox>
+            <HBox alignment="CENTER_RIGHT" spacing="10">
+                <ComboBox fx:id="langueComboBox" prefWidth="160"
+                          style="-fx-background-color:white;-fx-background-radius:12;
+                         -fx-font-size:13px;-fx-border-color:#E0E3F0;
+                         -fx-border-radius:12;-fx-border-width:1;"/>
+                <ProgressIndicator fx:id="loadingIndicator"
+                                   prefWidth="28" prefHeight="28" visible="false"/>
+            </HBox>
+        </HBox>
 
-    <!-- Corps principal -->
-    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <!-- ══ CARTES STATS ═════════════════════════════════════════ -->
+        <HBox spacing="14">
 
-        <!-- Colonne gauche : Compétences -->
-        <VBox prefWidth="300" spacing="12"
-              style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:22;
-                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-            <Label text="🎯 Compétences"
-                   style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
-            <VBox fx:id="competencesContainer" spacing="10" VBox.vgrow="ALWAYS"/>
-        </VBox>
-
-        <!-- Colonne droite : Graphique + Recommandations -->
-        <VBox HBox.hgrow="ALWAYS" spacing="18">
-
-            <!-- Graphique évolution -->
-            <VBox style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:22;
-                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-                <Label text="📈 Évolution du Score"
-                       style="-fx-font-size:16px;-fx-font-weight:bold;
-                              -fx-text-fill:#1A1D2E;-fx-padding:0 0 8 0;"/>
-                <LineChart fx:id="progressionChart" prefHeight="200"
-                           animated="false" legendVisible="false">
-                    <xAxis>
-                        <CategoryAxis label="Date"/>
-                    </xAxis>
-                    <yAxis>
-                        <NumberAxis label="Score %" lowerBound="0"
-                                    upperBound="100" tickUnit="20" autoRanging="false"/>
-                    </yAxis>
-                </LineChart>
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;-fx-background-radius:16;
+                   -fx-padding:20 16;
+                   -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),12,0,0,3);">
+                <Label text="🧪" style="-fx-font-size:22px;"/>
+                <Label fx:id="testsPassesLabel" text="0"
+                       style="-fx-font-size:30px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
+                <Label text="Tests passés" style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
             </VBox>
 
-            <!-- Recommandations IA -->
-            <VBox VBox.vgrow="ALWAYS" spacing="10"
-                  style="-fx-background-color:white;-fx-background-radius:14;-fx-padding:22;
-                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,2);">
-                <Label text="🤖 Recommandations IA"
-                       style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
-                <Label fx:id="messageEncouragementLabel" text=""
-                       style="-fx-font-size:13px;-fx-text-fill:#6C63FF;-fx-font-style:italic;"/>
-                <TextArea fx:id="recommendationsArea"
-                          editable="false" wrapText="true"
-                          prefHeight="150"
-                          style="-fx-background-radius:10;-fx-font-size:13px;
-                                 -fx-background-color:#F8F9FF;"/>
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;-fx-background-radius:16;
+                   -fx-padding:20 16;
+                   -fx-effect:dropshadow(gaussian,rgba(5,150,105,0.10),12,0,0,3);">
+                <Label text="📈" style="-fx-font-size:22px;"/>
+                <Label fx:id="scoreMoyenLabel" text="0%"
+                       style="-fx-font-size:30px;-fx-font-weight:bold;-fx-text-fill:#059669;"/>
+                <Label text="Score moyen" style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
             </VBox>
-        </VBox>
-    </HBox>
-</VBox>
+
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;-fx-background-radius:16;
+                   -fx-padding:20 16;
+                   -fx-effect:dropshadow(gaussian,rgba(245,158,11,0.10),12,0,0,3);">
+                <Label text="🏆" style="-fx-font-size:22px;"/>
+                <Label fx:id="meilleurScoreLabel" text="0%"
+                       style="-fx-font-size:30px;-fx-font-weight:bold;-fx-text-fill:#D97706;"/>
+                <Label text="Meilleur score" style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+            </VBox>
+
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;-fx-background-radius:16;
+                   -fx-padding:20 16;
+                   -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.10),12,0,0,3);">
+                <Label text="🕐" style="-fx-font-size:22px;"/>
+                <Label fx:id="dernierScoreLabel" text="0%"
+                       style="-fx-font-size:30px;-fx-font-weight:bold;-fx-text-fill:#3B82F6;"/>
+                <Label text="Dernier score" style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+            </VBox>
+
+            <VBox HBox.hgrow="ALWAYS" spacing="8" alignment="CENTER"
+                  style="-fx-background-color:white;-fx-background-radius:16;
+                   -fx-padding:20 16;
+                   -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),12,0,0,3);">
+                <Label text="🚀" style="-fx-font-size:22px;"/>
+                <Label fx:id="progressionLabel" text="—"
+                       style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#6B7280;"/>
+                <Label text="Tendance" style="-fx-font-size:11px;-fx-text-fill:#8A8FA8;"/>
+            </VBox>
+
+        </HBox>
+
+        <!-- ══ CORPS PRINCIPAL ══════════════════════════════════════ -->
+        <HBox spacing="20" alignment="TOP_LEFT">
+
+            <!-- Colonne gauche : Compétences -->
+            <VBox prefWidth="290" spacing="0"
+                  style="-fx-background-color:white;-fx-background-radius:18;
+                   -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.08),14,0,0,4);">
+
+                <HBox alignment="CENTER_LEFT" spacing="10"
+                      style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B7CF6);
+                     -fx-background-radius:18 18 0 0;-fx-padding:18 22;">
+                    <Label text="🎯 Compétences"
+                           style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                </HBox>
+
+                <VBox fx:id="competencesContainer" spacing="14"
+                      style="-fx-padding:20;">
+                    <Label text="Chargement..."
+                           style="-fx-text-fill:#8A8FA8;-fx-font-size:13px;"/>
+                </VBox>
+            </VBox>
+
+            <!-- Colonne droite -->
+            <VBox HBox.hgrow="ALWAYS" spacing="20">
+
+                <!-- Graphique -->
+                <VBox spacing="0"
+                      style="-fx-background-color:white;-fx-background-radius:18;
+                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),14,0,0,4);">
+
+                    <HBox alignment="CENTER_LEFT"
+                          style="-fx-background-color:#F8F9FF;-fx-background-radius:18 18 0 0;
+                       -fx-padding:16 22;-fx-border-color:#EAECF5;-fx-border-width:0 0 1 0;">
+                        <Label text="📈 Évolution du Score"
+                               style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                    </HBox>
+
+                    <LineChart fx:id="progressionChart" prefHeight="220"
+                               animated="false" legendVisible="false"
+                               style="-fx-background-color:transparent;-fx-padding:10;">
+                        <xAxis><CategoryAxis/></xAxis>
+                        <yAxis>
+                            <NumberAxis lowerBound="0" upperBound="100"
+                                        tickUnit="20" autoRanging="false"/>
+                        </yAxis>
+                    </LineChart>
+                </VBox>
+
+                <!-- Recommandations IA -->
+                <VBox spacing="0"
+                      style="-fx-background-color:white;-fx-background-radius:18;
+                     -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),14,0,0,4);">
+
+                    <HBox alignment="CENTER_LEFT" spacing="12"
+                          style="-fx-background-color:linear-gradient(to right,#F0EEFF,#EEF6FF);
+                       -fx-background-radius:18 18 0 0;-fx-padding:16 22;
+                       -fx-border-color:#E8EAF0;-fx-border-width:0 0 1 0;">
+                        <Label text="🤖" style="-fx-font-size:20px;"/>
+                        <VBox spacing="2">
+                            <Label text="Recommandations IA"
+                                   style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+                            <Label fx:id="messageEncouragementLabel" text=""
+                                   style="-fx-font-size:12px;-fx-text-fill:#6C63FF;-fx-font-style:italic;"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox fx:id="recommendationsContainer" spacing="12"
+                          style="-fx-padding:20;">
+                        <Label text="Chargement des recommandations..."
+                               style="-fx-text-fill:#8A8FA8;-fx-font-size:13px;"/>
+                    </VBox>
+
+                </VBox>
+            </VBox>
+        </HBox>
+
+    </VBox>
+</ScrollPane>

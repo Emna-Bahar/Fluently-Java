@@ -166,27 +166,48 @@ public class PerformanceAnalyzerService {
         for (Map.Entry<String, Object> e : competences.entrySet()) {
             @SuppressWarnings("unchecked")
             Map<String, Object> d = (Map<String, Object>) e.getValue();
-            comps.append("- ").append(e.getKey())
-                    .append(": ").append(d.get("score")).append("% (")
+            comps.append(e.getKey()).append(": ")
+                    .append(d.get("score")).append("% (")
                     .append(d.get("niveau")).append(")\n");
         }
 
-        return "Tu es un conseiller pedagogique en apprentissage des langues.\n\n" +
-                "Profil etudiant: " + user.getPrenom() + "\n" +
-                "Langue: " + langue.getNom() + "\n" +
-                "Tests passes: " + stats.get("tests_passes") + "\n" +
-                "Score moyen: " + stats.get("score_moyen") + "%\n" +
-                "Progression: " + stats.get("progression") + "\n\n" +
-                "Competences:\n" + comps + "\n\n" +
-                "Genere 3 recommandations. Reponds avec ce JSON exact:\n" +
+        // Prompt très strict avec exemple concret
+        return "Genere 3 recommandations pedagogiques en JSON STRICTEMENT VALIDE.\n\n" +
+                "Contexte etudiant:\n" +
+                "- Prenom: " + user.getPrenom() + "\n" +
+                "- Langue: " + langue.getNom() + "\n" +
+                "- Tests passes: " + stats.get("tests_passes") + "\n" +
+                "- Score moyen: " + stats.get("score_moyen") + "%\n" +
+                "- Competences: " + comps.toString().replace("\n", ", ") + "\n\n" +
+                "REPONDS EXACTEMENT AVEC CE FORMAT JSON (guillemets obligatoires partout):\n" +
                 "{\n" +
                 "  \"recommandations\": [\n" +
-                "    {\"titre\": \"Titre\", \"description\": \"Description\", " +
-                "\"actions\": [\"action 1\", \"action 2\"], \"priorite\": \"haute\"}\n" +
+                "    {\n" +
+                "      \"titre\": \"Ameliorer la grammaire\",\n" +
+                "      \"description\": \"Revoir les bases grammaticales\",\n" +
+                "      \"actions\": [\"Faire des exercices chaque jour\", \"Relire les corrections\"],\n" +
+                "      \"priorite\": \"haute\"\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"titre\": \"Enrichir le vocabulaire\",\n" +
+                "      \"description\": \"Apprendre 5 mots nouveaux par jour\",\n" +
+                "      \"actions\": [\"Utiliser des flashcards\", \"Lire des textes en " +
+                langue.getNom() + "\"],\n" +
+                "      \"priorite\": \"moyenne\"\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"titre\": \"Pratiquer a l oral\",\n" +
+                "      \"description\": \"S exprimer regulierement pour gagner en fluidite\",\n" +
+                "      \"actions\": [\"Repasser les tests oraux\", \"Ecouter des podcasts\"],\n" +
+                "      \"priorite\": \"basse\"\n" +
+                "    }\n" +
                 "  ],\n" +
-                "  \"message_encouragement\": \"Message motivant\"\n" +
-                "}\n" +
-                "Pas de guillemets dans les valeurs. Commence par {";
+                "  \"message_encouragement\": \"Bravo " + user.getPrenom() +
+                ", continuez ainsi!\"\n" +
+                "}\n\n" +
+                "ADAPTE le contenu au profil ci-dessus. " +
+                "RESPECTE le format JSON avec guillemets doubles partout. " +
+                "Commence par { directement.";
     }
 
     @SuppressWarnings("unchecked")

@@ -9,7 +9,9 @@ module com.example.pijava_fluently {
     requires org.apache.httpcomponents.httpcore;
     requires org.slf4j;
     requires javafx.media;
-    requires vosk;
+    requires jdk.jsobject;
+
+
 
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;
