@@ -28,6 +28,15 @@
                           -fx-background-radius:30;-fx-padding:8 18 8 18;"/>
         </HBox>
 
+        <!-- ══ Gamification ═════════════════════════════════════════ -->
+        <!--
+            fx:id="gamificationCard" génère l'injection automatique dans ObjectifController :
+              @FXML private HBox gamificationCard;
+              @FXML private GamificationCardController gamificationCardController;
+        -->
+        <fx:include fx:id="gamificationCard"
+                    source="Gamificationcard.fxml"/>
+
         <!-- ══ Barre recherche + Ajouter + Recommandation IA ═══════ -->
         <HBox spacing="14" alignment="CENTER_LEFT">
             <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="400"
@@ -50,7 +59,6 @@
                            -fx-background-radius:12;-fx-padding:12 22 12 22;-fx-cursor:hand;
                            -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.4),12,0,0,4);"/>
 
-            <!-- ⭐ NOUVEAU BOUTON RECOMMANDATION IA -->
             <Button text="🤖  Recommandation IA" onAction="#openRecommendationDialog"
                     style="-fx-background-color:#10B981;-fx-text-fill:white;-fx-font-size:13px;
                            -fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 22 12 22;
@@ -165,7 +173,7 @@
                   style="-fx-background-color:transparent;"
                   prefWrapLength="1000"/>
 
-        <!-- ══ PAGINATION ═══════════════════════════════════════════ -->
+        <!-- ══ Pagination ═══════════════════════════════════════════ -->
         <HBox spacing="20" alignment="CENTER" style="-fx-padding:20 0 10 0;">
             <Button fx:id="btnPrev" text="◀  Précédent"
                     style="-fx-background-color:#FFFFFF;-fx-text-fill:#6C63FF;-fx-font-size:13px;

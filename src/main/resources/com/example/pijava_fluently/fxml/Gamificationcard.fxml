@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.geometry.Insets?>
+
+<!--
+    GamificationCard.fxml
+    Style : 3 cartes côte à côte  →  Niveau | Points | Badges
+    Contrôleur : GamificationCardController
+-->
+<HBox spacing="16" alignment="CENTER_LEFT"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.GamificationCardController"
+      style="-fx-padding:0 0 4 0;">
+
+    <!-- ══ CARTE 1 : Niveau ══════════════════════════════════════════════ -->
+    <VBox fx:id="niveauCard" spacing="10" alignment="CENTER"
+          prefWidth="200" minWidth="180"
+          style="-fx-background-color:#2ecc71;
+                 -fx-background-radius:18;
+                 -fx-padding:22 18 18 18;
+                 -fx-effect:dropshadow(gaussian,rgba(46,204,113,0.40),18,0,0,6);">
+
+        <!-- Icône niveau -->
+        <Label fx:id="niveauIcone" text="🌱"
+               style="-fx-font-size:42px;"/>
+
+        <!-- Label niveau -->
+        <Label fx:id="niveauLabel" text="Débutant"
+               style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+
+        <Label text="Votre niveau actuel"
+               style="-fx-font-size:11px;-fx-text-fill:rgba(255,255,255,0.80);"/>
+
+        <!-- Barre de progression -->
+        <VBox spacing="4" maxWidth="160" prefWidth="160">
+            <ProgressBar fx:id="niveauProgressBar" progress="0.6" maxWidth="Infinity"
+                         style="-fx-accent:white;-fx-background-color:rgba(255,255,255,0.30);
+                                -fx-background-radius:20;-fx-pref-height:8;"/>
+            <Label fx:id="niveauProgressLabel" text="60 / 100 pts"
+                   style="-fx-font-size:10px;-fx-text-fill:rgba(255,255,255,0.85);
+                          -fx-font-weight:bold;"/>
+        </VBox>
+    </VBox>
+
+    <!-- ══ CARTE 2 : Points ══════════════════════════════════════════════ -->
+    <VBox spacing="8" alignment="CENTER"
+          prefWidth="210" minWidth="190"
+          style="-fx-background-color:#FFFFFF;
+                 -fx-background-radius:18;
+                 -fx-border-color:#E2E8F0;-fx-border-radius:18;-fx-border-width:1.5;
+                 -fx-padding:22 18 18 18;
+                 -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),18,0,0,5);">
+
+        <!-- Diamant / gem icon -->
+        <Label text="💎" style="-fx-font-size:32px;"/>
+
+        <!-- Total points -->
+        <Label fx:id="totalPointsLabel" text="0"
+               style="-fx-font-size:32px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
+
+        <Label text="Points totaux"
+               style="-fx-font-size:12px;-fx-text-fill:#9CA3AF;-fx-font-weight:bold;"/>
+
+        <!-- Détail tâches / objectifs -->
+        <HBox spacing="12" alignment="CENTER">
+            <!-- tâches -->
+            <VBox alignment="CENTER" spacing="3"
+                  style="-fx-background-color:#D1FAE5;-fx-background-radius:10;-fx-padding:6 14 6 14;">
+                <Label fx:id="pointsTachesLabel" text="+0 pts"
+                       style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#059669;"/>
+                <Label fx:id="nbTachesLabel" text="0 tâche(s)"
+                       style="-fx-font-size:10px;-fx-text-fill:#6B7280;"/>
+            </VBox>
+            <!-- objectifs -->
+            <VBox alignment="CENTER" spacing="3"
+                  style="-fx-background-color:#FEF3C7;-fx-background-radius:10;-fx-padding:6 14 6 14;">
+                <Label fx:id="pointsObjectifsLabel" text="+0 pts"
+                       style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#D97706;"/>
+                <Label fx:id="nbObjectifsLabel" text="0 obj."
+                       style="-fx-font-size:10px;-fx-text-fill:#6B7280;"/>
+            </VBox>
+        </HBox>
+    </VBox>
+
+    <!-- ══ CARTE 3 : Badges ══════════════════════════════════════════════ -->
+    <VBox spacing="10" alignment="TOP_LEFT"
+          prefWidth="220" minWidth="200"
+          style="-fx-background-color:#FFFFFF;
+                 -fx-background-radius:18;
+                 -fx-border-color:#E2E8F0;-fx-border-radius:18;-fx-border-width:1.5;
+                 -fx-padding:22 18 18 18;
+                 -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),18,0,0,5);">
+
+        <!-- Trophée -->
+        <Label text="🏆" style="-fx-font-size:28px;"/>
+
+        <Label text="Badges obtenus"
+               style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#1E293B;"/>
+
+        <!-- Rangée d'icônes badges débloqués -->
+        <FlowPane fx:id="badgesRow" hgap="6" vgap="6"/>
+
+        <Label fx:id="badgesCountLabel" text="0 badge(s) débloqué(s)"
+               style="-fx-font-size:11px;-fx-text-fill:#9CA3AF;"/>
+
+        <Button text="Voir tous les badges" onAction="#handleVoirBadges"
+                style="-fx-background-color:transparent;-fx-text-fill:#6C63FF;
+                       -fx-font-size:12px;-fx-font-weight:bold;-fx-cursor:hand;
+                       -fx-border-color:#6C63FF;-fx-border-radius:20;-fx-border-width:1.5;
+                       -fx-padding:5 14 5 14;-fx-background-radius:20;"/>
+    </VBox>
+
+</HBox>
