@@ -4,6 +4,8 @@ module com.example.pijava_fluently {
     requires java.sql;
     requires java.desktop;
     requires com.google.gson;
+    requires okhttp3;           // ← AJOUTER CETTE LIGNE
+
 
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;

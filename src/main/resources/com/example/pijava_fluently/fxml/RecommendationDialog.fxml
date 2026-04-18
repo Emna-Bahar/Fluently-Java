@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<DialogPane fx:controller="com.example.pijava_fluently.controller.RecommendationDialogController"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            prefWidth="800" prefHeight="700"
+            style="-fx-background-color: transparent;">
+
+    <!-- Header avec dégradé (FIXE) -->
+    <header>
+        <VBox spacing="8"
+              style="-fx-padding: 28 32 24 32;
+                     -fx-background-color: linear-gradient(to right, #667eea, #764ba2);
+                     -fx-border-radius: 0 0 20 20;">
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="🤖" style="-fx-text-fill: white; -fx-font-size: 32px;"/>
+                <VBox>
+                    <Label text="Assistant IA - Recommandations"
+                           style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;"/>
+                    <Label text="Des objectifs d'apprentissage personnalisés, générés par intelligence artificielle"
+                           style="-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12px;"/>
+                </VBox>
+            </HBox>
+        </VBox>
+    </header>
+
+    <content>
+        <!-- ScrollPane principal qui rend TOUT le contenu scrollable -->
+        <ScrollPane fitToWidth="true"
+                    style="-fx-background: transparent; -fx-background-color: transparent;
+                           -fx-border-color: transparent; -fx-padding: 0;"
+                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+
+            <VBox spacing="24" style="-fx-background-color: #F0F2F5; -fx-padding: 28 28 28 28;">
+
+                <!-- Section Formulaire -->
+                <VBox spacing="16"
+                      style="-fx-background-color: white; -fx-background-radius: 24;
+                             -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 3);
+                             -fx-padding: 22;">
+
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="🎯" style="-fx-font-size: 24px;"/>
+                        <VBox>
+                            <Label text="Vos préférences"
+                                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1F2937;"/>
+                            <Label text="Personnalisez les recommandations selon vos intérêts"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #6B7280;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Centres d'intérêt -->
+                    <VBox spacing="6">
+                        <Label text="📌 Centres d'intérêt"
+                               style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #4B5563;"/>
+                        <TextField fx:id="fieldInterests"
+                                   promptText="Ex: voyages, cuisine, technologie, littérature, cinéma..."
+                                   style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB;
+                                          -fx-border-radius: 14; -fx-background-radius: 14;
+                                          -fx-padding: 14 18 14 18; -fx-font-size: 13px;
+                                          -fx-text-fill: #1F2937; -fx-border-width: 1.5;"/>
+                    </VBox>
+
+                    <!-- Niveau et Langue -->
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="📊 Niveau"
+                                   style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #4B5563;"/>
+                            <ComboBox fx:id="comboNiveau" maxWidth="Infinity"
+                                      style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB;
+                                             -fx-border-radius: 14; -fx-background-radius: 14;
+                                             -fx-padding: 10 14 10 14; -fx-font-size: 13px;
+                                             -fx-border-width: 1.5;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="🌍 Langue cible"
+                                   style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #4B5563;"/>
+                            <ComboBox fx:id="comboLangue" maxWidth="Infinity"
+                                      style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB;
+                                             -fx-border-radius: 14; -fx-background-radius: 14;
+                                             -fx-padding: 10 14 10 14; -fx-font-size: 13px;
+                                             -fx-border-width: 1.5;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Bouton Générer -->
+                    <Button fx:id="btnGenerer" text="✨ Générer des recommandations" onAction="#genererRecommendations"
+                            style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2);
+                                   -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;
+                                   -fx-background-radius: 40; -fx-padding: 14 0 14 0; -fx-cursor: hand;
+                                   -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 10, 0, 0, 2);"
+                            maxWidth="Infinity"/>
+                </VBox>
+
+                <!-- Section Résultats -->
+                <VBox spacing="14" VBox.vgrow="ALWAYS">
+
+                    <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 0 0 4 4;">
+                        <Label text="📋" style="-fx-font-size: 20px;"/>
+                        <Label text="Recommandations pour vous"
+                               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1F2937;"/>
+                        <ProgressIndicator fx:id="loadingIndicator" visible="false" prefWidth="22" prefHeight="22"
+                                           style="-fx-progress-color: #667eea;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="statusLabel"
+                               style="-fx-background-color: #E0E7FF; -fx-text-fill: #4338CA;
+                                      -fx-font-size: 11px; -fx-font-weight: bold;
+                                      -fx-background-radius: 20; -fx-padding: 4 12 4 12;"/>
+                    </HBox>
+
+                    <!-- Conteneur des cartes (sans ScrollPane interne) -->
+                    <VBox fx:id="recommendationsContainer" spacing="14"
+                          style="-fx-background-color: transparent; -fx-padding: 2;"/>
+
+                </VBox>
+
+                <!-- Boutons d'action -->
+                <HBox spacing="14" alignment="CENTER_RIGHT" style="-fx-padding: 16 0 0 0;">
+                    <Button fx:id="btnFermer" text="✕ Fermer" onAction="#fermer"
+                            style="-fx-background-color: white; -fx-text-fill: #4B5563; -fx-font-size: 13px;
+                                   -fx-font-weight: bold; -fx-background-radius: 30; -fx-padding: 10 28 10 28;
+                                   -fx-cursor: hand; -fx-border-color: #E5E7EB; -fx-border-width: 1.5;
+                                   -fx-border-radius: 30;"/>
+                    <Button fx:id="btnAjouterSelection" text="✅ Ajouter la sélection" onAction="#ajouterObjectifsSelectionnes"
+                            style="-fx-background-color: linear-gradient(to right, #10B981, #059669);
+                                   -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;
+                                   -fx-background-radius: 30; -fx-padding: 10 32 10 32;
+                                   -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(16,185,129,0.4), 12, 0, 0, 3);"/>
+                </HBox>
+
+            </VBox>
+        </ScrollPane>
+    </content>
+</DialogPane>

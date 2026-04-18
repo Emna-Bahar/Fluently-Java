@@ -36,3 +36,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+# Fichiers de configuration avec clés API
+src/main/resources/config.properties
+**/config.properties
+
+# Fichiers sensibles
+*.properties
+!application.properties

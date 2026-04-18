@@ -53,6 +53,42 @@ public class ObjectifController {
     @FXML private Button btnPrev;
     @FXML private Button btnNext;
     @FXML private Label pageInfoLabel;
+    @FXML
+    private void openRecommendationDialog() {
+        if (currentUser == null) {
+            showAlert(Alert.AlertType.WARNING, "Connexion requise",
+                    "Veuillez vous connecter pour utiliser les recommandations IA.");
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/RecommendationDialog.fxml")
+            );
+            DialogPane dialogPane = loader.load();
+
+            RecommendationDialogController ctrl = loader.getController();
+            ctrl.setCurrentUser(currentUser);
+            ctrl.setObjectifController(this);
+
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("🤖 Recommandations IA - Objectifs personnalisés");
+            dialog.initOwner(cardsContainer.getScene().getWindow());
+
+            dialog.showAndWait();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur",
+                    "Impossible d'ouvrir la fenêtre de recommandation: " + e.getMessage());
+        }
+    }
+
+    // Méthode pour rafraîchir la liste après ajout d'un objectif recommandé
+    public void refreshObjectifs() {
+        loadData();
+    }
 
     private final ObjectifService service      = new ObjectifService();
     private final TacheService    tacheService  = new TacheService();
@@ -519,8 +555,8 @@ public class ObjectifController {
         if (desc.isEmpty()) {
             setError(errDescription, "La description est obligatoire.", fieldDescription);
             return false;
-        } else if (desc.length() > 255) {
-            setError(errDescription, "Maximum 255 caractères.", fieldDescription);
+        } else if (desc.length() > 100000) {
+            setError(errDescription, "Maximum 100000 caractères.", fieldDescription);
             return false;
         } else {
             clearError(errDescription);
