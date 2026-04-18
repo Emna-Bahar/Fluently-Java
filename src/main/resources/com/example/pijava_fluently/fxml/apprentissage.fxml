@@ -7,16 +7,15 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.collections.FXCollections?>
 
-
 <?import java.lang.String?>
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.pijava_fluently.controller.ApprentissageController"
-      spacing="0" style="-fx-background-color: linear-gradient(to bottom, #F0F4FF, #FAFBFF);">
+      spacing="0" style="-fx-background-color: linear-gradient(to bottom, #F8FAFC, #F1F5F9);">
 
-    <!-- Header -->
+    <!-- Header avec dégradé élégant -->
     <HBox alignment="CENTER_LEFT" spacing="16"
-          style="-fx-background-color: linear-gradient(to right, #6C63FF, #8B5CF6); -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.2), 10, 0, 0, 2);">
+          style="-fx-background-color: linear-gradient(to right, #4F46E5, #7C3AED); -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.25), 10, 0, 0, 2);">
         <padding><Insets top="20" left="32" right="32" bottom="20"/></padding>
         <Button text="← Retour"
                 style="-fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 8 18 8 18; -fx-cursor: hand;"
@@ -37,34 +36,34 @@
         <VBox spacing="24">
             <padding><Insets top="30" left="40" right="40" bottom="40"/></padding>
 
-            <!-- SECTION 1 : TEST DE NIVEAU -->
-            <VBox spacing="16" style="-fx-background-color: white; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 12, 0, 0, 4); -fx-padding: 24;">
+            <!-- SECTION 1 : TEST DE NIVEAU - Bleu glacier -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #EFF6FF, #DBEAFE); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #BFDBFE; -fx-border-radius: 20; -fx-border-width: 1;">
                 <HBox spacing="16" alignment="CENTER_LEFT">
-                    <StackPane style="-fx-background-color: #F0E6FF; -fx-background-radius: 30;">
-                        <Label text="📝" style="-fx-font-size: 32px; -fx-padding: 12;"/>
+                    <StackPane style="-fx-background-color: #3B82F6; -fx-background-radius: 30;">
+                        <Label text="📝" style="-fx-font-size: 28px; -fx-padding: 10;"/>
                     </StackPane>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="Évaluez votre niveau" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                        <Label text="Passez notre test de niveau pour un parcours personnalisé" style="-fx-font-size: 13px; -fx-text-fill: #8A8FA8;"/>
+                        <Label text="Évaluez votre niveau" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1E3A5F;"/>
+                        <Label text="Passez notre test de niveau pour un parcours personnalisé" style="-fx-font-size: 13px; -fx-text-fill: #64748B;"/>
                     </VBox>
                     <Button text="Commencer le test →"
-                            style="-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24 12 24; -fx-cursor: hand;"
+                            style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24 12 24; -fx-cursor: hand;"
                             onAction="#handleTest"/>
                 </HBox>
             </VBox>
 
-            <!-- SECTION 2 : GÉNÉRATION DE COURS (VIOLET) -->
-            <VBox spacing="16" style="-fx-background-color: #667eea; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5); -fx-padding: 24;">
+            <!-- SECTION 2 : GÉNÉRATION DE COURS - Violet doux -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #F5F3FF, #EDE9FE); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #DDD6FE; -fx-border-radius: 20; -fx-border-width: 1;">
                 <HBox spacing="16" alignment="CENTER_LEFT">
-                    <StackPane style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 30;">
-                        <Label text="✨" style="-fx-font-size: 32px; -fx-padding: 12;"/>
+                    <StackPane style="-fx-background-color: #8B5CF6; -fx-background-radius: 30;">
+                        <Label text="✨" style="-fx-font-size: 28px; -fx-padding: 10;"/>
                     </StackPane>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="Générer un cours personnalisé" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;"/>
-                        <Label text="Créez un cours sur mesure selon vos besoins" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                        <Label text="Générer un cours personnalisé" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4C1D95;"/>
+                        <Label text="Créez un cours sur mesure selon vos besoins" style="-fx-font-size: 13px; -fx-text-fill: #6B7280;"/>
                     </VBox>
                     <Button fx:id="btnOuvrirFormCours" text="Créer mon cours →"
-                            style="-fx-background-color: white; -fx-text-fill: #667eea; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24 12 24; -fx-cursor: hand;"
+                            style="-fx-background-color: #8B5CF6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24 12 24; -fx-cursor: hand;"
                             onAction="#ouvrirFormulaireCours"/>
                 </HBox>
             </VBox>
@@ -136,65 +135,65 @@
                 </HBox>
                 <HBox spacing="15" alignment="CENTER_RIGHT">
                     <Button text="🗑️ Effacer" style="-fx-background-color: #F4F5FA; -fx-text-fill: #4A4D6A; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 20;" onAction="#effacerFormulaire"/>
-                    <Button text="🔄 Générer" style="-fx-background-color: #667eea; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 24;" onAction="#genererCours"/>
+                    <Button text="🔄 Générer" style="-fx-background-color: #8B5CF6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 24;" onAction="#genererCours"/>
                     <Button fx:id="btnExporterPDF" text="📥 Exporter PDF" disable="true" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 24;" onAction="#exporterPDF"/>
                 </HBox>
             </VBox>
 
-            <!-- SECTION 3 : DICTIONNAIRE AVEC IA (BLEU TURQUOISE) -->
-            <VBox spacing="16" style="-fx-background-color: #1E88B0; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5); -fx-padding: 24;">
+            <!-- SECTION 3 : DICTIONNAIRE - Vert sauge -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #ECFDF5, #D1FAE5); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #A7F3D0; -fx-border-radius: 20; -fx-border-width: 1;">
                 <HBox spacing="16" alignment="CENTER_LEFT">
-                    <StackPane style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 30;">
-                        <Label text="📖" style="-fx-font-size: 32px; -fx-padding: 12;"/>
+                    <StackPane style="-fx-background-color: #10B981; -fx-background-radius: 30;">
+                        <Label text="📖" style="-fx-font-size: 28px; -fx-padding: 10;"/>
                     </StackPane>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="Dictionnaire avec IA" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;"/>
-                        <Label text="Trouvez la définition, traduction et exemples d'un mot" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                        <Label text="Dictionnaire" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #064E3B;"/>
+                        <Label text="Trouvez la définition, traduction et exemples d'un mot" style="-fx-font-size: 13px; -fx-text-fill: #047857;"/>
                     </VBox>
                 </HBox>
                 <HBox spacing="12" alignment="CENTER_LEFT">
                     <TextField fx:id="dictionarySearchField" promptText="Entrez un mot à définir..." HBox.hgrow="ALWAYS"
-                               style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: transparent; -fx-padding: 12 15; -fx-font-size: 13px;"/>
+                               style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #A7F3D0; -fx-border-radius: 12; -fx-padding: 12 15; -fx-font-size: 13px;"/>
                     <Button text="🔍 Chercher" onAction="#chercherMotDictionnaire"
-                            style="-fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24; -fx-cursor: hand;"/>
+                            style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24; -fx-cursor: hand;"/>
                 </HBox>
                 <HBox fx:id="dictionaryLoading" alignment="CENTER" spacing="15" visible="false" managed="false">
                     <ProgressIndicator prefWidth="30" prefHeight="30"/>
-                    <Label text="Recherche en cours..." style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                    <Label text="Recherche en cours..." style="-fx-font-size: 12px; -fx-text-fill: #064E3B;"/>
                 </HBox>
                 <VBox fx:id="dictionaryResultContainer" spacing="12" visible="false" managed="false"
-                      style="-fx-background-color: rgba(255,255,255,0.15); -fx-background-radius: 16; -fx-padding: 16;">
-                    <Label fx:id="dictionaryWord" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;"/>
-                    <Label fx:id="dictionaryDefinition" wrapText="true" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.9);"/>
-                    <Label fx:id="dictionaryExample" wrapText="true" style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.7); -fx-font-style: italic;"/>
-                    <Label fx:id="dictionarySynonym" wrapText="true" style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.7);"/>
+                      style="-fx-background-color: rgba(16,185,129,0.1); -fx-background-radius: 16; -fx-padding: 16; -fx-border-color: #A7F3D0; -fx-border-radius: 16; -fx-border-width: 1;">
+                    <Label fx:id="dictionaryWord" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #064E3B;"/>
+                    <Label fx:id="dictionaryDefinition" wrapText="true" style="-fx-font-size: 13px; -fx-text-fill: #065F46;"/>
+                    <Label fx:id="dictionaryExample" wrapText="true" style="-fx-font-size: 12px; -fx-text-fill: #047857; -fx-font-style: italic;"/>
+                    <Label fx:id="dictionarySynonym" wrapText="true" style="-fx-font-size: 12px; -fx-text-fill: #047857;"/>
                 </VBox>
                 <VBox fx:id="dictionaryEmptyMessage" alignment="CENTER" spacing="10" visible="false" managed="false">
                     <Label text="📭" style="-fx-font-size: 32px;"/>
-                    <Label text="Aucun résultat" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                    <Label text="Aucun résultat" style="-fx-font-size: 13px; -fx-text-fill: #064E3B;"/>
                 </VBox>
             </VBox>
 
-            <!-- SECTION 4 : RECHERCHE YOUTUBE (ROUGE) -->
-            <VBox spacing="16" style="-fx-background-color: #DC2626; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5); -fx-padding: 24;">
+            <!-- SECTION 4 : RECHERCHE YOUTUBE - Rouge élégant -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #FEF2F2, #FEE2E2); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #FECACA; -fx-border-radius: 20; -fx-border-width: 1;">
                 <HBox spacing="16" alignment="CENTER_LEFT">
-                    <StackPane style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 30;">
-                        <Label text="🎬" style="-fx-font-size: 32px; -fx-padding: 12;"/>
+                    <StackPane style="-fx-background-color: #EF4444; -fx-background-radius: 30;">
+                        <Label text="🎬" style="-fx-font-size: 28px; -fx-padding: 10;"/>
                     </StackPane>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="Rechercher des vidéos YouTube" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;"/>
-                        <Label text="Trouvez des vidéos pour améliorer votre apprentissage" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                        <Label text="Vidéos YouTube" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #7F1D1D;"/>
+                        <Label text="Trouvez des vidéos pour améliorer votre apprentissage" style="-fx-font-size: 13px; -fx-text-fill: #991B1B;"/>
                     </VBox>
                 </HBox>
                 <HBox spacing="12" alignment="CENTER_LEFT">
                     <TextField fx:id="youtubeSearchField" promptText="Rechercher une vidéo..." HBox.hgrow="ALWAYS"
-                               style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: transparent; -fx-padding: 12 15; -fx-font-size: 13px;"/>
+                               style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #FECACA; -fx-border-radius: 12; -fx-padding: 12 15; -fx-font-size: 13px;"/>
                     <Button text="🔍 Rechercher" onAction="#rechercherVideosYouTube"
-                            style="-fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24; -fx-cursor: hand;"/>
+                            style="-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24; -fx-cursor: hand;"/>
                 </HBox>
                 <HBox fx:id="youtubeLoading" alignment="CENTER" spacing="15" visible="false" managed="false">
                     <ProgressIndicator prefWidth="30" prefHeight="30"/>
-                    <Label text="Recherche en cours..." style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                    <Label text="Recherche en cours..." style="-fx-font-size: 12px; -fx-text-fill: #7F1D1D;"/>
                 </HBox>
                 <ScrollPane fx:id="youtubeScrollPane" fitToWidth="true" prefHeight="300" visible="false" managed="false"
                             style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
@@ -202,25 +201,146 @@
                 </ScrollPane>
                 <VBox fx:id="youtubeEmptyMessage" alignment="CENTER" spacing="10" visible="false" managed="false">
                     <Label text="📭" style="-fx-font-size: 32px;"/>
-                    <Label text="Aucune vidéo trouvée" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);"/>
-                    <Label text="Essayez un autre mot-clé" style="-fx-font-size: 11px; -fx-text-fill: rgba(255,255,255,0.6);"/>
+                    <Label text="Aucune vidéo trouvée" style="-fx-font-size: 13px; -fx-text-fill: #7F1D1D;"/>
+                    <Label text="Essayez un autre mot-clé" style="-fx-font-size: 11px; -fx-text-fill: #991B1B;"/>
                 </VBox>
             </VBox>
-            <!-- SECTION 6 : JEU ÉDUCATIF (ORANGE) -->
-            <VBox spacing="16" style="-fx-background-color: #EA580C; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5); -fx-padding: 24;">
+
+            <!-- SECTION 5 : PRONONCIATION - Bleu océan -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #EFF6FF, #DBEAFE); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #BFDBFE; -fx-border-radius: 20; -fx-border-width: 1;">
                 <HBox spacing="16" alignment="CENTER_LEFT">
-                    <StackPane style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 30;">
-                        <Label text="🎮" style="-fx-font-size: 32px; -fx-padding: 12;"/>
+                    <StackPane style="-fx-background-color: #3B82F6; -fx-background-radius: 30;">
+                        <Label text="🔊" style="-fx-font-size: 28px; -fx-padding: 10;"/>
                     </StackPane>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="Jeu éducatif" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;"/>
-                        <Label text="Choisissez votre jeu et testez vos connaissances" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                        <Label text="Prononciation" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1E3A5F;"/>
+                        <Label text="Écoutez la prononciation d'un mot ou d'une phrase" style="-fx-font-size: 13px; -fx-text-fill: #3B82F6;"/>
                     </VBox>
                 </HBox>
 
-                <!-- Sélecteur de jeu et niveau -->
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <TextField fx:id="pronunciationTextField" promptText="Entrez un mot ou une phrase à écouter..."
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #BFDBFE; -fx-border-radius: 12; -fx-padding: 12 15; -fx-font-size: 13px;"/>
+                    <Button text="🔊 Écouter" onAction="#prononcer"
+                            style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24; -fx-cursor: hand;"/>
+                </HBox>
+
+                <HBox fx:id="pronunciationLoading" alignment="CENTER" spacing="15" visible="false" managed="false">
+                    <ProgressIndicator prefWidth="25" prefHeight="25"/>
+                    <Label text="Lecture en cours..." style="-fx-font-size: 12px; -fx-text-fill: #1E3A5F;"/>
+                </HBox>
+
+                <VBox spacing="8">
+                    <Label text="Suggestions :" style="-fx-font-size: 12px; -fx-text-fill: #1E3A5F;"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button text="Bonjour" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 11px; -fx-background-radius: 15; -fx-padding: 5 12; -fx-cursor: hand;" onAction="#suggestionBonjour"/>
+                        <Button text="Merci" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 11px; -fx-background-radius: 15; -fx-padding: 5 12; -fx-cursor: hand;" onAction="#suggestionMerci"/>
+                        <Button text="Comment allez-vous ?" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 11px; -fx-background-radius: 15; -fx-padding: 5 12; -fx-cursor: hand;" onAction="#suggestionComment"/>
+                        <Button text="Je t'aime" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 11px; -fx-background-radius: 15; -fx-padding: 5 12; -fx-cursor: hand;" onAction="#suggestionAmour"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+            <!-- SECTION FLASHCARDS INTÉGRÉE -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #F0FDF4, #DCFCE7); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #BBF7D0; -fx-border-radius: 20; -fx-border-width: 1;">
+                <HBox spacing="16" alignment="CENTER_LEFT">
+                    <StackPane style="-fx-background-color: #22C55E; -fx-background-radius: 30;">
+                        <Label text="📇" style="-fx-font-size: 28px; -fx-padding: 10;"/>
+                    </StackPane>
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="Flashcards IA" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #14532D;"/>
+                        <Label text="Générez des flashcards personnalisées avec l'IA" style="-fx-font-size: 13px; -fx-text-fill: #166534;"/>
+                    </VBox>
+                    <Button fx:id="btnOuvrirFlashcards" text="🚀 Générer →"
+                            style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24 12 24; -fx-cursor: hand;"
+                            onAction="#ouvrirFormulaireFlashcards"/>
+                </HBox>
+
+                <!-- Conteneur du formulaire Flashcards (caché par défaut) -->
+                <VBox fx:id="flashcardsFormContainer" spacing="15" visible="false" managed="false"
+                      style="-fx-background-color: rgba(255,255,255,0.9); -fx-background-radius: 16; -fx-padding: 20; -fx-border-color: #BBF7D0; -fx-border-radius: 16;">
+
+                    <Label text="✏️ Décrivez ce que vous voulez réviser" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #14532D;"/>
+                    <TextArea fx:id="flashcardsPromptArea" promptText="Ex: Verbes au passé composé, Vocabulaire du voyage, Conjugaison du subjonctif..." prefHeight="80" wrapText="true"
+                              style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #D1D5DB; -fx-border-radius: 10; -fx-padding: 10;"/>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="Niveau :" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #14532D;"/>
+                        <ComboBox fx:id="flashcardsLevelCombo" style="-fx-background-color: white; -fx-background-radius: 10;">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="A1 - Débutant"/>
+                                    <String fx:value="A2 - Élémentaire"/>
+                                    <String fx:value="B1 - Intermédiaire"/>
+                                    <String fx:value="B2 - Avancé"/>
+                                    <String fx:value="C1 - Expert"/>
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_RIGHT">
+                        <Button text="Annuler" onAction="#fermerFormulaireFlashcards"
+                                style="-fx-background-color: #E5E7EB; -fx-text-fill: #374151; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 8 20; -fx-cursor: hand;"/>
+                        <Button fx:id="btnGenererFlashcards" text="🤖 Générer les flashcards" onAction="#genererFlashcardsIA"
+                                style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 8 20; -fx-cursor: hand;"/>
+                    </HBox>
+
+                    <HBox fx:id="flashcardsLoading" alignment="CENTER" spacing="15" visible="false" managed="false">
+                        <ProgressIndicator prefWidth="30" prefHeight="30"/>
+                        <Label text="Génération en cours..." style="-fx-font-size: 12px; -fx-text-fill: #22C55E;"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Conteneur de la session Flashcards (caché par défaut) -->
+                <VBox fx:id="flashcardsSessionContainer" spacing="15" visible="false" managed="false"
+                      style="-fx-background-color: rgba(255,255,255,0.95); -fx-background-radius: 20; -fx-padding: 20; -fx-border-color: #BBF7D0; -fx-border-radius: 20;">
+
+                    <HBox alignment="CENTER">
+                        <Label fx:id="flashcardProgressLabel" text="Carte 1/5" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #22C55E;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="flashcardScoreLabel" text="Score: 0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #14532D;"/>
+                        <Button text="✕ Fermer" onAction="#fermerFlashcardsSession" style="-fx-background-color: transparent; -fx-text-fill: #9CA3AF; -fx-font-size: 16px; -fx-cursor: hand;"/>
+                    </HBox>
+
+                    <VBox spacing="20" style="-fx-background-color: #F0FDF4; -fx-background-radius: 16; -fx-padding: 25;">
+                        <Label fx:id="flashcardQuestionLabel" wrapText="true" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                        <VBox fx:id="flashcardOptionsContainer" spacing="10"/>
+
+                        <HBox spacing="15" alignment="CENTER">
+                            <Button fx:id="flashcardValidateBtn" text="✓ Valider" onAction="#validerReponseFlashcard"
+                                    style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 25; -fx-cursor: hand;"/>
+                            <Button fx:id="flashcardNextBtn" text="→ Carte suivante" onAction="#flashcardSuivante"
+                                    style="-fx-background-color: #8B5CF6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 25; -fx-cursor: hand;" visible="false"/>
+                        </HBox>
+
+                        <TextArea fx:id="flashcardExplanationArea" editable="false" wrapText="true" prefHeight="100"
+                                  style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-font-size: 12px;" visible="false"/>
+                    </VBox>
+                </VBox>
+
+                <!-- Conteneur des résultats -->
+                <VBox fx:id="flashcardResultContainer" spacing="15" visible="false" managed="false"
+                      style="-fx-background-color: rgba(255,255,255,0.95); -fx-background-radius: 20; -fx-padding: 20;">
+                    <TextArea fx:id="flashcardResultArea" editable="false" wrapText="true" prefHeight="400"
+                              style="-fx-background-color: #F8FAFC; -fx-font-size: 13px; -fx-font-family: monospace;"/>
+                    <Button text="Fermer" onAction="#fermerFlashcardsResult" style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 20; -fx-cursor: hand;"/>
+                </VBox>
+            </VBox>
+            <!-- SECTION 6 : JEU ÉDUCATIF - Ambre -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #FFFBEB, #FEF3C7); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #FDE68A; -fx-border-radius: 20; -fx-border-width: 1;">
+                <HBox spacing="16" alignment="CENTER_LEFT">
+                    <StackPane style="-fx-background-color: #F59E0B; -fx-background-radius: 30;">
+                        <Label text="🎮" style="-fx-font-size: 28px; -fx-padding: 10;"/>
+                    </StackPane>
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="Jeu éducatif" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #78350F;"/>
+                        <Label text="Choisissez votre jeu et testez vos connaissances" style="-fx-font-size: 13px; -fx-text-fill: #B45309;"/>
+                    </VBox>
+                </HBox>
+
                 <HBox spacing="15" alignment="CENTER_LEFT">
-                    <Label text="Type de jeu :" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                    <Label text="Type de jeu :" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #78350F;"/>
                     <ComboBox fx:id="gameTypeCombo" promptText="Choisissez un jeu" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 8 15;">
                         <items>
                             <FXCollections fx:factory="observableArrayList">
@@ -229,7 +349,7 @@
                             </FXCollections>
                         </items>
                     </ComboBox>
-                    <Label text="Niveau :" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                    <Label text="Niveau :" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #78350F;"/>
                     <ComboBox fx:id="gameLevelCombo" promptText="Choisissez un niveau" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 8 15;">
                         <items>
                             <FXCollections fx:factory="observableArrayList">
@@ -242,81 +362,68 @@
                         </items>
                     </ComboBox>
                     <Button fx:id="startGameBtn" text="🎲 Commencer le jeu" onAction="#startGame"
-                            style="-fx-background-color: white; -fx-text-fill: #EA580C; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 24; -fx-cursor: hand;"/>
+                            style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 24; -fx-cursor: hand;"/>
+                    <Button text="📇 Flashcards IA" onAction="#ouvrirFlashcards"
+                            style="-fx-background-color: #8B5CF6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;"/>
                 </HBox>
 
-                <!-- Indicateur de chargement -->
                 <HBox fx:id="gameLoading" alignment="CENTER" spacing="15" visible="false" managed="false">
                     <ProgressIndicator prefWidth="30" prefHeight="30"/>
-                    <Label text="Génération du jeu en cours..." style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                    <Label text="Génération du jeu en cours..." style="-fx-font-size: 12px; -fx-text-fill: #78350F;"/>
                 </HBox>
 
-                <!-- Zone du quiz -->
                 <VBox fx:id="quizContainer" spacing="15" visible="false" managed="false"
-                      style="-fx-background-color: rgba(255,255,255,0.15); -fx-background-radius: 16; -fx-padding: 20;">
+                      style="-fx-background-color: rgba(245,158,11,0.1); -fx-background-radius: 16; -fx-padding: 20; -fx-border-color: #FDE68A; -fx-border-radius: 16; -fx-border-width: 1;">
                     <HBox alignment="CENTER_RIGHT">
-                        <Label fx:id="quizScore" text="Score: 0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFD700;"/>
+                        <Label fx:id="quizScore" text="Score: 0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #D97706;"/>
                     </HBox>
-                    <ProgressBar fx:id="quizProgress" prefWidth="Infinity" progress="0" style="-fx-accent: #FFD700;"/>
-                    <Label fx:id="quizQuestion" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white; -fx-wrap-text: true;"/>
+                    <ProgressBar fx:id="quizProgress" prefWidth="Infinity" progress="0" style="-fx-accent: #F59E0B;"/>
+                    <Label fx:id="quizQuestion" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #78350F; -fx-wrap-text: true;"/>
                     <VBox spacing="10" fx:id="quizAnswersContainer"/>
                     <Button fx:id="nextQuestionBtn" text="Question suivante →" onAction="#nextQuestion"
-                            style="-fx-background-color: #FFD700; -fx-text-fill: #EA580C; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;" visible="false" managed="false"/>
+                            style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;" visible="false" managed="false"/>
                     <VBox fx:id="quizResultContainer" spacing="10" alignment="CENTER" visible="false" managed="false">
-                        <Label fx:id="quizFinalScore" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FFD700;"/>
-                        <Label fx:id="quizFeedback" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.9); -fx-wrap-text: true;" textAlignment="CENTER"/>
+                        <Label fx:id="quizFinalScore" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #D97706;"/>
+                        <Label fx:id="quizFeedback" style="-fx-font-size: 13px; -fx-text-fill: #78350F; -fx-wrap-text: true;" textAlignment="CENTER"/>
                         <Button text="🔄 Nouveau jeu" onAction="#startGame"
-                                style="-fx-background-color: white; -fx-text-fill: #EA580C; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 24; -fx-cursor: hand;"/>
+                                style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 24; -fx-cursor: hand;"/>
                     </VBox>
                 </VBox>
 
-
-
-                <!-- Zone du jeu "Compléter la phrase" -->
                 <VBox fx:id="fillGameContainer" spacing="15" visible="false" managed="false"
-                      style="-fx-background-color: rgba(255,255,255,0.15); -fx-background-radius: 16; -fx-padding: 20;">
-
-                    <Label text="📝 COMPLÉTER LA PHRASE" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #FFD700;"/>
-
+                      style="-fx-background-color: rgba(245,158,11,0.1); -fx-background-radius: 16; -fx-padding: 20; -fx-border-color: #FDE68A; -fx-border-radius: 16; -fx-border-width: 1;">
+                    <Label text="📝 COMPLÉTER LA PHRASE" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #D97706;"/>
                     <HBox alignment="CENTER_RIGHT">
-                        <Label fx:id="fillScore" text="Score: 0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFD700;"/>
+                        <Label fx:id="fillScore" text="Score: 0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #D97706;"/>
                     </HBox>
-
-                    <ProgressBar fx:id="fillProgress" prefWidth="Infinity" progress="0" style="-fx-accent: #FFD700;"/>
-
-                    <!-- Question -->
-                    <Label fx:id="fillQuestion" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white; -fx-wrap-text: true;"/>
-
-                    <!-- Options (boutons) -->
+                    <ProgressBar fx:id="fillProgress" prefWidth="Infinity" progress="0" style="-fx-accent: #F59E0B;"/>
+                    <Label fx:id="fillQuestion" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #78350F; -fx-wrap-text: true;"/>
                     <VBox spacing="10" fx:id="fillOptionsContainer"/>
-
-                    <!-- Bouton suivant -->
                     <Button fx:id="fillNextBtn" text="Question suivante →" onAction="#nextFillQuestion"
-                            style="-fx-background-color: #FFD700; -fx-text-fill: #EA580C; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;" visible="false" managed="false"/>
-
-                    <!-- Résultat final -->
+                            style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;" visible="false" managed="false"/>
                     <VBox fx:id="fillResultContainer" spacing="10" alignment="CENTER" visible="false" managed="false">
-                        <Label fx:id="fillFinalScore" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FFD700;"/>
-                        <Label fx:id="fillFeedback" style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.9); -fx-wrap-text: true;" textAlignment="CENTER"/>
+                        <Label fx:id="fillFinalScore" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #D97706;"/>
+                        <Label fx:id="fillFeedback" style="-fx-font-size: 13px; -fx-text-fill: #78350F; -fx-wrap-text: true;" textAlignment="CENTER"/>
                         <Button text="🔄 Nouveau jeu" onAction="#startGame"
-                                style="-fx-background-color: white; -fx-text-fill: #EA580C; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 24; -fx-cursor: hand;"/>
+                                style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 24; -fx-cursor: hand;"/>
                     </VBox>
                 </VBox>
             </VBox>
-            <!-- SECTION 5 : MES COURS PDF (VERT) -->
-            <VBox spacing="16" style="-fx-background-color: #10B981; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5); -fx-padding: 24;">
+
+            <!-- SECTION 7 : MES COURS PDF - Indigo -->
+            <VBox spacing="16" style="-fx-background-color: linear-gradient(to bottom right, #EEF2FF, #E0E7FF); -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 4); -fx-padding: 24; -fx-border-color: #C7D2FE; -fx-border-radius: 20; -fx-border-width: 1;">
                 <HBox spacing="16" alignment="CENTER_LEFT">
-                    <StackPane style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 30;">
-                        <Label text="📚" style="-fx-font-size: 32px; -fx-padding: 12;"/>
+                    <StackPane style="-fx-background-color: #4F46E5; -fx-background-radius: 30;">
+                        <Label text="📚" style="-fx-font-size: 28px; -fx-padding: 10;"/>
                     </StackPane>
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Mes cours personnalisés" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;"/>
-                        <Label text="Retrouvez ici tous les cours PDF que vous avez générés" style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+                        <Label text="Mes cours personnalisés" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #312E81;"/>
+                        <Label text="Retrouvez ici tous les cours PDF que vous avez générés" style="-fx-font-size: 12px; -fx-text-fill: #4F46E5;"/>
                     </VBox>
                     <Label fx:id="totalCoursCount" text="0 cours"
-                           style="-fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 5 12 5 12;"/>
+                           style="-fx-background-color: #4F46E5; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 5 12 5 12;"/>
                 </HBox>
-                <Separator style="-fx-background-color: rgba(255,255,255,0.2);"/>
+                <Separator style="-fx-background-color: #C7D2FE;"/>
                 <ScrollPane fx:id="coursPdfScroll" fitToWidth="true" fitToHeight="false" visible="false" managed="false"
                             style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
                     <HBox fx:id="coursPdfContainer" spacing="16" alignment="CENTER_LEFT" style="-fx-padding: 10 0 10 0;"/>
@@ -324,15 +431,15 @@
                 <VBox fx:id="emptyCoursMessage" alignment="CENTER" spacing="10" visible="true" managed="true"
                       style="-fx-padding: 20 0 20 0;">
                     <Label text="📭" style="-fx-font-size: 48px;"/>
-                    <Label text="Aucun cours généré" style="-fx-font-size: 14px; -fx-text-fill: rgba(255,255,255,0.9);"/>
-                    <Label text="Utilisez 'Générer un cours personnalisé'" style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.7);"/>
+                    <Label text="Aucun cours généré" style="-fx-font-size: 14px; -fx-text-fill: #4F46E5;"/>
+                    <Label text="Utilisez 'Générer un cours personnalisé'" style="-fx-font-size: 12px; -fx-text-fill: #6366F1;"/>
                 </VBox>
             </VBox>
 
-            <!-- SECTION 6 : PARCOURS D'APPRENTISSAGE -->
+            <!-- SECTION 8 : PARCOURS D'APPRENTISSAGE -->
             <VBox spacing="8">
-                <Label text="🎯 Parcours d'apprentissage" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                <Label text="Progressez niveau par niveau avec nos cours interactifs" style="-fx-font-size: 13px; -fx-text-fill: #8A8FA8;"/>
+                <Label text="🎯 Parcours d'apprentissage" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                <Label text="Progressez niveau par niveau avec nos cours interactifs" style="-fx-font-size: 13px; -fx-text-fill: #64748B;"/>
             </VBox>
 
             <!-- Niveaux A1 à C2 -->
@@ -340,8 +447,8 @@
                 <HBox alignment="CENTER_LEFT" spacing="16">
                     <Label text="A1" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #6C63FF;"/>
                     <VBox HBox.hgrow="ALWAYS">
-                        <Label text="Débutant" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                        <Label text="Les bases de la langue" style="-fx-font-size: 12px; -fx-text-fill: #8A8FA8;"/>
+                        <Label text="Débutant" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                        <Label text="Les bases de la langue" style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
                     </VBox>
                     <Label fx:id="progressA1" text="0/3 cours" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #10B981;"/>
                 </HBox>
@@ -352,8 +459,8 @@
                 <HBox alignment="CENTER_LEFT" spacing="16">
                     <Label text="A2" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #8B5CF6;"/>
                     <VBox HBox.hgrow="ALWAYS">
-                        <Label text="Élémentaire" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                        <Label text="Communication simple" style="-fx-font-size: 12px; -fx-text-fill: #8A8FA8;"/>
+                        <Label text="Élémentaire" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                        <Label text="Communication simple" style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
                     </VBox>
                     <Label fx:id="progressA2" text="0/3 cours" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #10B981;"/>
                 </HBox>
@@ -364,8 +471,8 @@
                 <HBox alignment="CENTER_LEFT" spacing="16">
                     <Label text="B1" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #F59E0B;"/>
                     <VBox HBox.hgrow="ALWAYS">
-                        <Label text="Intermédiaire" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                        <Label text="Compréhension de sujets familiers" style="-fx-font-size: 12px; -fx-text-fill: #8A8FA8;"/>
+                        <Label text="Intermédiaire" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                        <Label text="Compréhension de sujets familiers" style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
                     </VBox>
                     <Label fx:id="progressB1" text="0/3 cours" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #10B981;"/>
                 </HBox>
@@ -376,8 +483,8 @@
                 <HBox alignment="CENTER_LEFT" spacing="16">
                     <Label text="B2" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #EF4444;"/>
                     <VBox HBox.hgrow="ALWAYS">
-                        <Label text="Intermédiaire supérieur" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                        <Label text="Interaction fluide" style="-fx-font-size: 12px; -fx-text-fill: #8A8FA8;"/>
+                        <Label text="Intermédiaire supérieur" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                        <Label text="Interaction fluide" style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
                     </VBox>
                     <Label fx:id="progressB2" text="0/3 cours" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #10B981;"/>
                 </HBox>
@@ -388,8 +495,8 @@
                 <HBox alignment="CENTER_LEFT" spacing="16">
                     <Label text="C1" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #EC4899;"/>
                     <VBox HBox.hgrow="ALWAYS">
-                        <Label text="Avancé" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                        <Label text="Expression spontanée" style="-fx-font-size: 12px; -fx-text-fill: #8A8FA8;"/>
+                        <Label text="Avancé" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                        <Label text="Expression spontanée" style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
                     </VBox>
                     <Label fx:id="progressC1" text="0/3 cours" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #10B981;"/>
                 </HBox>
@@ -400,8 +507,8 @@
                 <HBox alignment="CENTER_LEFT" spacing="16">
                     <Label text="C2" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #14B8A6;"/>
                     <VBox HBox.hgrow="ALWAYS">
-                        <Label text="Maîtrise" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
-                        <Label text="Compréhension quasi complète" style="-fx-font-size: 12px; -fx-text-fill: #8A8FA8;"/>
+                        <Label text="Maîtrise" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
+                        <Label text="Compréhension quasi complète" style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
                     </VBox>
                     <Label fx:id="progressC2" text="0/3 cours" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #10B981;"/>
                 </HBox>

@@ -112,6 +112,9 @@ public class ApprentissageController {
     @FXML private VBox fillResultContainer;
     @FXML private Label fillFinalScore;
     @FXML private Label fillFeedback;
+    // Prononciation
+    @FXML private TextField pronunciationTextField;
+    @FXML private HBox pronunciationLoading;
 
     // Variables pour le jeu
     private List<FillQuestion> fillQuestionsList = new ArrayList<>();
@@ -119,6 +122,7 @@ public class ApprentissageController {
     private int currentFillScore = 0;
     // Variables
 
+    private final PrononciationService prononciationService = new PrononciationService();
     private Map<String, Integer> selectedMatches;
     private List<QuizQuestion> questionsList = new ArrayList<>();
     private int currentQuestionIndex = 0;
@@ -140,6 +144,29 @@ public class ApprentissageController {
     private Map<String, Integer> niveauIdParKey = new HashMap<>();
     private Map<String, Map<Integer, Boolean>> progressionCoursParNiveau = new HashMap<>();
 
+    // Flashcards
+    @FXML private VBox flashcardsFormContainer;
+    @FXML private VBox flashcardsSessionContainer;
+    @FXML private VBox flashcardResultContainer;
+    @FXML private TextArea flashcardsPromptArea;
+    @FXML private ComboBox<String> flashcardsLevelCombo;
+    @FXML private HBox flashcardsLoading;
+    @FXML private Label flashcardProgressLabel;
+    @FXML private Label flashcardScoreLabel;
+    @FXML private Label flashcardQuestionLabel;
+    @FXML private VBox flashcardOptionsContainer;
+    @FXML private Button flashcardValidateBtn;
+    @FXML private Button flashcardNextBtn;
+    @FXML private TextArea flashcardExplanationArea;
+    @FXML private TextArea flashcardResultArea;
+
+    // Variables pour la session flashcards
+    private List<Flashcard> currentFlashcards = new ArrayList<>();
+    private int currentFlashcardIndex = 0;
+    private int currentFlashcardScore = 0;
+    private ToggleGroup flashcardToggleGroup;
+    private List<Boolean> flashcardUserAnswers = new ArrayList<>();
+    private List<Integer> flashcardUserSelections = new ArrayList<>();
     private User currentUser;
     private UserProgressService userProgressService = new UserProgressService();
     private final IAService iaService = new IAService();
@@ -2235,5 +2262,481 @@ public class ApprentissageController {
 
         fillFeedback.setText(appreciation);
         fillResultContainer.setVisible(true); fillResultContainer.setManaged(true);
+    }
+    @FXML
+    private void prononcer() {
+        String texte = pronunciationTextField.getText().trim();
+        if (texte.isEmpty()) {
+            showAlert("Information", "Veuillez entrer un mot ou une phrase à écouter.");
+            return;
+        }
+
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        String langueCode = prononciationService.getLangueCode(langueNom);
+
+        // Afficher l'indicateur de chargement
+        pronunciationLoading.setVisible(true);
+        pronunciationLoading.setManaged(true);
+
+        // Désactiver le bouton pendant la lecture
+        // (optionnel)
+
+        new Thread(() -> {
+            try {
+                prononciationService.prononcer(texte, langueCode);
+                Platform.runLater(() -> {
+                    pronunciationLoading.setVisible(false);
+                    pronunciationLoading.setManaged(false);
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    pronunciationLoading.setVisible(false);
+                    pronunciationLoading.setManaged(false);
+                    showAlert("Erreur", "Impossible de lire la prononciation : " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    // Méthodes pour les suggestions
+    @FXML
+    private void suggestionBonjour() {
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        if (langueNom.equalsIgnoreCase("Anglais")) {
+            pronunciationTextField.setText("Hello");
+        } else if (langueNom.equalsIgnoreCase("Espagnol")) {
+            pronunciationTextField.setText("Hola");
+        } else if (langueNom.equalsIgnoreCase("Allemand")) {
+            pronunciationTextField.setText("Hallo");
+        } else if (langueNom.equalsIgnoreCase("Italien")) {
+            pronunciationTextField.setText("Ciao");
+        } else {
+            pronunciationTextField.setText("Bonjour");
+        }
+        prononcer();
+    }
+
+    @FXML
+    private void suggestionMerci() {
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        if (langueNom.equalsIgnoreCase("Anglais")) {
+            pronunciationTextField.setText("Thank you");
+        } else if (langueNom.equalsIgnoreCase("Espagnol")) {
+            pronunciationTextField.setText("Gracias");
+        } else if (langueNom.equalsIgnoreCase("Allemand")) {
+            pronunciationTextField.setText("Danke");
+        } else if (langueNom.equalsIgnoreCase("Italien")) {
+            pronunciationTextField.setText("Grazie");
+        } else {
+            pronunciationTextField.setText("Merci");
+        }
+        prononcer();
+    }
+
+    @FXML
+    private void suggestionComment() {
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        if (langueNom.equalsIgnoreCase("Anglais")) {
+            pronunciationTextField.setText("How are you?");
+        } else if (langueNom.equalsIgnoreCase("Espagnol")) {
+            pronunciationTextField.setText("¿Cómo estás?");
+        } else if (langueNom.equalsIgnoreCase("Allemand")) {
+            pronunciationTextField.setText("Wie geht es dir?");
+        } else if (langueNom.equalsIgnoreCase("Italien")) {
+            pronunciationTextField.setText("Come stai?");
+        } else {
+            pronunciationTextField.setText("Comment allez-vous ?");
+        }
+        prononcer();
+    }
+
+    @FXML
+    private void suggestionAmour() {
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        if (langueNom.equalsIgnoreCase("Anglais")) {
+            pronunciationTextField.setText("I love you");
+        } else if (langueNom.equalsIgnoreCase("Espagnol")) {
+            pronunciationTextField.setText("Te quiero");
+        } else if (langueNom.equalsIgnoreCase("Allemand")) {
+            pronunciationTextField.setText("Ich liebe dich");
+        } else if (langueNom.equalsIgnoreCase("Italien")) {
+            pronunciationTextField.setText("Ti amo");
+        } else {
+            pronunciationTextField.setText("Je t'aime");
+        }
+        prononcer();
+    }
+    @FXML
+    private void ouvrirFlashcards() {
+        ouvrirFormulaireFlashcards();
+    }
+    @FXML
+    private void ouvrirFormulaireFlashcards() {
+        flashcardsFormContainer.setVisible(true);
+        flashcardsFormContainer.setManaged(true);
+        flashcardsPromptArea.clear();
+        flashcardsLevelCombo.setValue(niveauActuelValue.getText() != null ? niveauActuelValue.getText() : "B1 - Intermédiaire");
+    }
+
+    @FXML
+    private void fermerFormulaireFlashcards() {
+        flashcardsFormContainer.setVisible(false);
+        flashcardsFormContainer.setManaged(false);
+    }
+
+    @FXML
+    private void genererFlashcardsIA() {
+        String prompt = flashcardsPromptArea.getText().trim();
+        if (prompt.isEmpty()) {
+            showAlert("Information", "Veuillez décrire ce que vous souhaitez réviser.");
+            return;
+        }
+
+        String selectedLevel = flashcardsLevelCombo.getValue();
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+
+        flashcardsLoading.setVisible(true);
+        flashcardsLoading.setManaged(true);
+
+        new Thread(() -> {
+            try {
+                String resultat = iaService.genererFlashcards(langueNom, prompt, selectedLevel);
+                List<Flashcard> flashcards = parserFlashcardsFromString(resultat);
+
+                Platform.runLater(() -> {
+                    flashcardsLoading.setVisible(false);
+                    flashcardsLoading.setManaged(false);
+
+                    if (!flashcards.isEmpty()) {
+                        startFlashcardSession(flashcards);
+                    } else {
+                        showAlert("Erreur", "Impossible de générer les flashcards. Utilisation du mode secours.");
+                        startFlashcardSession(getFallbackFlashcards(langueNom));
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    flashcardsLoading.setVisible(false);
+                    flashcardsLoading.setManaged(false);
+                    showAlert("Erreur", "Erreur: " + e.getMessage() + "\nUtilisation du mode secours.");
+                    startFlashcardSession(getFallbackFlashcards(langueNom));
+                });
+            }
+        }).start();
+    }
+
+    private List<Flashcard> parserFlashcardsFromString(String data) {
+        List<Flashcard> flashcards = new ArrayList<>();
+        String[] sections = data.split("===");
+
+        for (String section : sections) {
+            if (section.trim().isEmpty()) continue;
+
+            String question = extractFlashcardField(section, "QUESTION:");
+            String opt1 = extractFlashcardField(section, "OPTION1:");
+            String opt2 = extractFlashcardField(section, "OPTION2:");
+            String opt3 = extractFlashcardField(section, "OPTION3:");
+            String opt4 = extractFlashcardField(section, "OPTION4:");
+            String reponseStr = extractFlashcardField(section, "REPONSE:");
+            String explication = extractFlashcardField(section, "EXPLICATION:");
+
+            if (question != null && opt1 != null && reponseStr != null) {
+                try {
+                    int correctAnswer = Integer.parseInt(reponseStr.trim());
+                    String[] options = {opt1, opt2, opt3, opt4};
+                    flashcards.add(new Flashcard(question, options, correctAnswer,
+                            explication != null ? explication : "Révisez ce concept."));
+                } catch (NumberFormatException e) {}
+            }
+        }
+
+        if (flashcards.isEmpty()) {
+            flashcards = getFallbackFlashcards(langue != null ? langue.getNom() : "Français");
+        }
+
+        return flashcards;
+    }
+
+    private String extractFlashcardField(String text, String fieldName) {
+        int start = text.indexOf(fieldName);
+        if (start == -1) return null;
+        start += fieldName.length();
+        int end = text.indexOf("\n", start);
+        if (end == -1) end = text.length();
+        return text.substring(start, end).trim();
+    }
+
+    private List<Flashcard> getFallbackFlashcards(String langue) {
+        List<Flashcard> flashcards = new ArrayList<>();
+
+        if (langue.equalsIgnoreCase("anglais") || langue.equalsIgnoreCase("english")) {
+            flashcards.add(new Flashcard("What is the past tense of 'to go'?",
+                    new String[]{"Goed", "Went", "Gone", "Going"}, 2,
+                    "'Went' is the correct past tense of 'to go'."));
+            flashcards.add(new Flashcard("Choose the correct sentence:",
+                    new String[]{"She don't like pizza", "She doesn't likes pizza", "She doesn't like pizza", "She not like pizza"}, 3,
+                    "With 'she', use 'doesn't' + base verb."));
+            flashcards.add(new Flashcard("What does 'big' mean?",
+                    new String[]{"Small", "Large", "Fast", "Slow"}, 2,
+                    "'Big' means large in size."));
+            flashcards.add(new Flashcard("Complete: I ___ to the cinema yesterday.",
+                    new String[]{"go", "went", "goes", "going"}, 2,
+                    "'Yesterday' = past tense, use 'went'."));
+            flashcards.add(new Flashcard("What is the opposite of 'hot'?",
+                    new String[]{"Warm", "Cold", "Cool", "Freezing"}, 2,
+                    "'Cold' is opposite of 'hot'."));
+        } else {
+            flashcards.add(new Flashcard("Quel est le passé composé du verbe 'aller' ?",
+                    new String[]{"Je vais", "Je suis allé", "Je suis allée", "Je vais aller"}, 2,
+                    "Le passé composé de 'aller' = auxiliaire 'être' + 'allé'."));
+            flashcards.add(new Flashcard("Complétez : Elle ___ (manger) une pomme.",
+                    new String[]{"mange", "manges", "mangent", "mangeons"}, 1,
+                    "Avec 'elle', conjuguez au présent : 'elle mange'."));
+            flashcards.add(new Flashcard("Que signifie 'big' en français ?",
+                    new String[]{"Petit", "Grand", "Rapide", "Lent"}, 2,
+                    "'Big' = 'grand' en français."));
+            flashcards.add(new Flashcard("Complétez : Je ___ (être) fatigué.",
+                    new String[]{"suis", "es", "est", "sommes"}, 1,
+                    "Le verbe 'être' se conjugue 'je suis'."));
+            flashcards.add(new Flashcard("Quel est le contraire de 'chaud' ?",
+                    new String[]{"Tiède", "Froid", "Brûlant", "Glacé"}, 2,
+                    "Le contraire de 'chaud' est 'froid'."));
+        }
+        return flashcards;
+    }
+
+    private void startFlashcardSession(List<Flashcard> flashcards) {
+        currentFlashcards = flashcards;
+        currentFlashcardIndex = 0;
+        currentFlashcardScore = 0;
+        flashcardUserAnswers.clear();
+        flashcardUserSelections.clear();
+
+        for (int i = 0; i < flashcards.size(); i++) {
+            flashcardUserAnswers.add(false);
+            flashcardUserSelections.add(-1);
+        }
+
+        fermerFormulaireFlashcards();
+        loadCurrentFlashcard();
+        flashcardsSessionContainer.setVisible(true);
+        flashcardsSessionContainer.setManaged(true);
+    }
+
+    private void loadCurrentFlashcard() {
+        if (currentFlashcardIndex >= currentFlashcards.size()) {
+            terminerFlashcardSession();
+            return;
+        }
+
+        Flashcard card = currentFlashcards.get(currentFlashcardIndex);
+        // Nettoyer la question des caractères markdown
+        flashcardQuestionLabel.setText(cleanMarkdown(card.getQuestion()));
+
+        flashcardOptionsContainer.getChildren().clear();
+        flashcardToggleGroup = new ToggleGroup();
+
+        for (int i = 0; i < card.getOptions().length; i++) {
+            RadioButton rb = new RadioButton(cleanMarkdown(card.getOptions()[i]));
+            rb.setToggleGroup(flashcardToggleGroup);
+            rb.setUserData(i + 1);
+            rb.setStyle("-fx-font-size: 13px; -fx-text-fill: #475569; -fx-padding: 8; -fx-cursor: hand;");
+            flashcardOptionsContainer.getChildren().add(rb);
+        }
+
+        flashcardExplanationArea.setVisible(false);
+        flashcardExplanationArea.clear();
+        flashcardValidateBtn.setDisable(false);
+        flashcardValidateBtn.setVisible(true);
+        flashcardNextBtn.setVisible(false);
+
+        flashcardProgressLabel.setText("Carte " + (currentFlashcardIndex + 1) + "/" + currentFlashcards.size());
+        flashcardScoreLabel.setText("Score: " + currentFlashcardScore);
+    }
+
+    @FXML
+    private void validerReponseFlashcard() {
+        if (flashcardToggleGroup == null) return;
+
+        RadioButton selected = (RadioButton) flashcardToggleGroup.getSelectedToggle();
+        if (selected == null) {
+            showAlert("Information", "Veuillez sélectionner une réponse.");
+            return;
+        }
+
+        int selectedOption = (int) selected.getUserData();
+        Flashcard card = currentFlashcards.get(currentFlashcardIndex);
+        boolean isCorrect = (selectedOption == card.getCorrectAnswer());
+
+        // Nettoyer l'explication
+        flashcardExplanationArea.setText(cleanMarkdown(card.getExplanation()));
+        flashcardExplanationArea.setVisible(true);
+
+        // Style de l'explication avec couleurs
+        flashcardExplanationArea.setStyle("-fx-background-color: #E8F5E9; -fx-background-radius: 10; -fx-border-color: #A5D6A7; -fx-border-radius: 10; -fx-font-size: 12px; -fx-text-fill: #2E7D32;");
+
+        // Désactiver et colorier
+        for (int i = 0; i < flashcardOptionsContainer.getChildren().size(); i++) {
+            javafx.scene.Node node = flashcardOptionsContainer.getChildren().get(i);
+            if (node instanceof RadioButton) {
+                RadioButton rb = (RadioButton) node;
+                rb.setDisable(true);
+                int optValue = (int) rb.getUserData();
+                if (optValue == card.getCorrectAnswer()) {
+                    rb.setStyle("-fx-text-fill: #10B981; -fx-font-weight: bold; -fx-padding: 8; -fx-background-color: #D1FAE5; -fx-background-radius: 8;");
+                } else if (optValue == selectedOption && !isCorrect) {
+                    rb.setStyle("-fx-text-fill: #EF4444; -fx-padding: 8; -fx-background-color: #FEE2E2; -fx-background-radius: 8;");
+                }
+            }
+        }
+
+        flashcardUserAnswers.set(currentFlashcardIndex, isCorrect);
+        flashcardUserSelections.set(currentFlashcardIndex, selectedOption);
+        if (isCorrect) currentFlashcardScore++;
+
+        flashcardValidateBtn.setDisable(true);
+        flashcardValidateBtn.setVisible(false);
+        flashcardNextBtn.setVisible(true);
+        flashcardScoreLabel.setText("Score: " + currentFlashcardScore);
+
+        if (currentFlashcardIndex + 1 >= currentFlashcards.size()) {
+            flashcardNextBtn.setText("✓ Terminer");
+        }
+    }
+
+    @FXML
+    private void flashcardSuivante() {
+        currentFlashcardIndex++;
+        if (currentFlashcardIndex >= currentFlashcards.size()) {
+            terminerFlashcardSession();
+        } else {
+            loadCurrentFlashcard();
+        }
+    }
+
+    private void terminerFlashcardSession() {
+        flashcardsSessionContainer.setVisible(false);
+        flashcardsSessionContainer.setManaged(false);
+
+        String analysis = generateFlashcardAnalysis();
+        flashcardResultArea.setText(analysis);
+        styleFlashcardResult(); // Ajouter cette ligne
+        flashcardResultContainer.setVisible(true);
+        flashcardResultContainer.setManaged(true);
+    }
+
+    private String generateFlashcardAnalysis() {
+        StringBuilder analysis = new StringBuilder();
+        int total = currentFlashcards.size();
+        int correct = currentFlashcardScore;
+        int wrong = total - correct;
+        double percentage = (double) correct / total * 100;
+
+        analysis.append("📊 ANALYSE DE VOS RÉPONSES\n");
+        analysis.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
+
+        // Section des statistiques avec couleurs via emojis
+        analysis.append("✅ Réponses correctes : ").append(correct).append("/").append(total).append("\n");
+        analysis.append("❌ Réponses incorrectes : ").append(wrong).append("/").append(total).append("\n");
+        analysis.append("📈 Taux de réussite : ").append(String.format("%.1f", percentage)).append("%\n\n");
+
+        // Message de félicitations ou encouragement
+        if (percentage >= 80) {
+            analysis.append("🏆 EXCELLENT ! Vous maîtrisez très bien ce sujet !\n");
+            analysis.append("   Continuez comme ça, vous êtes sur la bonne voie !\n\n");
+        } else if (percentage >= 60) {
+            analysis.append("👍 TRÈS BIEN ! Quelques petites lacunes à combler.\n");
+            analysis.append("   Révisez les cartes où vous avez fait des erreurs.\n\n");
+        } else if (percentage >= 40) {
+            analysis.append("📚 PAS MAL ! Mais il faut plus de pratique.\n");
+            analysis.append("   Concentrez-vous sur les explications fournies.\n\n");
+        } else {
+            analysis.append("💪 CONTINUEZ VOS EFFORTS ! C'est en forgeant qu'on devient forgeron.\n");
+            analysis.append("   Revoyez toutes les flashcards et réessayez.\n\n");
+        }
+
+        // Détail des erreurs
+        analysis.append("📝 DÉTAIL DES ERREURS\n");
+        analysis.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+        boolean hasErrors = false;
+        for (int i = 0; i < currentFlashcards.size(); i++) {
+            if (!flashcardUserAnswers.get(i)) {
+                hasErrors = true;
+                Flashcard card = currentFlashcards.get(i);
+                int userAnswer = flashcardUserSelections.get(i);
+                analysis.append("\n❌ CARTE ").append(i + 1).append("\n");
+                analysis.append("   📖 Question : ").append(cleanMarkdown(card.getQuestion())).append("\n");
+                analysis.append("   ❌ Votre réponse : ").append(cleanMarkdown(card.getOptions()[userAnswer - 1])).append("\n");
+                analysis.append("   ✅ Bonne réponse : ").append(cleanMarkdown(card.getOptions()[card.getCorrectAnswer() - 1])).append("\n");
+                analysis.append("   💡 Explication : ").append(cleanMarkdown(card.getExplanation())).append("\n");
+            }
+        }
+
+        if (!hasErrors) {
+            analysis.append("\n🎉 Félicitations ! Aucune erreur ! Vous avez parfaitement maîtrisé ce sujet.\n");
+        }
+
+        // Conseils personnalisés
+        analysis.append("\n\n🎯 CONSEILS POUR PROGRESSER\n");
+        analysis.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+        // Analyser les types d'erreurs
+        int grammarErrors = 0, vocabErrors = 0, conjugationErrors = 0;
+        for (int i = 0; i < currentFlashcards.size(); i++) {
+            if (!flashcardUserAnswers.get(i)) {
+                String explanation = currentFlashcards.get(i).getExplanation().toLowerCase();
+                if (explanation.contains("grammaire") || explanation.contains("règle")) grammarErrors++;
+                if (explanation.contains("vocabulaire") || explanation.contains("mot")) vocabErrors++;
+                if (explanation.contains("conjug") || explanation.contains("verbe")) conjugationErrors++;
+            }
+        }
+
+        if (grammarErrors > 0) {
+            analysis.append("📖 Grammaire : Révisez les règles de grammaire de ce thème.\n");
+        }
+        if (vocabErrors > 0) {
+            analysis.append("📝 Vocabulaire : Apprenez plus de mots sur ce sujet.\n");
+        }
+        if (conjugationErrors > 0) {
+            analysis.append("🔤 Conjugaison : Entraînez-vous avec des exercices de conjugaison.\n");
+        }
+
+        if (grammarErrors == 0 && vocabErrors == 0 && conjugationErrors == 0 && hasErrors) {
+            analysis.append("📚 Révisez les explications des cartes où vous avez fait des erreurs.\n");
+        }
+
+        analysis.append("\n💪 N'oubliez pas : la pratique régulière est la clé du succès !\n");
+
+        return analysis.toString();
+    }
+
+    @FXML
+    private void fermerFlashcardsSession() {
+        flashcardsSessionContainer.setVisible(false);
+        flashcardsSessionContainer.setManaged(false);
+    }
+
+    @FXML
+    private void fermerFlashcardsResult() {
+        flashcardResultContainer.setVisible(false);
+        flashcardResultContainer.setManaged(false);
+        currentFlashcards.clear();
+    }
+    /**
+     * Nettoie le texte en supprimant les caractères markdown (** et ##)
+     */
+    private String cleanMarkdown(String text) {
+        if (text == null) return "";
+        return text.replaceAll("\\*\\*", "")      // Supprime **
+                .replaceAll("##", "")          // Supprime ##
+                .replaceAll("#", "")           // Supprime #
+                .replaceAll("\\*", "");        // Supprime les * simples
+    }
+
+
+    // Ajoutez cette méthode pour styliser le résultat quand il s'affiche
+    private void styleFlashcardResult() {
+        flashcardResultArea.setStyle("-fx-background-color: #F8FAFC; -fx-font-size: 13px; -fx-font-family: 'Courier New'; -fx-text-fill: #1E293B;");
     }
 }

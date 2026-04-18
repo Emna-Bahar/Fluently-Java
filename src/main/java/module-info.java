@@ -7,6 +7,7 @@ module com.example.pijava_fluently {
     requires kernel;
     requires layout;
     requires okhttp3;
+    requires javafx.media;
 
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;

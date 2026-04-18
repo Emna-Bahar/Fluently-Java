@@ -134,4 +134,35 @@ public class MistralService {
 
         return appelerMistral(prompt);
     }
+    // Ajoutez cette méthode dans MistralService.java
+    public String genererFlashcards(String langue, String promptUtilisateur, String niveau) {
+        String systemPrompt = String.format("""
+        Tu es un professeur expert en %s. Tu dois générer des flashcards éducatives en %s UNIQUEMENT.
+        
+        L'utilisateur demande: "%s"
+        Niveau: %s
+        
+        Génère EXACTEMENT 5 flashcards. Chaque flashcard doit être au format suivant, sans texte supplémentaire:
+        
+        ===
+        QUESTION: [La question posée à l'étudiant en %s]
+        OPTION1: [Choix 1 en %s]
+        OPTION2: [Choix 2 en %s]
+        OPTION3: [Choix 3 en %s]
+        OPTION4: [Choix 4 en %s]
+        REPONSE: [numéro de 1 à 4]
+        EXPLICATION: [Explication détaillée en %s de la réponse]
+        ===
+        
+        IMPORTANT: 
+        - Toute la question, les options et l'explication DOIVENT être en %s
+        - Ne mets rien d'autre que ces 5 flashcards
+        - Sépare chaque flashcard par "==="
+        - Les flashcards doivent couvrir: grammaire, vocabulaire, conjugaison, culture
+        - Adapte-toi au niveau %s
+        """, langue, langue, promptUtilisateur, niveau,
+                langue, langue, langue, langue, langue, langue, langue, niveau);
+
+        return appelerMistral(systemPrompt);
+    }
 }

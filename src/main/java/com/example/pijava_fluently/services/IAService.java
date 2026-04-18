@@ -24,4 +24,8 @@ public class IAService {
     public String chercherDefinition(String mot, String langue) {
         return mistralService.chercherDefinition(mot, langue);
     }
+    // Ajoutez cette méthode dans IAService.java
+    public String genererFlashcards(String langue, String promptUtilisateur, String niveau) {
+        return mistralService.genererFlashcards(langue, promptUtilisateur, niveau);
+    }
 }
