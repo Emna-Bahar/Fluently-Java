@@ -74,39 +74,4 @@ public class NiveauService implements IService<Niveau> {
         }
         return niveaux;
     }
-
-    // ── Methods used by GroupesController / GroupFormController ──────────────
-
-    /** Returns niveaux for a langue as services.Niveau (used by group views). */
-    public List<com.example.pijava_fluently.services.Niveau> recupererNiveauxParLangue(int idLangue) throws SQLException {
-        List<com.example.pijava_fluently.services.Niveau> niveaux = new ArrayList<>();
-        String sql = "SELECT id, titre, id_langue_id FROM niveau WHERE id_langue_id = ?";
-        PreparedStatement ps = cnx.prepareStatement(sql);
-        ps.setInt(1, idLangue);
-        ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-            com.example.pijava_fluently.services.Niveau n = new com.example.pijava_fluently.services.Niveau();
-            n.setId(rs.getInt("id"));
-            n.setTitre(rs.getString("titre"));
-            n.setIdLangueId(rs.getInt("id_langue_id"));
-            niveaux.add(n);
-        }
-        return niveaux;
-    }
-
-    /** Returns a single niveau by id as services.Niveau (used by group views). */
-    public com.example.pijava_fluently.services.Niveau recupererParId(int id) throws SQLException {
-        String sql = "SELECT id, titre, id_langue_id FROM niveau WHERE id = ?";
-        PreparedStatement ps = cnx.prepareStatement(sql);
-        ps.setInt(1, id);
-        ResultSet rs = ps.executeQuery();
-        if (rs.next()) {
-            com.example.pijava_fluently.services.Niveau n = new com.example.pijava_fluently.services.Niveau();
-            n.setId(rs.getInt("id"));
-            n.setTitre(rs.getString("titre"));
-            n.setIdLangueId(rs.getInt("id_langue_id"));
-            return n;
-        }
-        return null;
-    }
 }
