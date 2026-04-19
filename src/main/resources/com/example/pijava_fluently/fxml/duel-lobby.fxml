@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.DuelLobbyController"
+      spacing="0"
+      style="-fx-background-color:#F0F2FF;">
+
+    <!-- En-tête -->
+    <VBox style="-fx-background-color:white;-fx-padding:30 40;
+                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.08),10,0,0,3);">
+        <Label text="⚔️ Mode Duel — Tournoi en temps réel"
+               style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;"/>
+        <Label text="Défiez un camarade sur le même réseau WiFi"
+               style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;-fx-padding:4 0 0 0;"/>
+    </VBox>
+
+    <HBox spacing="30" alignment="TOP_CENTER" style="-fx-padding:40;">
+
+        <!-- ── BLOC HÔTE ── -->
+        <VBox spacing="16" prefWidth="320"
+              style="-fx-background-color:white;-fx-background-radius:18;
+                     -fx-padding:30;
+                     -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.10),14,0,0,4);">
+
+            <Label text="🏠 Créer un duel"
+                   style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;"/>
+            <Label text="Vous serez l'hôte. Partagez votre IP à l'adversaire."
+                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;" wrapText="true"/>
+
+            <Label text="Choisir un test :"
+                   style="-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#374151;"/>
+            <ComboBox fx:id="testComboBox" prefWidth="260"
+                      style="-fx-background-radius:10;-fx-font-size:13px;"/>
+
+            <Button fx:id="btnCreer" text="🚀 Créer le duel"
+                    onAction="#handleCreerDuel"
+                    style="-fx-background-color:#6C63FF;-fx-text-fill:white;
+                           -fx-font-weight:bold;-fx-background-radius:12;
+                           -fx-font-size:14px;-fx-padding:12 24;-fx-cursor:hand;"/>
+
+            <!-- Affiché après création -->
+            <VBox fx:id="panelIP" visible="false" managed="false" spacing="8"
+                  style="-fx-background-color:#F0EEFF;-fx-background-radius:12;-fx-padding:16;">
+                <Label text="📡 Votre IP à partager :"
+                       style="-fx-font-size:12px;-fx-text-fill:#6C63FF;-fx-font-weight:bold;"/>
+                <Label fx:id="labelIP" text="192.168.x.x"
+                       style="-fx-font-size:22px;-fx-font-weight:bold;
+                              -fx-text-fill:#1A1D2E;"/>
+                <Label fx:id="labelStatutHote" text="⏳ En attente de l'adversaire..."
+                       style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+            </VBox>
+        </VBox>
+
+        <!-- Séparateur -->
+        <VBox alignment="CENTER">
+            <Label text="OU"
+                   style="-fx-font-size:16px;-fx-font-weight:bold;
+                          -fx-text-fill:#C0C7D0;"/>
+        </VBox>
+
+        <!-- ── BLOC CLIENT ── -->
+        <VBox spacing="16" prefWidth="320"
+              style="-fx-background-color:white;-fx-background-radius:18;
+                     -fx-padding:30;
+                     -fx-effect:dropshadow(gaussian,rgba(236,72,153,0.10),14,0,0,4);">
+
+            <Label text="🎯 Rejoindre un duel"
+                   style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#EC4899;"/>
+            <Label text="Entrez l'IP affichée sur le PC de l'hôte."
+                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;" wrapText="true"/>
+
+            <Label text="IP de l'hôte :"
+                   style="-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#374151;"/>
+            <TextField fx:id="fieldIP" promptText="ex : 192.168.1.45"
+                       style="-fx-background-radius:10;-fx-font-size:15px;
+                              -fx-padding:12;-fx-border-color:#E0E3F0;
+                              -fx-border-radius:10;-fx-border-width:1;"/>
+
+            <Button fx:id="btnRejoindre" text="🔗 Rejoindre"
+                    onAction="#handleRejoindre"
+                    style="-fx-background-color:#EC4899;-fx-text-fill:white;
+                           -fx-font-weight:bold;-fx-background-radius:12;
+                           -fx-font-size:14px;-fx-padding:12 24;-fx-cursor:hand;"/>
+
+            <Label fx:id="labelStatutClient" text=""
+                   style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"
+                   wrapText="true"/>
+        </VBox>
+    </HBox>
+</VBox>

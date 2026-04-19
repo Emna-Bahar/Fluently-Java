@@ -15,8 +15,9 @@ module com.example.pijava_fluently {
 
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;
-    opens com.example.pijava_fluently.entites to javafx.base, javafx.fxml;
+    opens com.example.pijava_fluently.entites to javafx.base, javafx.fxml, com.fasterxml.jackson.databind;
     opens com.example.pijava_fluently.utils to javafx.fxml;
+    opens com.example.pijava_fluently.services to com.fasterxml.jackson.databind;
 
     exports com.example.pijava_fluently;
     exports com.example.pijava_fluently.controller;

@@ -804,4 +804,25 @@ public class MesTestsController implements Initializable { //initializable
         alert.setContentText(msg);
         alert.showAndWait();
     }
+    @FXML
+    private void handleDuel() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/duel-lobby.fxml"));
+            Node vue = loader.load();
+            DuelLobbyController ctrl = loader.getController();
+            ctrl.setCurrentUser(currentUser);
+
+            if (homeController != null) {
+                homeController.setContent(vue);
+            } else {
+                // Fallback : remplacer dans vboxContenu
+                vboxContenu.getChildren().clear();
+                vboxContenu.getChildren().add(vue);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger le lobby duel.");
+        }
+    }
 }
