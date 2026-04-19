@@ -1,6 +1,11 @@
 package com.example.pijava_fluently.controller;
 
-import com.example.pijava_fluently.services.*;
+import com.example.pijava_fluently.entites.Langue;
+import com.example.pijava_fluently.entites.Niveau;
+import com.example.pijava_fluently.services.GroupService;
+import com.example.pijava_fluently.services.Groupe;
+import com.example.pijava_fluently.services.LangueService;
+import com.example.pijava_fluently.services.NiveauService;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
