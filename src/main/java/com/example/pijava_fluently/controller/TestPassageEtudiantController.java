@@ -356,6 +356,7 @@ public class TestPassageEtudiantController {
 
     private void terminerTest(boolean parTimer) {
         if (timer != null) timer.stop();
+        testTermine = true;
 
         double scoreTotal = 0.0;
         double scoreMaxTotal = 0.0;
@@ -724,58 +725,149 @@ public class TestPassageEtudiantController {
         a.setHeaderText(null);
         a.showAndWait();
     }
+    // ── Compteur global d'infractions ────────────────────────────────
+
+    // ── Flags pour éviter les boucles ────────────────────────────────
+    private int     totalInfractions  = 0;
+    private boolean testTermine       = false;  // stopper tout après fin
+    private boolean alerteEnCours     = false;  // éviter les boucles focus
+    private static final int MAX_INFRACTIONS = 3;
+
     private void setupExamModeDetection() {
-        // Attendre que le label soit attaché à la scène
         labelTitreTest.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                javafx.stage.Stage stage = (javafx.stage.Stage) newScene.getWindow();
+            if (newScene == null) return;
+            javafx.stage.Stage stage = (javafx.stage.Stage) newScene.getWindow();
 
-                // Détection de perte de focus
-                stage.focusedProperty().addListener((obs2, oldVal, newVal) -> {
-                    if (!newVal && isExamMode) {
-                        blurCount++;
-                        LoggerUtil.warning("Exam mode: Window lost focus", "count", String.valueOf(blurCount));
+            // ── Perte de focus ────────────────────────────────────────
+            stage.focusedProperty().addListener((obs2, wasActive, isNowActive) -> {
+                // Ignorer si : test fini, alerte déjà ouverte, ou fenêtre
+                // qui regagne le focus (isNowActive = true)
+                if (!isNowActive && isExamMode && !testTermine && !alerteEnCours) {
+                    blurCount++;
+                    LoggerUtil.warning("Focus perdu", "count", String.valueOf(blurCount));
+                    if (blurCount > 2) {
+                        logInfraction("Changement de fenêtre (" + blurCount + " fois)");
                     }
-                });
-                // Bloquer le clic droit (ContextMenu)
-                stage.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_CLICKED, event -> {
-                    if (isExamMode && event.isSecondaryButtonDown()) {
-                        event.consume();
-                        LoggerUtil.warning("Exam mode: Right-click detected");
-                        showWarning("Le clic droit est désactivé en mode examen !");
-                    }
-                });
-                // Bloquer le menu contextuel
-                stage.addEventFilter(javafx.scene.input.ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
-                    if (isExamMode) {
-                        event.consume();
-                        LoggerUtil.warning("Exam mode: Context menu requested");
-                        showWarning("Le menu contextuel est désactivé en mode examen !");
-                    }
-                });
+                }
+            });
 
-                // Empêcher Ctrl+C, Ctrl+V, Ctrl+X
-                stage.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
-                    if (isExamMode && event.isControlDown()) {
-                        if (event.getCode() == javafx.scene.input.KeyCode.C ||
-                                event.getCode() == javafx.scene.input.KeyCode.V ||
-                                event.getCode() == javafx.scene.input.KeyCode.X) {
-                            event.consume();
-                            copyPasteCount++;
-                            LoggerUtil.warning("Exam mode: Copy/Paste attempt detected", "count", String.valueOf(copyPasteCount));
-                            showWarning("Copier-coller est désactivé en mode examen !");
+            // ── Menu contextuel (clic droit) ──────────────────────────
+            stage.addEventFilter(
+                    javafx.scene.input.ContextMenuEvent.CONTEXT_MENU_REQUESTED,
+                    event -> {
+                        if (!isExamMode || testTermine) return;
+                        event.consume();
+                        logInfraction("Clic droit détecté");
+                    });
+
+            // ── Touches interdites ────────────────────────────────────
+            stage.addEventFilter(
+                    javafx.scene.input.KeyEvent.KEY_PRESSED,
+                    event -> {
+                        if (!isExamMode || testTermine) return;
+                        if (event.isControlDown()) {
+                            javafx.scene.input.KeyCode kc = event.getCode();
+                            if (kc == javafx.scene.input.KeyCode.C
+                                    || kc == javafx.scene.input.KeyCode.V
+                                    || kc == javafx.scene.input.KeyCode.X) {
+                                event.consume();
+                                copyPasteCount++;
+                                logInfraction("Copier-coller (Ctrl+" + kc + ")");
+                            }
                         }
-                    }
-                    // Empêcher F12, Ctrl+Shift+I, etc.
-                    if (isExamMode && (event.getCode() == javafx.scene.input.KeyCode.F12 ||
-                            (event.isControlDown() && event.isShiftDown() && event.getCode() == javafx.scene.input.KeyCode.I))) {
-                        event.consume();
-                        LoggerUtil.warning("Exam mode: DevTools attempt detected");
-                        showWarning("Les outils développeur sont désactivés en mode examen !");
-                    }
-                });
+                        if (event.getCode() == javafx.scene.input.KeyCode.F12) {
+                            event.consume();
+                            logInfraction("Tentative F12");
+                        }
+                    });
+        });
+    }
+
+    private void logInfraction(String raison) {
+        // Ne rien faire si test déjà terminé ou alerte déjà ouverte
+        if (testTermine || alerteEnCours) return;
+
+        totalInfractions++;
+        int restantes = MAX_INFRACTIONS - totalInfractions;
+
+        LoggerUtil.warning("INFRACTION " + totalInfractions + "/" + MAX_INFRACTIONS,
+                "raison", raison);
+
+        Platform.runLater(() -> {
+            // Double-vérification sur le thread FX
+            if (testTermine) return;
+
+            alerteEnCours = true; // bloquer les événements focus pendant l'alerte
+
+            if (totalInfractions >= MAX_INFRACTIONS) {
+                // ── Terminer le test ──────────────────────────────────
+                testTermine = true; // poser le flag AVANT d'ouvrir l'alerte
+
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("🔒 Test annulé");
+                alert.setHeaderText("Trop d'infractions — test annulé");
+                alert.setContentText(
+                        "Dernière infraction : " + raison + "\n\n" +
+                                MAX_INFRACTIONS + " infractions atteintes.\n" +
+                                "Le test est soumis automatiquement avec un score de 0.");
+                alert.showAndWait();
+
+                alerteEnCours = false;
+                terminerTestForce();
+
+            } else {
+                // ── Avertissement simple ──────────────────────────────
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("⚠️ Avertissement — Mode Examen");
+                alert.setHeaderText("Infraction " + totalInfractions + "/" + MAX_INFRACTIONS);
+                alert.setContentText(
+                        "Infraction : " + raison + "\n\n" +
+                                "Encore " + restantes + " infraction(s) avant annulation.");
+                alert.showAndWait();
+
+                // Remettre le flag APRÈS fermeture de l'alerte
+                // (showAndWait bloque ici jusqu'à ce que l'user clique OK)
+                alerteEnCours = false;
             }
         });
+    }
+
+    private void terminerTestForce() {
+        if (timer != null) timer.stop();
+
+        try {
+            TestPassage passage = new TestPassage(
+                    dateDebut,
+                    LocalDateTime.now(),
+                    0.0, 0,
+                    questions.stream().mapToInt(Question::getScoreMax).sum(),
+                    "annule",
+                    secondesEcoulees,
+                    test.getId(),
+                    userId
+            );
+            testPassageService.ajouter(passage);
+        } catch (Exception e) {
+            LoggerUtil.error("Erreur sauvegarde passage annulé", e);
+        }
+
+        // Afficher les résultats avec score 0
+        int scoreMax = questions.stream().mapToInt(Question::getScoreMax).sum();
+        double[] scoresObtenus  = new double[questions.size()];
+        String[] statusParQuestion = new String[questions.size()];
+        java.util.Arrays.fill(statusParQuestion, "non_repondu");
+
+        afficherResultats(scoresObtenus, statusParQuestion, 0, scoreMax, 0.0, false);
+    }
+
+    /**
+     * Termine le test avec score = 0 (cas d'infraction maximale).
+     */
+
+
+    /** Calcule le scoreMax sans passer les questions */
+    private int calculerScoreMax() {
+        return questions.stream().mapToInt(Question::getScoreMax).sum();
     }
     private void showWarning(String message) {
         javafx.application.Platform.runLater(() -> {
