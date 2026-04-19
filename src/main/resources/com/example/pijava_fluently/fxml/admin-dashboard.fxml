@@ -303,7 +303,6 @@
                     <VBox fx:id="questionsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="reponsesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="passagesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="etudiantsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
 
                     <!-- ═══════ GROUPES (gestion-groupe branch — inline table) ═══════ -->
                     <VBox fx:id="groupesView" visible="false" managed="false" spacing="24">

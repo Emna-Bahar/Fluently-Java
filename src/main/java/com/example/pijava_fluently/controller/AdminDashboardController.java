@@ -587,11 +587,7 @@ public class AdminDashboardController implements Initializable {
     @FXML
     private void showEtudiants() {
         hideAll();
-        if (etudiantsView != null && !etudiantsView.getChildren().isEmpty()) {
-            show(etudiantsView);
-        } else {
-            loadPage(etudiantsView, "/com/example/pijava_fluently/fxml/etudiants-view.fxml");
-        }
+        show(etudiantsView);
         setTitle("Utilisateurs", "Administration › Utilisateurs");
         setActive(navEtudiants);
     }
