@@ -1,5 +1,6 @@
 package com.example.pijava_fluently.services;
 
+import com.example.pijava_fluently.entites.Groupe;
 import com.example.pijava_fluently.utils.MyDatabase;
 
 import java.sql.*;

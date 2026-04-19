@@ -1,5 +1,6 @@
 package com.example.pijava_fluently.controller;
 
+import com.example.pijava_fluently.entites.Groupe;
 import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.entites.TestPassage;

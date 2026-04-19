@@ -1,4 +1,4 @@
-package com.example.pijava_fluently.services;
+package com.example.pijava_fluently.entites;
 
 import java.sql.Timestamp;
 

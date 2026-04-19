@@ -1,10 +1,10 @@
-package com.example.pijava_fluently.services;
+package com.example.pijava_fluently.entites;
 
 import java.sql.Timestamp;
 
 public class MessageLog {
     private int id;
-    private String action;          // "DELETE" or "EDIT"
+    private String action;
     private int messageId;
     private int groupeId;
     private int userId;

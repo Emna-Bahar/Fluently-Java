@@ -1,7 +1,7 @@
 package com.example.pijava_fluently.controller;
 
-import com.example.pijava_fluently.services.Groupe;
-import com.example.pijava_fluently.services.Message;
+import com.example.pijava_fluently.entites.Groupe;
+import com.example.pijava_fluently.entites.Message;
 import com.example.pijava_fluently.services.MessageLogService;
 import com.example.pijava_fluently.services.MessageService;
 import javafx.fxml.FXML;

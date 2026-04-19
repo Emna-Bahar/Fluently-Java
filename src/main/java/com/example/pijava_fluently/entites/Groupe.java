@@ -1,4 +1,4 @@
-package com.example.pijava_fluently.services;
+package com.example.pijava_fluently.entites;
 
 import java.sql.Timestamp;
 
@@ -15,7 +15,7 @@ public class Groupe {
     public Groupe() {
     }
 
-    public Groupe(int id, String nom, String description, int capacite, String statut, 
+    public Groupe(int id, String nom, String description, int capacite, String statut,
                   Timestamp dateCreation, int idLangueId, int idNiveauId) {
         this.id = id;
         this.nom = nom;
@@ -27,7 +27,7 @@ public class Groupe {
         this.idNiveauId = idNiveauId;
     }
 
-    public Groupe(String nom, String description, int capacite, String statut, 
+    public Groupe(String nom, String description, int capacite, String statut,
                   int idLangueId, int idNiveauId) {
         this.nom = nom;
         this.description = description;
