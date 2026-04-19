@@ -73,6 +73,39 @@ public class LangueService implements IService<Langue> {
         }
         return langues;
     }
+    // ── Methods used by GroupesController / GroupFormController ──────────────
+
+    /** Returns active langues as services.Langue (used by group views). */
+    public List<com.example.pijava_fluently.services.Langue> recupererToutesLanguesActives() throws SQLException {
+        List<com.example.pijava_fluently.services.Langue> langues = new ArrayList<>();
+        String sql = "SELECT id, nom FROM langue WHERE is_active = 1";
+        Statement st = cnx.createStatement();
+        ResultSet rs = st.executeQuery(sql);
+        while (rs.next()) {
+            com.example.pijava_fluently.services.Langue l = new com.example.pijava_fluently.services.Langue();
+            l.setId(rs.getInt("id"));
+            l.setNom(rs.getString("nom"));
+            l.setActive(true);
+            langues.add(l);
+        }
+        return langues;
+    }
+
+    /** Returns a single langue by id as services.Langue (used by group views). */
+    public com.example.pijava_fluently.services.Langue recupererParId(int id) throws SQLException {
+        String sql = "SELECT id, nom FROM langue WHERE id = ?";
+        PreparedStatement ps = cnx.prepareStatement(sql);
+        ps.setInt(1, id);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            com.example.pijava_fluently.services.Langue l = new com.example.pijava_fluently.services.Langue();
+            l.setId(rs.getInt("id"));
+            l.setNom(rs.getString("nom"));
+            return l;
+        }
+        return null;
+    }
+
     // Vérifier si une langue existe déjà avec ce nom
     public boolean existsByNom(String nom, Integer excludeId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM langue WHERE LOWER(nom) = LOWER(?)";
