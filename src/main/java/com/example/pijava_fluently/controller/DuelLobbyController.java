@@ -27,6 +27,7 @@ public class DuelLobbyController {
     @FXML private TextField      fieldIP;
     @FXML private Button         btnRejoindre;
     @FXML private Label          labelStatutClient;
+    @FXML private Label labelCommande;
 
     private final TestService testService = new TestService();
     private DuelServer   server;
@@ -102,6 +103,14 @@ public class DuelLobbyController {
         panelIP.setVisible(true);
         panelIP.setManaged(true);
         labelIP.setText(DuelServer.getLocalIP() + " : 9090");
+        // Après labelIP.setText(...)
+        if (labelCommande != null) {
+            labelCommande.setText(
+                    "netsh advfirewall firewall add rule " +
+                            "name=\"Fluently Duel\" dir=in action=allow " +
+                            "protocol=TCP localport=9090"
+            );
+        }
         labelStatutHote.setText("⏳ En attente de l'adversaire...");
     }
 

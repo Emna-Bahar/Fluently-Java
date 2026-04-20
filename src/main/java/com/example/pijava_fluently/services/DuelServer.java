@@ -86,9 +86,38 @@ public class DuelServer {
 
     public static String getLocalIP() {
         try {
-            return InetAddress.getLocalHost().getHostAddress();
+            // Parcourir toutes les interfaces réseau
+            java.util.Enumeration<java.net.NetworkInterface> interfaces =
+                    java.net.NetworkInterface.getNetworkInterfaces();
+
+            while (interfaces.hasMoreElements()) {
+                java.net.NetworkInterface ni = interfaces.nextElement();
+
+                // Ignorer loopback et interfaces inactives
+                if (ni.isLoopback() || !ni.isUp()) continue;
+
+                java.util.Enumeration<java.net.InetAddress> addresses =
+                        ni.getInetAddresses();
+
+                while (addresses.hasMoreElements()) {
+                    java.net.InetAddress addr = addresses.nextElement();
+
+                    // Prendre seulement les IPv4 qui commencent par 192.168 ou 10.
+                    String ip = addr.getHostAddress();
+                    if (!addr.isLoopbackAddress()
+                            && addr instanceof java.net.Inet4Address
+                            && (ip.startsWith("192.168.")
+                            || ip.startsWith("10.")
+                            || ip.startsWith("172."))) {
+                        return ip;
+                    }
+                }
+            }
+            // Fallback
+            return java.net.InetAddress.getLocalHost().getHostAddress();
+
         } catch (Exception e) {
-            return "127.0.0.1";
+            return "Introuvable — vérifiez votre connexion WiFi";
         }
     }
 

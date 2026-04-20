@@ -2,6 +2,7 @@ package com.example.pijava_fluently.services;
 
 import com.example.pijava_fluently.utils.LoggerUtil;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 
 import java.io.*;
 import java.net.Socket;
@@ -26,26 +27,57 @@ public class DuelClient {
     }
 
     public void connect(String hostIp) {
-        Thread clientThread = new Thread(() -> {
+        new Thread(() -> {
             try {
-                socket = new Socket(hostIp, PORT);
+                // Timeout de connexion : 5 secondes maximum
+                socket = new Socket();
+                socket.connect(
+                        new java.net.InetSocketAddress(hostIp, PORT),
+                        5000  // 5 secondes
+                );
+
                 out = new PrintWriter(new BufferedWriter(
                         new OutputStreamWriter(socket.getOutputStream())), true);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                in  = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()));
 
                 running = true;
                 LoggerUtil.info("Connected to host", "ip", hostIp);
-
                 Platform.runLater(onConnected);
-                startListening();
+                listen();
 
+            } catch (java.net.SocketTimeoutException e) {
+                LoggerUtil.error("Connexion timeout", e);
+                Platform.runLater(() -> showConnectError(
+                        "Connexion impossible à " + hostIp + "\n\n" +
+                                "Causes possibles :\n" +
+                                "• Le pare-feu Windows bloque le port 9090\n" +
+                                "• L'hôte n'a pas encore cliqué 'Créer le duel'\n" +
+                                "• Vous n'êtes pas sur le même réseau WiFi\n\n" +
+                                "Solution : l'hôte doit ouvrir le port 9090 dans son pare-feu."));
+            } catch (java.net.ConnectException e) {
+                LoggerUtil.error("Connexion refusée", e);
+                Platform.runLater(() -> showConnectError(
+                        "Connexion refusée par " + hostIp + "\n\n" +
+                                "Causes possibles :\n" +
+                                "• Le pare-feu Windows bloque le port 9090\n" +
+                                "• L'IP est incorrecte\n" +
+                                "• L'hôte n'a pas encore cliqué 'Créer le duel'\n\n" +
+                                "Solution : l'hôte doit autoriser le port 9090 dans son pare-feu."));
             } catch (Exception e) {
-                LoggerUtil.error("DuelClient connect error", e);
-                Platform.runLater(() -> LoggerUtil.error("Connexion échouée — vérifiez l'IP et le WiFi", e));
+                LoggerUtil.error("Erreur connexion inattendue", e);
+                Platform.runLater(() -> showConnectError(
+                        "Erreur : " + e.getMessage()));
             }
-        }, "DuelClient-MainThread");
-        clientThread.setDaemon(true);
-        clientThread.start();
+        }, "DuelClient-Thread").start();
+    }
+
+    private void showConnectError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Connexion impossible");
+        alert.setHeaderText("Impossible de rejoindre le duel");
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private void startListening() {

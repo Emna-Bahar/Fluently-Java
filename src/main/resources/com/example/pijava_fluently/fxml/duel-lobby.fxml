@@ -43,15 +43,34 @@
                            -fx-font-size:14px;-fx-padding:12 24;-fx-cursor:hand;"/>
 
             <!-- Affiché après création -->
-            <VBox fx:id="panelIP" visible="false" managed="false" spacing="8"
-                  style="-fx-background-color:#F0EEFF;-fx-background-radius:12;-fx-padding:16;">
-                <Label text="📡 Votre IP à partager :"
+            <!-- Remplace le panelIP existant -->
+            <VBox fx:id="panelIP" visible="false" managed="false" spacing="10"
+                  style="-fx-background-color:#F0EEFF;-fx-background-radius:14;-fx-padding:18;">
+
+                <Label text="📡 Votre IP — à communiquer à l'adversaire"
                        style="-fx-font-size:12px;-fx-text-fill:#6C63FF;-fx-font-weight:bold;"/>
-                <Label fx:id="labelIP" text="192.168.x.x"
-                       style="-fx-font-size:22px;-fx-font-weight:bold;
-                              -fx-text-fill:#1A1D2E;"/>
-                <Label fx:id="labelStatutHote" text="⏳ En attente de l'adversaire..."
-                       style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
+
+                <Label fx:id="labelIP" text=""
+                       style="-fx-font-size:24px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;
+                  -fx-background-color:white;-fx-background-radius:8;
+                  -fx-padding:10 16;"/>
+
+                <Label fx:id="labelStatutHote" text="⏳ En attente..."
+                       style="-fx-font-size:13px;-fx-text-fill:#8A8FA8;"/>
+
+                <Separator/>
+
+                <Label text="Si votre collègue ne peut pas se connecter :"
+                       style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#374151;"/>
+
+                <Label text="→ Ouvrez PowerShell en admin et tapez :"
+                       style="-fx-font-size:11px;-fx-text-fill:#6B7280;"/>
+
+                <Label fx:id="labelCommande" text=""
+                       wrapText="true"
+                       style="-fx-font-size:11px;-fx-text-fill:#6C63FF;
+                  -fx-background-color:#EEF0FF;-fx-background-radius:6;
+                  -fx-padding:8 10;-fx-font-family:monospace;"/>
             </VBox>
         </VBox>
 
