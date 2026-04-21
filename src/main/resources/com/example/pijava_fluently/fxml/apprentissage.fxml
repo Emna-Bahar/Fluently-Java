@@ -363,9 +363,7 @@
                     </ComboBox>
                     <Button fx:id="startGameBtn" text="🎲 Commencer le jeu" onAction="#startGame"
                             style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 24; -fx-cursor: hand;"/>
-                    <Button text="📇 Flashcards IA" onAction="#ouvrirFlashcards"
-                            style="-fx-background-color: #8B5CF6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;"/>
-                </HBox>
+                     </HBox>
 
                 <HBox fx:id="gameLoading" alignment="CENTER" spacing="15" visible="false" managed="false">
                     <ProgressIndicator prefWidth="30" prefHeight="30"/>

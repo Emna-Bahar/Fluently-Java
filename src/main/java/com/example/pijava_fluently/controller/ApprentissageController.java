@@ -2118,8 +2118,6 @@ public class ApprentissageController {
         }
     }
 
-
-
     private void parserFillGame(String data) {
         fillQuestionsList.clear();
         String[] lignes = data.split("\n");
@@ -2130,8 +2128,23 @@ public class ApprentissageController {
             if (parts.length >= 6) {
                 String phrase = parts[0].trim();
                 String[] options = Arrays.copyOfRange(parts, 1, 5);
-                int correctAnswer = Integer.parseInt(parts[5].trim());
-                fillQuestionsList.add(new FillQuestion(phrase, options, correctAnswer));
+
+                // 🔥 NETTOYER LA RÉPONSE des caractères markdown
+                String reponseRaw = parts[5].trim();
+                String reponseClean = reponseRaw.replaceAll("\\*\\*", "").replaceAll("\\*", "").trim();
+
+                try {
+                    int correctAnswer = Integer.parseInt(reponseClean);
+                    fillQuestionsList.add(new FillQuestion(phrase, options, correctAnswer));
+                } catch (NumberFormatException e) {
+                    System.err.println("Erreur parsing réponse: " + reponseRaw + " -> nettoyé: " + reponseClean);
+                    // Fallback: essayer d'extraire le premier chiffre trouvé
+                    String digits = reponseClean.replaceAll("[^0-9]", "");
+                    if (!digits.isEmpty()) {
+                        int correctAnswer = Integer.parseInt(digits.substring(0, 1));
+                        fillQuestionsList.add(new FillQuestion(phrase, options, correctAnswer));
+                    }
+                }
             }
         }
 
