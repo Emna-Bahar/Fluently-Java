@@ -29,15 +29,10 @@
         </HBox>
 
         <!-- ══ Gamification ═════════════════════════════════════════ -->
-        <!--
-            fx:id="gamificationCard" génère l'injection automatique dans ObjectifController :
-              @FXML private HBox gamificationCard;
-              @FXML private GamificationCardController gamificationCardController;
-        -->
         <fx:include fx:id="gamificationCard"
                     source="Gamificationcard.fxml"/>
 
-        <!-- ══ Barre recherche + Ajouter + Recommandation IA ═══════ -->
+        <!-- ══ Barre recherche + Ajouter + Recommandation IA + Notifications ═══════ -->
         <HBox spacing="14" alignment="CENTER_LEFT">
             <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="400"
                   style="-fx-background-color:#FFFFFF;-fx-background-radius:12;
@@ -63,6 +58,26 @@
                     style="-fx-background-color:#10B981;-fx-text-fill:white;-fx-font-size:13px;
                            -fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 22 12 22;
                            -fx-cursor:hand;-fx-effect:dropshadow(gaussian,rgba(16,185,129,0.4),12,0,0,4);"/>
+
+            <Button fx:id="btnNotifications" text="🔔 Notifications"
+                    style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px;
+                           -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 22 12 22;
+                           -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.4),12,0,0,4);">
+                <graphic>
+                    <StackPane>
+                        <Label fx:id="badgeNotificationCount" text="0"
+                               style="-fx-background-color: #EF4444; -fx-text-fill: white;
+                                      -fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 10;
+                                      -fx-padding: 2 5 2 5; -fx-min-width: 18; -fx-alignment: center;"
+                               visible="false" managed="false"
+                               StackPane.alignment="TOP_RIGHT">
+                            <StackPane.margin>
+                                <Insets top="-8" right="-10" bottom="0" left="0"/>
+                            </StackPane.margin>
+                        </Label>
+                    </StackPane>
+                </graphic>
+            </Button>
         </HBox>
 
         <!-- ══ Formulaire ════════════════════════════════════════════ -->

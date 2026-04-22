@@ -1113,5 +1113,54 @@ public class TacheController {
             case "Normale" -> "🟡";
             default -> "🟢";
         };
+
+    }
+    /**
+     * Affiche les détails d'une tâche et la met en évidence
+     */
+    public void showDetailsAndHighlight(Tache tache) {
+        Platform.runLater(() -> {
+            // Afficher les détails
+            showDetailsTache(tache);
+
+            // Mettre en évidence la carte dans le Kanban
+            String statut = tache.getStatut();
+            VBox colonne = getColonneByStatut(statut);
+
+            if (colonne != null) {
+                for (javafx.scene.Node node : colonne.getChildren()) {
+                    if (node instanceof VBox && node.getUserData() != null) {
+                        // La carte contient la tâche, on cherche par titre
+                        VBox card = (VBox) node;
+                        for (javafx.scene.Node child : card.getChildren()) {
+                            if (child instanceof Label && ((Label) child).getText().equals(tache.getTitre())) {
+                                card.setStyle(card.getStyle() +
+                                        "-fx-border-color: #6C63FF; -fx-border-width: 2; -fx-border-radius: 13;");
+
+                                // Animation
+                                Timeline blink = new Timeline(
+                                        new KeyFrame(Duration.seconds(0), e -> card.setOpacity(1.0)),
+                                        new KeyFrame(Duration.seconds(0.3), e -> card.setOpacity(0.5)),
+                                        new KeyFrame(Duration.seconds(0.6), e -> card.setOpacity(1.0))
+                                );
+                                blink.setCycleCount(3);
+                                blink.play();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private VBox getColonneByStatut(String statut) {
+        switch (statut) {
+            case "À faire": return colAFaire;
+            case "En cours": return colEnCours;
+            case "Terminée": return colTerminee;
+            case "Annulée": return colAnnulee;
+            default: return colAFaire;
+        }
     }
 }

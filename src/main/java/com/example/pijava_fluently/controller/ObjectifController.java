@@ -1,12 +1,15 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.Objectif;
+import com.example.pijava_fluently.entites.Tache;
 import com.example.pijava_fluently.entites.User;
+import com.example.pijava_fluently.services.NotificationService;
 import com.example.pijava_fluently.services.ObjectifService;
 import com.example.pijava_fluently.services.TacheService;
 import com.example.pijava_fluently.utils.MyDatabase;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -56,20 +59,22 @@ public class ObjectifController {
     @FXML private Button btnNext;
     @FXML private Label  pageInfoLabel;
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // ── FXML — Gamification (injectée via <fx:include fx:id="gamificationCard">)
-    // ══════════════════════════════════════════════════════════════════════════
-    @FXML private HBox                        gamificationCard;           // nœud racine du fx:include
-    @FXML private GamificationCardController  gamificationCardController; // contrôleur du fx:include
+    // ── FXML — Gamification ──────────────────────────────────────────────────
+    @FXML private HBox                        gamificationCard;
+    @FXML private GamificationCardController  gamificationCardController;
+
+    // ── FXML — Notifications ─────────────────────────────────────────────────
+    @FXML private Button btnNotifications;
+    @FXML private Label badgeNotificationCount;
 
     // ── Services ─────────────────────────────────────────────────────────────
-    private final ObjectifService service      = new ObjectifService();
-    private final TacheService    tacheService  = new TacheService();
+    private final ObjectifService    service        = new ObjectifService();
+    private final TacheService       tacheService   = new TacheService();
 
     // ── État ─────────────────────────────────────────────────────────────────
-    private ObservableList<Objectif> allData          = FXCollections.observableArrayList();
-    private ObservableList<Objectif> currentPageData  = FXCollections.observableArrayList();
-    private Objectif selectedObjectif                  = null;
+    private ObservableList<Objectif> allData         = FXCollections.observableArrayList();
+    private ObservableList<Objectif> currentPageData = FXCollections.observableArrayList();
+    private Objectif selectedObjectif                 = null;
     private HomeController homeController;
     private User currentUser;
 
@@ -81,69 +86,211 @@ public class ObjectifController {
     private int itemsPerPage = 4;
     private int totalPages   = 0;
 
-    // ── Constantes ───────────────────────────────────────────────────────────
+    // ── Timer pour notifications ────────────────────────────────────────────
+    private Timeline notificationTimeline;
+
+    // ── Constants ────────────────────────────────────────────────────────────
     private static final String[] STATUTS = {"En cours", "Terminé", "En pause", "Annulé"};
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String[][] CARD_COLORS = {
-            {"#6C63FF","#8B5CF6"},{"#3B82F6","#2563EB"},{"#10B981","#059669"},
-            {"#F59E0B","#D97706"},{"#EF4444","#DC2626"},{"#8B5CF6","#7C3AED"},
-            {"#06B6D4","#0891B2"},{"#EC4899","#DB2777"},
+            {"#6C63FF","#8B5CF6"}, {"#3B82F6","#2563EB"}, {"#10B981","#059669"},
+            {"#F59E0B","#D97706"}, {"#EF4444","#DC2626"}, {"#8B5CF6","#7C3AED"},
+            {"#06B6D4","#0891B2"}, {"#EC4899","#DB2777"},
     };
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Setters publics
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── Already-notified set (session-level) ─────────────────────────────────
+    private boolean notificationShownThisSession = false;
 
-    public void setHomeController(HomeController hc) {
-        this.homeController = hc;
-    }
+    // ══════════════════════════════════════════════════════════════════════════
+    //  PUBLIC API
+    // ══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Appelé depuis HomeController (ou tout autre endroit qui connaît l'utilisateur).
-     * Lance le chargement des données ET initialise la gamification.
-     */
+    public void setHomeController(HomeController hc) { this.homeController = hc; }
+
     public void setCurrentUser(User user) {
         this.currentUser = user;
         if (user != null) {
             loadUsersForCurrentUser();
             loadData();
-            // ── Gamification : passer l'utilisateur au widget ────────────────
             if (gamificationCardController != null) {
                 gamificationCardController.setCurrentUser(user);
             }
+            // Per-user deadline notification (once per session)
+            if (!notificationShownThisSession) {
+                Platform.runLater(this::checkAndNotifyDeadlines);
+            }
         }
     }
+    /**
+     * Navigue vers l'objectif et affiche ses détails
+     */
+    public void navigateToObjectifAndShowDetails(int objectifId) {
+        if (homeController != null) {
+            homeController.showObjectifs();
+        }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Initialisation FXML
-    // ─────────────────────────────────────────────────────────────────────────
+        Platform.runLater(() -> {
+            // Trouver l'objectif et afficher ses détails
+            for (Objectif obj : allData) {
+                if (obj.getId() == objectifId) {
+                    showDetails(obj);
+                    break;
+                }
+            }
 
-    @FXML
-    public void initialize() {
-        comboStatut.setItems(FXCollections.observableArrayList(STATUTS));
-        setupLiveValidation();
-        setupPagination();
-        // Note : gamificationCardController est déjà injecté par JavaFX via fx:include.
-        // L'utilisateur lui sera passé dans setCurrentUser().
+
+            // Mettre en évidence la carte
+            for (javafx.scene.Node node : cardsContainer.getChildren()) {
+                if (node.getUserData() != null && node.getUserData() instanceof Integer) {
+                    if ((Integer) node.getUserData() == objectifId) {
+                        node.setStyle("-fx-effect: dropshadow(gaussian, #6C63FF, 20, 0, 0, 0);" +
+                                "-fx-border-color: #6C63FF; -fx-border-width: 2; -fx-border-radius: 18;");
+
+                        // Animation
+                        Timeline blink = new Timeline(
+                                new KeyFrame(Duration.seconds(0), e -> node.setOpacity(1.0)),
+                                new KeyFrame(Duration.seconds(0.3), e -> node.setOpacity(0.5)),
+                                new KeyFrame(Duration.seconds(0.6), e -> node.setOpacity(1.0)),
+                                new KeyFrame(Duration.seconds(0.9), e -> node.setOpacity(0.5)),
+                                new KeyFrame(Duration.seconds(1.2), e -> node.setOpacity(1.0))
+                        );
+                        blink.setCycleCount(3);
+                        blink.play();
+
+                        // Scroll vers la carte
+                        node.requestFocus();
+                        break;
+                    }
+                }
+            }
+        });
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Gamification — méthodes publiques utilisées aussi par TacheController
-    // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Rafraîchit le widget gamification.
-     * À appeler depuis TacheController après chaque ajout/modif/suppression de tâche.
+     * Navigue vers la tâche et affiche ses détails
      */
-    public void refreshGamification() {
-        if (gamificationCardController != null) {
-            gamificationCardController.refresh();
+    public void navigateToTacheAndShowDetails(Tache tache) {
+        if (homeController == null) return;
+
+        // D'abord naviguer vers l'objectif parent
+        Objectif objectifParent = null;
+        try {
+            for (Objectif obj : allData) {
+                if (obj.getId() == tache.getIdObjectifId()) {
+                    objectifParent = obj;
+                    break;
+                }
+            }
+
+            if (objectifParent != null) {
+                // Naviguer vers les tâches de l'objectif
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getResource("/com/example/pijava_fluently/fxml/Tache-view.fxml")
+                );
+                Node view = loader.load();
+                TacheController tacheCtrl = loader.getController();
+                tacheCtrl.setObjectif(objectifParent);
+                tacheCtrl.setObjectifController(this);
+                tacheCtrl.setCurrentUser(currentUser);
+
+                // Afficher les détails de la tâche
+                Platform.runLater(() -> tacheCtrl.showDetailsAndHighlight(tache));
+
+                homeController.setContent(view);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible d'afficher la tâche");
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Recommandation IA
-    // ─────────────────────────────────────────────────────────────────────────
+    public void refreshGamification() {
+        if (gamificationCardController != null) gamificationCardController.refresh();
+    }
+
+    public void refreshObjectifs() {
+        loadData();
+        refreshGamification();
+        Platform.runLater(this::checkAndNotifyDeadlines);
+    }
+
+    public void refreshNotificationBadge() {
+        updateNotificationBadge();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  NOTIFICATIONS
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void setupNotificationButton() {
+        if (btnNotifications != null) {
+            btnNotifications.setOnAction(e -> NotificationService.openNotificationCenter());
+
+            // Mettre à jour le badge périodiquement
+            notificationTimeline = new Timeline(
+                    new KeyFrame(Duration.seconds(5), e -> updateNotificationBadge())
+            );
+            notificationTimeline.setCycleCount(Timeline.INDEFINITE);
+            notificationTimeline.play();
+            updateNotificationBadge();
+        }
+    }
+
+    private void updateNotificationBadge() {
+        Platform.runLater(() -> {
+            if (badgeNotificationCount != null) {
+                int count = NotificationService.getUnreadCount();
+                if (count > 0) {
+                    badgeNotificationCount.setText(String.valueOf(count));
+                    badgeNotificationCount.setVisible(true);
+                    badgeNotificationCount.setManaged(true);
+
+                    // Animation du badge
+                    badgeNotificationCount.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; " +
+                            "-fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 10; " +
+                            "-fx-padding: 2 5 2 5; -fx-min-width: 18; -fx-alignment: center; " +
+                            "-fx-effect: dropshadow(gaussian, #EF4444, 5, 0, 0, 0);");
+                } else {
+                    badgeNotificationCount.setVisible(false);
+                    badgeNotificationCount.setManaged(false);
+                }
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  PER-USER DEADLINE NOTIFICATION
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void checkAndNotifyDeadlines() {
+        if (currentUser == null) return;
+
+        new Thread(() -> {
+            try {
+                List<Objectif> myObjectifs = service.recupererParUtilisateur(currentUser.getId());
+                List<Tache> myTaches = new ArrayList<>();
+
+                for (Objectif o : myObjectifs) {
+                    List<Tache> taches = tacheService.recupererParObjectif(o.getId());
+                    myTaches.addAll(taches);
+                    System.out.println("Objectif: " + o.getTitre() + " - " + taches.size() + " tâches");
+                }
+
+                System.out.println("Total tâches à vérifier: " + myTaches.size());
+
+                Platform.runLater(() -> {
+                    NotificationService.checkAndNotify(currentUser, myObjectifs, myTaches);
+                    notificationShownThisSession = true;
+                });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  IA RECOMMENDATION DIALOG
+    // ══════════════════════════════════════════════════════════════════════════
 
     @FXML
     private void openRecommendationDialog() {
@@ -157,42 +304,38 @@ public class ObjectifController {
                     getClass().getResource("/com/example/pijava_fluently/fxml/RecommendationDialog.fxml")
             );
             DialogPane dialogPane = loader.load();
-
             RecommendationDialogController ctrl = loader.getController();
             ctrl.setCurrentUser(currentUser);
             ctrl.setObjectifController(this);
 
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setDialogPane(dialogPane);
-            dialog.setTitle("🤖 Recommandations IA - Objectifs personnalisés");
+            dialog.setTitle("🤖 Recommandations IA");
             dialog.initOwner(cardsContainer.getScene().getWindow());
             dialog.showAndWait();
-
         } catch (IOException e) {
             e.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Erreur",
-                    "Impossible d'ouvrir la fenêtre de recommandation: " + e.getMessage());
+                    "Impossible d'ouvrir la fenêtre de recommandation : " + e.getMessage());
         }
     }
 
-    /** Appelée par RecommendationDialogController après ajout d'un objectif recommandé. */
-    public void refreshObjectifs() {
-        loadData();
-        refreshGamification(); // ← mise à jour gamification aussi
-    }
+    // ══════════════════════════════════════════════════════════════════════════
+    //  INITIALISATION
+    // ══════════════════════════════════════════════════════════════════════════
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Pagination — setup
-    // ─────────────────────────────────────────────────────────────────────────
+    @FXML
+    public void initialize() {
+        comboStatut.setItems(FXCollections.observableArrayList(STATUTS));
+        setupLiveValidation();
+        setupPagination();
+        setupNotificationButton();
+    }
 
     private void setupPagination() {
         if (btnPrev != null) btnPrev.setOnAction(e -> previousPage());
         if (btnNext != null) btnNext.setOnAction(e -> nextPage());
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Validation live
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void setupLiveValidation() {
         fieldTitre.textProperty().addListener((obs, old, val) -> {
@@ -208,22 +351,16 @@ public class ObjectifController {
             if (val != null && fieldDateDeb.getValue() != null) validateDates();
         });
         comboStatut.valueProperty().addListener((obs, old, val) -> {
-            if (val != null && !val.isEmpty()) {
-                clearError(errStatut);
-                comboStatut.setStyle(comboStatut.getStyle().replace("-fx-border-color:#E11D48;", "") + "-fx-border-color:#E2E8F0;");
-            }
+            if (val != null && !val.isEmpty()) clearError(errStatut);
         });
         comboUser.valueProperty().addListener((obs, old, val) -> {
-            if (val != null && !val.isEmpty()) {
-                clearError(errUser);
-                comboUser.setStyle(comboUser.getStyle().replace("-fx-border-color:#E11D48;", "") + "-fx-border-color:#E2E8F0;");
-            }
+            if (val != null && !val.isEmpty()) clearError(errUser);
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Chargement des données
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  DATA LOADING
+    // ══════════════════════════════════════════════════════════════════════════
 
     private void loadUsersForCurrentUser() {
         userMap.clear();
@@ -239,9 +376,7 @@ public class ObjectifController {
                 userMap.put(label, userId);
                 userIdToNameMap.put(userId, label);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
 
         if (currentUser != null) {
             String label = currentUser.getNom() + " " + currentUser.getPrenom();
@@ -259,16 +394,18 @@ public class ObjectifController {
     private void loadData() {
         try {
             allData = FXCollections.observableArrayList(service.recuperer());
+            currentPage = 0;
             updatePagination();
             updateCountLabel(allData.size());
+            updateNotificationBadge();
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Pagination — logique
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  PAGINATION
+    // ══════════════════════════════════════════════════════════════════════════
 
     private void updatePagination() {
         totalPages = (int) Math.ceil((double) allData.size() / itemsPerPage);
@@ -305,17 +442,12 @@ public class ObjectifController {
         if (btnNext != null) btnNext.setDisable(currentPage >= totalPages - 1);
     }
 
-    @FXML private void previousPage() {
-        if (currentPage > 0) { currentPage--; updatePagination(); }
-    }
+    @FXML private void previousPage() { if (currentPage > 0) { currentPage--; updatePagination(); } }
+    @FXML private void nextPage() { if (currentPage < totalPages - 1) { currentPage++; updatePagination(); } }
 
-    @FXML private void nextPage() {
-        if (currentPage < totalPages - 1) { currentPage++; updatePagination(); }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Rendu des cartes
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  CARD RENDERING
+    // ══════════════════════════════════════════════════════════════════════════
 
     private void renderCards(List<Objectif> list) {
         cardsContainer.getChildren().clear();
@@ -339,7 +471,7 @@ public class ObjectifController {
     private VBox buildCard(Objectif o, int colorIdx) {
         String c1 = CARD_COLORS[colorIdx][0], c2 = CARD_COLORS[colorIdx][1];
 
-        List<com.example.pijava_fluently.entites.Tache> taches;
+        List<Tache> taches;
         int nbTaches = 0, tachesTerminees = 0, progression = 0;
         try {
             taches          = tacheService.recupererParObjectif(o.getId());
@@ -349,18 +481,18 @@ public class ObjectifController {
         } catch (SQLException ignored) {}
 
         VBox card = new VBox(0);
+        card.setUserData(o.getId());
         card.setPrefWidth(320);
         card.setMaxWidth(320);
-        card.setStyle("-fx-background-color:#FFFFFF;-fx-background-radius:18;" +
-                "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),20,0,0,5);" +
-                "-fx-cursor:hand;");
+        card.setStyle(
+                "-fx-background-color:#FFFFFF;-fx-background-radius:18;" +
+                        "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),20,0,0,5);" +
+                        "-fx-cursor:hand;"
+        );
         card.setOnMouseEntered(e -> card.setStyle(card.getStyle() +
-                "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.15),25,0,0,8);" +
                 "-fx-scale-x:1.02;-fx-scale-y:1.02;"));
         card.setOnMouseExited(e -> card.setStyle(card.getStyle()
-                .replace("-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.15),25,0,0,8);" +
-                        "-fx-scale-x:1.02;-fx-scale-y:1.02;", "") +
-                "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.10),20,0,0,5);"));
+                .replace("-fx-scale-x:1.02;-fx-scale-y:1.02;", "")));
 
         // Header
         VBox header = new VBox(8);
@@ -400,7 +532,8 @@ public class ObjectifController {
         datesBox.setAlignment(Pos.CENTER_LEFT);
         datesBox.getChildren().addAll(
                 dateBadge("📅 Début", o.getDateDeb(), "#EFF6FF", "#3B82F6"),
-                dateBadge("🏁 Fin", o.getDateFin(), "#FFF7ED", "#EA580C"));
+                dateBadge("🏁 Fin", o.getDateFin(), "#FFF7ED", "#EA580C")
+        );
 
         Label statutBadge = buildStatutBadge(o.getStatut());
 
@@ -409,9 +542,8 @@ public class ObjectifController {
         userBadge.setStyle("-fx-background-color:#F0FDF4;-fx-text-fill:#16A34A;" +
                 "-fx-font-size:11px;-fx-font-weight:bold;-fx-background-radius:20;-fx-padding:4 12 4 12;");
 
-        // Barre de progression tâches
         VBox progressBox = new VBox(4);
-        Label progressLabel = new Label("📊 Progression des tâches : " + progression + "%");
+        Label progressLabel = new Label("📊 Progression : " + progression + "%");
         progressLabel.setStyle("-fx-font-size:10px;-fx-text-fill:#64748B;-fx-font-weight:bold;");
         ProgressBar progressBar = new ProgressBar(progression / 100.0);
         progressBar.setPrefWidth(Double.MAX_VALUE);
@@ -437,15 +569,13 @@ public class ObjectifController {
 
         boolean isOwner = (currentUser != null && o.getIdUserId() == currentUser.getId());
         if (!isOwner) {
-            btnEdit.setDisable(true); btnEdit.setVisible(false);
-            btnDel.setDisable(true);  btnDel.setVisible(false);
-            HBox.setHgrow(btnVoir, Priority.ALWAYS);
-            btnVoir.setMaxWidth(Double.MAX_VALUE);
+            btnEdit.setVisible(false); btnEdit.setManaged(false);
+            btnDel.setVisible(false);  btnDel.setManaged(false);
         } else {
-            HBox.setHgrow(btnVoir, Priority.ALWAYS); btnVoir.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(btnEdit, Priority.ALWAYS); btnEdit.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(btnDel,  Priority.ALWAYS); btnDel.setMaxWidth(Double.MAX_VALUE);
         }
+        HBox.setHgrow(btnVoir, Priority.ALWAYS); btnVoir.setMaxWidth(Double.MAX_VALUE);
         row1.getChildren().addAll(btnVoir, btnEdit, btnDel);
 
         final int nb = nbTaches;
@@ -467,9 +597,9 @@ public class ObjectifController {
         return card;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Navigation vers TacheController
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  NAVIGATION TO TASKS
+    // ══════════════════════════════════════════════════════════════════════════
 
     private void ouvrirTaches(Objectif o) {
         if (homeController == null) {
@@ -491,7 +621,7 @@ public class ObjectifController {
             homeController.setContent(view);
         } catch (IOException e) {
             e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de charger la vue des tâches : " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de charger les tâches : " + e.getMessage());
         }
     }
 
@@ -499,9 +629,9 @@ public class ObjectifController {
         if (homeController != null) homeController.showObjectifs();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Formulaire — ajouter / modifier / annuler
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  FORM
+    // ══════════════════════════════════════════════════════════════════════════
 
     @FXML private void handleAjouter() {
         selectedObjectif = null;
@@ -511,10 +641,6 @@ public class ObjectifController {
         formTitleIcon.setText("✚");
         formCard.setVisible(true);
         formCard.setManaged(true);
-        formCard.setStyle(formCard.getStyle() + "-fx-scale-x:0.95;-fx-scale-y:0.95;");
-        new Timeline(new KeyFrame(Duration.millis(100),
-                e -> formCard.setStyle(formCard.getStyle().replace("-fx-scale-x:0.95;-fx-scale-y:0.95;", ""))
-        )).play();
     }
 
     private void openEditForm(Objectif o) {
@@ -537,12 +663,12 @@ public class ObjectifController {
         clearErrors();
         if (!validateForm()) return;
         try {
-            String    titre    = fieldTitre.getText().trim();
-            String    desc     = fieldDescription.getText().trim();
-            LocalDate dateDeb  = fieldDateDeb.getValue();
-            LocalDate dateFin  = fieldDateFin.getValue();
-            String    statut   = comboStatut.getValue();
-            int       idUser   = userMap.get(comboUser.getValue());
+            String    titre   = fieldTitre.getText().trim();
+            String    desc    = fieldDescription.getText().trim();
+            LocalDate dateDeb = fieldDateDeb.getValue();
+            LocalDate dateFin = fieldDateFin.getValue();
+            String    statut  = comboStatut.getValue();
+            int       idUser  = userMap.get(comboUser.getValue());
 
             if (selectedObjectif == null) {
                 service.ajouter(new Objectif(titre, desc, dateDeb, dateFin, statut, idUser));
@@ -559,9 +685,7 @@ public class ObjectifController {
             }
             handleCancel();
             loadData();
-            // ── Mise à jour gamification ─────────────────────────────────────
             refreshGamification();
-
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
         }
@@ -575,9 +699,9 @@ public class ObjectifController {
         selectedObjectif = null;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Suppression
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  DELETE
+    // ══════════════════════════════════════════════════════════════════════════
 
     private void handleDelete(Objectif o) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
@@ -590,8 +714,7 @@ public class ObjectifController {
                 try {
                     service.supprimer(o.getId());
                     loadData();
-                    showSuccessToast("🗑 Objectif supprimé avec succès !");
-                    // ── Mise à jour gamification ─────────────────────────────
+                    showSuccessToast("🗑 Objectif supprimé !");
                     refreshGamification();
                 } catch (SQLException e) {
                     showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
@@ -600,9 +723,9 @@ public class ObjectifController {
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Recherche
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  SEARCH
+    // ══════════════════════════════════════════════════════════════════════════
 
     @FXML private void handleSearch() {
         String q = searchField.getText().toLowerCase().trim();
@@ -618,37 +741,28 @@ public class ObjectifController {
                         (o.getStatut()      != null && o.getStatut().toLowerCase().contains(q)))
                 .collect(Collectors.toList());
 
-        currentPage  = 0;
-        totalPages   = (int) Math.ceil((double) filtered.size() / itemsPerPage);
+        currentPage = 0;
+        totalPages  = (int) Math.ceil((double) filtered.size() / itemsPerPage);
         if (totalPages == 0) totalPages = 1;
 
-        int start = currentPage * itemsPerPage;
-        int end   = Math.min(start + itemsPerPage, filtered.size());
+        int start = 0;
+        int end   = Math.min(itemsPerPage, filtered.size());
         currentPageData.clear();
         if (start < filtered.size()) currentPageData.addAll(filtered.subList(start, end));
         renderCards(currentPageData);
         updateCountLabel(filtered.size());
-        updatePageInfoForFiltered(filtered.size());
         updateButtonsState();
-    }
-
-    private void updatePageInfoForFiltered(int filteredSize) {
-        if (pageInfoLabel == null) return;
-        if (filteredSize == 0) {
-            pageInfoLabel.setText("Page 0 / 0");
-        } else {
-            int start = currentPage * itemsPerPage + 1;
-            int end   = Math.min((currentPage + 1) * itemsPerPage, filteredSize);
-            pageInfoLabel.setText("Page " + (currentPage + 1) + " / " + totalPages +
-                    " (" + start + "-" + end + " sur " + filteredSize + ")");
+        if (pageInfoLabel != null) {
+            pageInfoLabel.setText(filtered.isEmpty() ? "Page 0/0" :
+                    "Page 1/" + totalPages + " (" + Math.min(itemsPerPage, filtered.size()) + " sur " + filtered.size() + ")");
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Détails (dialog)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  DETAILS DIALOG
+    // ══════════════════════════════════════════════════════════════════════════
 
-    private void showDetails(Objectif o) {
+    public void showDetails(Objectif o) {
         int colorIdx = (int)(o.getId() % CARD_COLORS.length);
         String c1 = CARD_COLORS[colorIdx][0], c2 = CARD_COLORS[colorIdx][1];
 
@@ -684,26 +798,24 @@ public class ObjectifController {
         String ls = "-fx-font-size:11px;-fx-text-fill:#9CA3AF;-fx-font-weight:bold;";
         String vs = "-fx-font-size:13px;-fx-text-fill:#1F2937;-fx-font-weight:bold;";
 
-        addRow(grid, 0, "ID",         String.valueOf(o.getId()), ls, vs);
-        addRow(grid, 1, "Date début", o.getDateDeb() != null ? o.getDateDeb().format(FMT) : "—", ls, vs);
-        addRow(grid, 2, "Date fin",   o.getDateFin() != null ? o.getDateFin().format(FMT) : "—", ls, vs);
-        addRow(grid, 3, "Utilisateur", getUserNameById(o.getIdUserId()), ls, vs);
-
         int nbTaches = 0, tachesTerminees = 0;
         try {
-            List<com.example.pijava_fluently.entites.Tache> taches = tacheService.recupererParObjectif(o.getId());
+            List<Tache> taches = tacheService.recupererParObjectif(o.getId());
             nbTaches        = taches.size();
             tachesTerminees = (int) taches.stream().filter(t -> "Terminée".equals(t.getStatut())).count();
         } catch (SQLException ignored) {}
-        int progression = nbTaches > 0 ? (tachesTerminees * 100 / nbTaches) : 0;
-        addRow(grid, 4, "Progression", progression + "% (" + tachesTerminees + "/" + nbTaches + " tâches)", ls, vs);
+        int prog = nbTaches > 0 ? (tachesTerminees * 100 / nbTaches) : 0;
+
+        addRow(grid, 0, "ID",          String.valueOf(o.getId()),                             ls, vs);
+        addRow(grid, 1, "Date début",  o.getDateDeb() != null ? o.getDateDeb().format(FMT) : "—", ls, vs);
+        addRow(grid, 2, "Date fin",    o.getDateFin() != null ? o.getDateFin().format(FMT) : "—", ls, vs);
+        addRow(grid, 3, "Utilisateur", getUserNameById(o.getIdUserId()),                      ls, vs);
+        addRow(grid, 4, "Progression", prog + "% (" + tachesTerminees + "/" + nbTaches + " tâches)", ls, vs);
 
         Label descTitle = new Label("📝  Description");
         descTitle.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#374151;");
         TextArea descArea = new TextArea(o.getDescription() != null ? o.getDescription() : "Aucune description.");
         descArea.setEditable(false); descArea.setWrapText(true); descArea.setPrefHeight(80);
-        descArea.setStyle("-fx-background-color:#F9FAFB;-fx-border-color:#E5E7EB;" +
-                "-fx-border-radius:10;-fx-font-size:13px;");
 
         body.getChildren().addAll(grid, descTitle, descArea);
         content.getChildren().addAll(header, body);
@@ -714,13 +826,13 @@ public class ObjectifController {
         Button close = (Button) dialog.getDialogPane().lookupButton(ButtonType.CLOSE);
         close.setText("Fermer");
         close.setStyle("-fx-background-color:" + c1 + ";-fx-text-fill:white;-fx-font-size:13px;" +
-                "-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:8 24 8 24;-fx-cursor:hand;");
+                "-fx-font-weight:bold;-fx-background-radius:8;-fx-padding:8 24 8 24;");
         dialog.showAndWait();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helpers UI
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  UI HELPERS
+    // ══════════════════════════════════════════════════════════════════════════
 
     private String getUserNameById(int userId) {
         return userIdToNameMap.getOrDefault(userId, "Utilisateur #" + userId);
@@ -777,23 +889,27 @@ public class ObjectifController {
     }
 
     private void updateCountLabel(int count) {
-        countLabel.setText(count + " objectif(s)");
+        if (countLabel != null) countLabel.setText(count + " objectif(s)");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Validation
-    // ─────────────────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    //  VALIDATION
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private static final String ERROR_STYLE  = "-fx-border-color:#E11D48;-fx-border-width:2;-fx-border-radius:10;";
+    private static final String VALID_STYLE  = "-fx-border-color:#10B981;-fx-border-width:2;-fx-border-radius:10;";
+    private static final String NORMAL_STYLE = "-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;";
 
     private boolean validateTitre(String titre) {
-        if (titre.isEmpty())        { setError(errTitre, "Le titre est obligatoire.", fieldTitre); return false; }
-        if (titre.length() < 3)     { setError(errTitre, "Minimum 3 caractères.",     fieldTitre); return false; }
-        if (titre.length() > 50)    { setError(errTitre, "Maximum 50 caractères.",    fieldTitre); return false; }
+        if (titre.isEmpty())    { setError(errTitre, "Le titre est obligatoire.", fieldTitre); return false; }
+        if (titre.length() < 3) { setError(errTitre, "Minimum 3 caractères.",    fieldTitre); return false; }
+        if (titre.length() > 50){ setError(errTitre, "Maximum 50 caractères.",   fieldTitre); return false; }
         clearError(errTitre); setValidStyle(fieldTitre); return true;
     }
 
     private boolean validateDescription(String desc) {
-        if (desc.isEmpty())           { setError(errDescription, "La description est obligatoire.", fieldDescription); return false; }
-        if (desc.length() > 100000)   { setError(errDescription, "Maximum 100000 caractères.",     fieldDescription); return false; }
+        if (desc.isEmpty())         { setError(errDescription, "La description est obligatoire.", fieldDescription); return false; }
+        if (desc.length() > 100000) { setError(errDescription, "Maximum 100000 caractères.",     fieldDescription); return false; }
         clearError(errDescription); setValidStyle(fieldDescription); return true;
     }
 
@@ -813,29 +929,23 @@ public class ObjectifController {
 
     private boolean validateForm() {
         boolean ok = true;
-        if (!validateTitre(fieldTitre.getText().trim()))           ok = false;
+        if (!validateTitre(fieldTitre.getText().trim()))            ok = false;
         if (!validateDescription(fieldDescription.getText().trim())) ok = false;
         if (!validateDates())                                         ok = false;
         if (comboStatut.getValue() == null) { setError(errStatut, "Sélectionnez un statut.",      comboStatut); ok = false; }
-        else                                { clearError(errStatut); setValidStyle(comboStatut); }
+        else                                { clearError(errStatut); }
         if (comboUser.getValue() == null)   { setError(errUser,   "Sélectionnez un utilisateur.", comboUser);   ok = false; }
-        else                                { clearError(errUser);   setValidStyle(comboUser); }
+        else                                { clearError(errUser); }
         return ok;
     }
-
-    private static final String ERROR_STYLE  = "-fx-border-color:#E11D48;-fx-border-width:2;-fx-border-radius:10;";
-    private static final String VALID_STYLE  = "-fx-border-color:#10B981;-fx-border-width:2;-fx-border-radius:10;";
-    private static final String NORMAL_STYLE = "-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;";
 
     private void setError(Label lbl, String msg, Control control) {
         if (lbl == null) return;
         lbl.setText("⚠  " + msg);
-        lbl.setStyle("-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;-fx-padding:3 0 0 4;");
+        lbl.setStyle("-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;");
         lbl.setVisible(true); lbl.setManaged(true);
-        if (control != null) {
-            String s = control.getStyle().replace(VALID_STYLE, "").replace(NORMAL_STYLE, "");
-            control.setStyle(s + ERROR_STYLE);
-        }
+        if (control != null) control.setStyle(control.getStyle()
+                .replace(VALID_STYLE, "").replace(NORMAL_STYLE, "") + ERROR_STYLE);
     }
 
     private void clearError(Label lbl) {
@@ -843,25 +953,20 @@ public class ObjectifController {
         lbl.setText(""); lbl.setVisible(false); lbl.setManaged(false);
     }
 
-    private void setValidStyle(Control control) {
-        if (control == null) return;
-        String s = control.getStyle().replace(ERROR_STYLE, "").replace(NORMAL_STYLE, "");
-        control.setStyle(s + VALID_STYLE);
-        new Timeline(new KeyFrame(Duration.seconds(2), e -> {
-            control.setStyle(control.getStyle().replace(VALID_STYLE, NORMAL_STYLE));
-        })).play();
-    }
-
-    private void clearFieldError(Control control) {
-        if (control == null) return;
-        control.setStyle(control.getStyle().replace(ERROR_STYLE, "").replace(VALID_STYLE, "") + NORMAL_STYLE);
+    private void setValidStyle(Control c) {
+        if (c == null) return;
+        c.setStyle(c.getStyle().replace(ERROR_STYLE, "").replace(NORMAL_STYLE, "") + VALID_STYLE);
+        new Timeline(new KeyFrame(Duration.seconds(2), e ->
+                c.setStyle(c.getStyle().replace(VALID_STYLE, NORMAL_STYLE))
+        )).play();
     }
 
     private void clearErrors() {
         Label[]   labels   = {errTitre, errDescription, errDateDeb, errDateFin, errStatut, errUser};
         Control[] controls = {fieldTitre, fieldDescription, fieldDateDeb, fieldDateFin, comboStatut, comboUser};
-        for (Label l   : labels)   { if (l != null) { l.setText(""); l.setVisible(false); l.setManaged(false); } }
-        for (Control c : controls) clearFieldError(c);
+        for (Label l   : labels)   if (l != null) { l.setText(""); l.setVisible(false); l.setManaged(false); }
+        for (Control c : controls) if (c != null) c.setStyle(c.getStyle()
+                .replace(ERROR_STYLE, "").replace(VALID_STYLE, "") + NORMAL_STYLE);
     }
 
     private void clearForm() {
@@ -874,15 +979,10 @@ public class ObjectifController {
         else                     comboUser.setValue(null);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Alertes
-    // ─────────────────────────────────────────────────────────────────────────
-
     private void showSuccessToast(String msg) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
-        alert.setTitle("Succès"); alert.setHeaderText(null);
-        alert.getDialogPane().setStyle("-fx-background-color:#FFFFFF;-fx-background-radius:12;");
-        alert.showAndWait();
+        Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
+        a.setTitle("Succès"); a.setHeaderText(null);
+        a.showAndWait();
     }
 
     private void showAlert(Alert.AlertType type, String title, String msg) {
@@ -890,4 +990,37 @@ public class ObjectifController {
         a.setTitle(title); a.setHeaderText(null);
         a.showAndWait();
     }
+
+    /**
+     * Navigue vers l'objectif spécifique et le met en évidence
+     */
+    public void navigateToObjectif(int objectifId) {
+        if (homeController != null) {
+            homeController.showObjectifs();
+        }
+        Platform.runLater(() -> {
+            for (javafx.scene.Node node : cardsContainer.getChildren()) {
+                if (node.getUserData() != null && node.getUserData() instanceof Integer) {
+                    if ((Integer) node.getUserData() == objectifId) {
+                        node.setStyle("-fx-effect: dropshadow(gaussian, #6C63FF, 20, 0, 0, 0);" +
+                                "-fx-border-color: #6C63FF; -fx-border-width: 2; -fx-border-radius: 18;");
+                        node.requestFocus();
+
+                        // Animation de clignotement
+                        Timeline blink = new Timeline(
+                                new KeyFrame(Duration.seconds(0), e -> node.setOpacity(1.0)),
+                                new KeyFrame(Duration.seconds(0.3), e -> node.setOpacity(0.5)),
+                                new KeyFrame(Duration.seconds(0.6), e -> node.setOpacity(1.0)),
+                                new KeyFrame(Duration.seconds(0.9), e -> node.setOpacity(0.5)),
+                                new KeyFrame(Duration.seconds(1.2), e -> node.setOpacity(1.0))
+                        );
+                        blink.setCycleCount(3);
+                        blink.play();
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
 }

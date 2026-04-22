@@ -21,7 +21,6 @@ public class TacheService {
         ps.setString(5, t.getPriorite());
         ps.setInt(6, t.getIdObjectifId());
         ps.executeUpdate();
-        System.out.println("Tâche ajoutée avec succès !");
     }
 
     public void modifier(Tache t) throws SQLException {
@@ -35,31 +34,42 @@ public class TacheService {
         ps.setInt(6, t.getIdObjectifId());
         ps.setInt(7, t.getId());
         ps.executeUpdate();
-        System.out.println("Tâche modifiée avec succès !");
     }
 
     public void supprimer(int id) throws SQLException {
         PreparedStatement ps = cnx.prepareStatement("DELETE FROM tache WHERE id=?");
         ps.setInt(1, id);
         ps.executeUpdate();
-        System.out.println("Tâche supprimée avec succès !");
     }
 
     public List<Tache> recuperer() throws SQLException {
         List<Tache> list = new ArrayList<>();
         ResultSet rs = cnx.createStatement().executeQuery("SELECT * FROM tache");
-        while (rs.next()) list.add(map(rs));
+        while (rs.next()) {
+            list.add(map(rs));
+        }
         return list;
     }
 
-    /** Récupère uniquement les tâches d'un objectif donné */
     public List<Tache> recupererParObjectif(int idObjectif) throws SQLException {
         List<Tache> list = new ArrayList<>();
-        PreparedStatement ps = cnx.prepareStatement("SELECT * FROM tache WHERE id_objectif_id=?");
+        PreparedStatement ps = cnx.prepareStatement("SELECT * FROM tache WHERE id_objectif_id = ?");
         ps.setInt(1, idObjectif);
         ResultSet rs = ps.executeQuery();
-        while (rs.next()) list.add(map(rs));
+        while (rs.next()) {
+            list.add(map(rs));
+        }
         return list;
+    }
+
+    public Tache recupererParId(int id) throws SQLException {
+        PreparedStatement ps = cnx.prepareStatement("SELECT * FROM tache WHERE id = ?");
+        ps.setInt(1, id);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return map(rs);
+        }
+        return null;
     }
 
     private Tache map(ResultSet rs) throws SQLException {
@@ -67,7 +77,10 @@ public class TacheService {
         t.setId(rs.getInt("id"));
         t.setTitre(rs.getString("titre"));
         t.setDescription(rs.getString("description"));
-        t.setDateLimite(rs.getDate("date_limite").toLocalDate());
+        Date dateLimite = rs.getDate("date_limite");
+        if (dateLimite != null) {
+            t.setDateLimite(dateLimite.toLocalDate());
+        }
         t.setStatut(rs.getString("statut"));
         t.setPriorite(rs.getString("priorite"));
         t.setIdObjectifId(rs.getInt("id_objectif_id"));
