@@ -50,6 +50,12 @@
                 style="-fx-background-color:#FEF2F2;-fx-text-fill:#DC2626;
                -fx-font-size:13px;-fx-font-weight:bold;
                -fx-background-radius:10;-fx-padding:9 18;-fx-cursor:hand;"/>
+        <Button text="🏆 Leaderboard"
+                onAction="#handleLeaderboard"
+                style="-fx-background-color:#FFFBEB;-fx-text-fill:#D97706;
+               -fx-font-size:13px;-fx-font-weight:bold;
+               -fx-background-radius:10;-fx-padding:9 18;-fx-cursor:hand;
+               -fx-border-color:#FDE68A;-fx-border-radius:10;-fx-border-width:1;"/>
         <Button text="📊 Performances"
                 onAction="#handlePerformances"
                 style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:9 18;-fx-cursor:hand;-fx-border-color:transparent;"/>

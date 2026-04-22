@@ -4,12 +4,8 @@ import com.example.pijava_fluently.entites.Langue;
 import com.example.pijava_fluently.entites.Niveau;
 import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.entites.TestPassage;
-import com.example.pijava_fluently.services.FraudeTrackerService;
+import com.example.pijava_fluently.services.*;
 import com.example.pijava_fluently.entites.User;
-import com.example.pijava_fluently.services.LangueService;
-import com.example.pijava_fluently.services.NiveauService;
-import com.example.pijava_fluently.services.TestPassageService;
-import com.example.pijava_fluently.services.TestService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -886,6 +882,238 @@ public class MesTestsController implements Initializable { //initializable
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    @FXML
+    private void handleLeaderboard() {
+        try {
+            LeaderboardService lb = new LeaderboardService();
+            List<LeaderboardService.EntreeLeaderboard> classement =
+                    lb.getLeaderboard();
+
+            vboxContenu.getChildren().clear();
+
+            // ── En-tête ──────────────────────────────────────────────
+            VBox header = new VBox(4);
+            header.setStyle(
+                    "-fx-background-color:linear-gradient(to right,#F59E0B,#D97706);" +
+                            "-fx-background-radius:16;-fx-padding:24 28;");
+            Label titre = new Label("🏆 Leaderboard — Tournoi de Duels");
+            titre.setStyle(
+                    "-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:white;");
+            Label sous = new Label("Classement des meilleurs joueurs");
+            sous.setStyle("-fx-font-size:13px;-fx-text-fill:rgba(255,255,255,0.8);");
+            header.getChildren().addAll(titre, sous);
+            vboxContenu.getChildren().add(header);
+
+            // ── Aucun résultat ────────────────────────────────────────
+            if (classement.isEmpty()) {
+                VBox empty = new VBox(12);
+                empty.setAlignment(javafx.geometry.Pos.CENTER);
+                empty.setStyle(
+                        "-fx-background-color:white;-fx-background-radius:14;" +
+                                "-fx-padding:40;");
+                Label ico  = new Label("🎮");
+                ico.setStyle("-fx-font-size:48px;");
+                Label msg  = new Label("Aucun duel joué pour l'instant.");
+                msg.setStyle("-fx-font-size:15px;-fx-text-fill:#8A8FA8;");
+                Label msg2 = new Label("Défiez un camarade via le bouton ⚔️ Duel !");
+                msg2.setStyle("-fx-font-size:13px;-fx-text-fill:#C0C7D0;");
+                empty.getChildren().addAll(ico, msg, msg2);
+                vboxContenu.getChildren().add(empty);
+                return;
+            }
+
+            // ── Podium TOP 3 ──────────────────────────────────────────
+            if (classement.size() >= 1) {
+                HBox podium = new HBox(16);
+                podium.setAlignment(javafx.geometry.Pos.BOTTOM_CENTER);
+                podium.setPadding(new javafx.geometry.Insets(10, 0, 0, 0));
+
+                // Ordre visuel : 2ème - 1er - 3ème
+                int[] ordreVisuel = classement.size() >= 3
+                        ? new int[]{1, 0, 2}
+                        : classement.size() == 2
+                        ? new int[]{1, 0}
+                        : new int[]{0};
+
+                String[] medailles  = {"🥇", "🥈", "🥉"};
+                String[] hauteurs   = {"160", "200", "130"};
+                String[] couleurs   = {"#F59E0B", "#94A3B8", "#CD7C2F"};
+                String[] textColors = {"#92400E", "#1E293B", "#7C3109"};
+                String[] bgLight    = {"#FFFBEB", "#F8FAFC", "#FFF7ED"};
+
+                for (int vi = 0; vi < ordreVisuel.length; vi++) {
+                    int rankIdx = ordreVisuel[vi];
+                    if (rankIdx >= classement.size()) continue;
+                    LeaderboardService.EntreeLeaderboard e = classement.get(rankIdx);
+                    int rang = rankIdx + 1;
+
+                    VBox marche = new VBox(10);
+                    marche.setAlignment(javafx.geometry.Pos.BOTTOM_CENTER);
+                    marche.setPrefWidth(160);
+
+                    // Carte joueur
+                    VBox carte = new VBox(6);
+                    carte.setAlignment(javafx.geometry.Pos.CENTER);
+                    carte.setStyle(
+                            "-fx-background-color:" + bgLight[rang - 1] + ";" +
+                                    "-fx-background-radius:14;" +
+                                    "-fx-border-color:" + couleurs[rang - 1] + ";" +
+                                    "-fx-border-radius:14;-fx-border-width:2;" +
+                                    "-fx-padding:14 10;");
+                    Label medalLabel = new Label(medailles[rang - 1]);
+                    medalLabel.setStyle("-fx-font-size:32px;");
+                    Label nomLabel = new Label(e.prenom() + "\n" + e.nom());
+                    nomLabel.setStyle(
+                            "-fx-font-size:13px;-fx-font-weight:bold;" +
+                                    "-fx-text-fill:" + textColors[rang - 1] + ";" +
+                                    "-fx-text-alignment:center;");
+                    nomLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                    Label winsLabel = new Label(e.duelsGagnes() + " victoires");
+                    winsLabel.setStyle(
+                            "-fx-font-size:12px;-fx-font-weight:bold;" +
+                                    "-fx-text-fill:" + couleurs[rang - 1] + ";");
+                    Label ptsLabel = new Label(e.totalPoints() + " pts");
+                    ptsLabel.setStyle("-fx-font-size:11px;-fx-text-fill:#9CA3AF;");
+                    carte.getChildren().addAll(medalLabel, nomLabel, winsLabel, ptsLabel);
+
+                    // Socle de la marche
+                    VBox socle = new VBox();
+                    socle.setPrefWidth(140);
+                    socle.setPrefHeight(Double.parseDouble(hauteurs[rang - 1]) / 3);
+                    socle.setStyle(
+                            "-fx-background-color:" + couleurs[rang - 1] + ";" +
+                                    "-fx-background-radius:8 8 0 0;");
+
+                    Label rangSocle = new Label("#" + rang);
+                    rangSocle.setStyle(
+                            "-fx-font-size:18px;-fx-font-weight:bold;" +
+                                    "-fx-text-fill:white;");
+                    rangSocle.setAlignment(javafx.geometry.Pos.CENTER);
+                    socle.setAlignment(javafx.geometry.Pos.CENTER);
+                    socle.getChildren().add(rangSocle);
+
+                    marche.getChildren().addAll(carte, socle);
+                    podium.getChildren().add(marche);
+                }
+                vboxContenu.getChildren().add(podium);
+            }
+
+            // ── Tableau complet ───────────────────────────────────────
+            VBox tableau = new VBox(0);
+            tableau.setStyle(
+                    "-fx-background-color:white;-fx-background-radius:14;" +
+                            "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.07),12,0,0,3);");
+
+            // Ligne d'en-tête tableau
+            HBox ligneHeader = new HBox();
+            ligneHeader.setStyle(
+                    "-fx-background-color:#1A1D2E;-fx-background-radius:14 14 0 0;" +
+                            "-fx-padding:12 16;");
+            String[] cols    = {"#", "Joueur", "Duels", "Victoires", "Taux", "Points"};
+            double[] largeurs = {40, 200, 80, 90, 80, 80};
+            for (int i = 0; i < cols.length; i++) {
+                Label h = new Label(cols[i]);
+                h.setStyle(
+                        "-fx-font-size:11px;-fx-font-weight:bold;" +
+                                "-fx-text-fill:rgba(255,255,255,0.7);");
+                h.setPrefWidth(largeurs[i]);
+                h.setAlignment(i == 1
+                        ? javafx.geometry.Pos.CENTER_LEFT
+                        : javafx.geometry.Pos.CENTER);
+                ligneHeader.getChildren().add(h);
+            }
+            tableau.getChildren().add(ligneHeader);
+
+            // Lignes joueurs
+            for (int i = 0; i < classement.size(); i++) {
+                LeaderboardService.EntreeLeaderboard e = classement.get(i);
+                int rang = i + 1;
+
+                // Mettre en évidence l'utilisateur courant
+                boolean estMoi = e.prenom().equals(currentUser.getPrenom())
+                        && e.nom().equals(currentUser.getNom());
+
+                HBox ligne = new HBox();
+                ligne.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                ligne.setStyle(
+                        "-fx-padding:12 16;" +
+                                "-fx-background-color:" + (estMoi
+                                ? "#F0EEFF"
+                                : i % 2 == 0 ? "white" : "#FAFBFF") + ";" +
+                                (i == classement.size() - 1
+                                        ? "-fx-background-radius:0 0 14 14;"
+                                        : "") +
+                                "-fx-border-color:#F0F1F7;-fx-border-width:0 0 1 0;");
+
+                // Rang avec médaille
+                String rangTxt = rang == 1 ? "🥇"
+                        : rang == 2 ? "🥈"
+                        : rang == 3 ? "🥉"
+                        : "#" + rang;
+                Label lblRang = new Label(rangTxt);
+                lblRang.setStyle(
+                        "-fx-font-size:" + (rang <= 3 ? "16" : "13") + "px;" +
+                                "-fx-font-weight:bold;-fx-text-fill:#6B7280;");
+                lblRang.setPrefWidth(largeurs[0]);
+                lblRang.setAlignment(javafx.geometry.Pos.CENTER);
+
+                // Nom
+                Label lblNom = new Label(e.prenom() + " " + e.nom()
+                        + (estMoi ? "  ← vous" : ""));
+                lblNom.setPrefWidth(largeurs[1]);
+                lblNom.setStyle(
+                        "-fx-font-size:13px;-fx-font-weight:" +
+                                (estMoi ? "bold" : "normal") + ";" +
+                                "-fx-text-fill:" + (estMoi ? "#6C63FF" : "#1A1D2E") + ";");
+
+                // Duels joués
+                Label lblDuels = new Label(String.valueOf(e.duelsJoues()));
+                lblDuels.setPrefWidth(largeurs[2]);
+                lblDuels.setAlignment(javafx.geometry.Pos.CENTER);
+                lblDuels.setStyle("-fx-font-size:13px;-fx-text-fill:#6B7280;");
+
+                // Victoires
+                Label lblVic = new Label(String.valueOf(e.duelsGagnes()));
+                lblVic.setPrefWidth(largeurs[3]);
+                lblVic.setAlignment(javafx.geometry.Pos.CENTER);
+                lblVic.setStyle(
+                        "-fx-font-size:13px;-fx-font-weight:bold;" +
+                                "-fx-text-fill:" + (e.duelsGagnes() > 0 ? "#059669" : "#9CA3AF") + ";");
+
+                // Taux victoire
+                Label lblTaux = new Label(
+                        String.format("%.0f%%", e.tauxVictoire()));
+                lblTaux.setPrefWidth(largeurs[4]);
+                lblTaux.setAlignment(javafx.geometry.Pos.CENTER);
+                String couleurTaux = e.tauxVictoire() >= 70 ? "#059669"
+                        : e.tauxVictoire() >= 40 ? "#D97706" : "#EF4444";
+                lblTaux.setStyle(
+                        "-fx-font-size:12px;-fx-font-weight:bold;" +
+                                "-fx-text-fill:" + couleurTaux + ";" +
+                                "-fx-background-color:" + (e.tauxVictoire() >= 70
+                                ? "#F0FDF4" : e.tauxVictoire() >= 40 ? "#FFFBEB" : "#FEF2F2") + ";" +
+                                "-fx-background-radius:20;-fx-padding:3 10;");
+
+                // Points
+                Label lblPts = new Label(e.totalPoints() + " pts");
+                lblPts.setPrefWidth(largeurs[5]);
+                lblPts.setAlignment(javafx.geometry.Pos.CENTER);
+                lblPts.setStyle(
+                        "-fx-font-size:13px;-fx-font-weight:bold;" +
+                                "-fx-text-fill:#F59E0B;");
+
+                ligne.getChildren().addAll(
+                        lblRang, lblNom, lblDuels, lblVic, lblTaux, lblPts);
+                tableau.getChildren().add(ligne);
+            }
+
+            vboxContenu.getChildren().add(tableau);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger le leaderboard : " + e.getMessage());
         }
     }
 }
