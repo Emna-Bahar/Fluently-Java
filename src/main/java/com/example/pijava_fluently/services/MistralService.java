@@ -49,28 +49,31 @@ public class MistralService {
         }
 
         return String.format("""
-            Tu es un professeur expert en %s. Tu dois créer un cours personnalisé pour un étudiant.
-            
-            📋 INFORMATIONS POUR LE COURS :
-            - Langue à enseigner : %s
-            - Thème du cours : %s
-            - Point de grammaire : %s
-            - Vocabulaire souhaité : %s
-            - Niveau de difficulté : %s (sur 5)
-            
-            📝 STRUCTURE ATTENDUE DU COURS (à respecter strictement) :
-            
-            🎯 1. INTRODUCTION
-            📝 2. VOCABULAIRE (15-20 mots)
-            📖 3. GRAMMAIRE
-            💬 4. DIALOGUE / MISE EN SITUATION
-            ✏️ 5. EXERCICES (4 exercices)
-            ✅ 6. CORRECTION DES EXERCICES
-            💡 7. ASTUCES ET CONSEILS
-            🚀 8. POUR ALLER PLUS LOIN
-            
-            Utilise la langue %s pour tout le cours.
-            """,
+        Tu es un professeur expert en %s. Tu dois créer un cours personnalisé pour un étudiant.
+        
+        📋 INFORMATIONS POUR LE COURS :
+        - Langue à enseigner : %s
+        - Thème du cours : %s
+        - Point de grammaire : %s
+        - Vocabulaire souhaité : %s
+        - Niveau de difficulté : %s (sur 5)
+        
+        📝 STRUCTURE ATTENDUE DU COURS (à respecter strictement) :
+        
+        🎯 1. INTRODUCTION
+        📝 2. VOCABULAIRE (15-20 mots)
+        📖 3. GRAMMAIRE
+        💬 4. DIALOGUE / MISE EN SITUATION
+        ✏️ 5. EXERCICES (4 exercices)
+        ✅ 6. CORRECTION DES EXERCICES (réponses détaillées pour les 4 exercices)
+        💡 7. ASTUCES ET CONSEILS
+        🚀 8. POUR ALLER PLUS LOIN
+        
+        IMPORTANT: 
+        - La section EXERCICES doit contenir 4 exercices variés (QCM, trous, traduction, conjugaison)
+        - La section CORRECTION DES EXERCICES doit donner TOUTES les réponses avec explications
+        - Utilise la langue %s pour tout le cours.
+        """,
                 langue, langue, theme, grammaire, vocabulaire, niveauTexte, langue);
     }
 
