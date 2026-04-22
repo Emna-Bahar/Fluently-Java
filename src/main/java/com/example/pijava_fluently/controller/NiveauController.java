@@ -66,7 +66,8 @@ public class NiveauController {
     private Niveau selectedNiveau = null;
     private File selectedImageFile = null;
 
-    private static final String IMAGE_DIR = "src/main/resources/com/example/pijava_fluently/image/niveaux/";
+    private static final String IMAGE_DIR =
+            "C:/xampp/htdocs/fluently/public/uploads/images/niveaux/";
 
     @FXML
     public void initialize() {
@@ -79,12 +80,12 @@ public class NiveauController {
 
     private void setupComboBoxes() {
         comboDifficulte.setItems(FXCollections.observableArrayList(
-                "A1 - Débutant",
-                "A2 - Élémentaire",
-                "B1 - Intermédiaire",
-                "B2 - Intermédiaire supérieur",
-                "C1 - Avancé",
-                "C2 - Maîtrise"
+                "A1",
+                "A2",
+                "B1",
+                "B2",
+                "C1",
+                "C2"
         ));
     }
 
@@ -144,10 +145,14 @@ public class NiveauController {
                     setText("—"); setGraphic(null); return;
                 }
                 try {
-                    File f = new File(path);
-                    if (f.exists()) {
-                        iv.setImage(new Image(f.toURI().toString()));
-                        setGraphic(iv); setText(null);
+                    // Convertir le chemin relatif en chemin absolu
+                    String absolutePath = getAbsoluteImagePath(path);
+                    if (absolutePath != null) {
+                        File f = new File(absolutePath);
+                        if (f.exists()) {
+                            iv.setImage(new Image(f.toURI().toString()));
+                            setGraphic(iv); setText(null);
+                        } else { setText("🖼"); setGraphic(null); }
                     } else { setText("🖼"); setGraphic(null); }
                 } catch (Exception e) { setText("🖼"); setGraphic(null); }
             }
@@ -309,13 +314,16 @@ public class NiveauController {
         );
         if (n.getImageCouverture() != null && !n.getImageCouverture().isBlank()) {
             try {
-                File f = new File(n.getImageCouverture());
-                if (f.exists()) {
-                    ImageView img = new ImageView(new Image(f.toURI().toString()));
-                    img.setFitWidth(70);
-                    img.setFitHeight(50);
-                    img.setPreserveRatio(true);
-                    header.getChildren().add(img);
+                String absolutePath = getAbsoluteImagePath(n.getImageCouverture());
+                if (absolutePath != null) {
+                    File f = new File(absolutePath);
+                    if (f.exists()) {
+                        ImageView img = new ImageView(new Image(f.toURI().toString()));
+                        img.setFitWidth(70);
+                        img.setFitHeight(50);
+                        img.setPreserveRatio(true);
+                        header.getChildren().add(img);
+                    }
                 }
             } catch (Exception ignored) {}
         }
@@ -421,7 +429,7 @@ public class NiveauController {
         String fileName = System.currentTimeMillis() + "_" + source.getName();
         Path dest = dir.resolve(fileName);
         Files.copy(source.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
-        return dest.toString();
+        return "/uploads/images/niveaux/" + fileName;
     }
 
     @FXML
@@ -446,10 +454,13 @@ public class NiveauController {
 
         if (n.getImageCouverture() != null && !n.getImageCouverture().isBlank()) {
             try {
-                File f = new File(n.getImageCouverture());
-                if (f.exists()) {
-                    imagePreview.setImage(new Image(f.toURI().toString()));
-                    imagePlaceholder.setVisible(false);
+                String absolutePath = getAbsoluteImagePath(n.getImageCouverture());
+                if (absolutePath != null) {
+                    File f = new File(absolutePath);
+                    if (f.exists()) {
+                        imagePreview.setImage(new Image(f.toURI().toString()));
+                        imagePlaceholder.setVisible(false);
+                    }
                 }
             } catch (Exception ignored) {}
         }
@@ -594,8 +605,8 @@ public class NiveauController {
             return false;
         }
         List<String> difficultesValides = Arrays.asList(
-                "A1 - Débutant", "A2 - Élémentaire", "B1 - Intermédiaire",
-                "B2 - Intermédiaire supérieur", "C1 - Avancé", "C2 - Maîtrise"
+                "A1", "A2", "B1",
+                "B2", "C1", "C2"
         );
         if (!difficultesValides.contains(difficulte)) {
             afficherErreur("Veuillez sélectionner une difficulté valide.");
@@ -728,5 +739,18 @@ public class NiveauController {
         a.setTitle(title);
         a.setHeaderText(null);
         a.showAndWait();
+    }
+
+    private String getAbsoluteImagePath(String relativePath) {
+        if (relativePath == null || relativePath.isEmpty()) return null;
+        // Si c'est déjà un chemin absolu Windows
+        if (relativePath.startsWith("C:/") || relativePath.startsWith("file:/")) {
+            return relativePath;
+        }
+        // Si c'est un chemin relatif Symfony
+        if (relativePath.startsWith("/uploads/")) {
+            return "C:/xampp/htdocs/fluently/public" + relativePath;
+        }
+        return relativePath;
     }
 }

@@ -64,7 +64,8 @@ public class CoursController {
     private Cours selectedCours = null;
     private ObservableList<String> ressources = FXCollections.observableArrayList();
 
-    private static final String RESSOURCES_DIR = "src/main/resources/com/example/pijava_fluently/image/ressources/";
+    private static final String RESSOURCES_DIR =
+            "C:/xampp/htdocs/fluently/public/uploads/ressources/";
 
     @FXML
     public void initialize() {
@@ -390,6 +391,7 @@ public class CoursController {
         String fileName = System.currentTimeMillis() + "_" + source.getName();
         Path dest = dir.resolve(fileName);
         Files.copy(source.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
+        // Retourner le chemin absolu pour l'instant, mais vous pouvez aussi stocker le relatif
         return dest;
     }
 
@@ -401,7 +403,12 @@ public class CoursController {
             }
             // Vérifier si c'est un fichier local
             else {
-                File file = new File(chemin);
+                // Convertir le chemin relatif en chemin absolu si nécessaire
+                String absolutePath = chemin;
+                if (chemin.startsWith("/uploads/")) {
+                    absolutePath = "C:/xampp/htdocs/fluently/public" + chemin;
+                }
+                File file = new File(absolutePath);
                 if (file.exists()) {
                     Desktop.getDesktop().open(file);
                 } else {
@@ -412,7 +419,6 @@ public class CoursController {
             showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible d'ouvrir la ressource : " + e.getMessage());
         }
     }
-
     @FXML
     private void handleAjouter() {
         selectedCours = null;

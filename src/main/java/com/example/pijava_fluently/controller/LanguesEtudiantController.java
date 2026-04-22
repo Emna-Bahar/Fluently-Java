@@ -150,9 +150,6 @@ public class LanguesEtudiantController {
         this.currentUser = user;
     }
 
-
-
-
     private VBox createLanguageCard(Langue langue) {
         VBox card = new VBox();
         card.setAlignment(Pos.TOP_CENTER);
@@ -215,11 +212,20 @@ public class LanguesEtudiantController {
         String imagePath = langue.getDrapeau();
         if (imagePath != null && !imagePath.isEmpty()) {
             try {
-                File file = new File(imagePath);
+                // CONVERSION DU CHEMIN RELATIF EN CHEMIN ABSOLU
+                String absolutePath = imagePath;
+                if (imagePath.startsWith("/uploads/")) {
+                    absolutePath = "C:/xampp/htdocs/fluently/public" + imagePath;
+                }
+                File file = new File(absolutePath);
                 if (file.exists()) {
                     flagView.setImage(new Image(file.toURI().toString()));
+                } else {
+                    System.out.println("Fichier drapeau introuvable: " + absolutePath);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                System.err.println("Erreur chargement drapeau: " + e.getMessage());
+            }
         }
 
         if (flagView.getImage() == null) {
@@ -253,9 +259,8 @@ public class LanguesEtudiantController {
         descLabel.setAlignment(Pos.CENTER);
 
         // Badge popularité
-
         String popText = langue.getPopularite() != null ? langue.getPopularite() : "";
-        Label popBadge = new Label( " " + popText);
+        Label popBadge = new Label(" " + popText);
         popBadge.setStyle(
                 "-fx-background-color: " + popColor + "20;" +
                         "-fx-text-fill: " + popColor + ";" +

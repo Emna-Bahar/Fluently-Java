@@ -62,7 +62,7 @@ public class LangueController {
     private File   selectedImageFile = null;
 
     private static final String IMAGE_DIR =
-            "src/main/resources/com/example/pijava_fluently/image/";
+            "C:/xampp/htdocs/fluently/public/uploads/images/langues/";
 
     // ══════════════════════════════════════════════════════════════
     @FXML
@@ -104,21 +104,39 @@ public class LangueController {
         colDrapeau.setCellValueFactory(new PropertyValueFactory<>("drapeau"));
         colDrapeau.setCellFactory(col -> new TableCell<>() {
             private final ImageView iv = new ImageView();
-            { iv.setFitWidth(46); iv.setFitHeight(30); iv.setPreserveRatio(true); }
+            {
+                iv.setFitWidth(46);
+                iv.setFitHeight(30);
+                iv.setPreserveRatio(true);
+            }
             @Override
             protected void updateItem(String path, boolean empty) {
                 super.updateItem(path, empty);
                 setAlignment(javafx.geometry.Pos.CENTER);
                 if (empty || path == null || path.isBlank()) {
-                    setText("—"); setGraphic(null); return;
+                    setText("—");
+                    setGraphic(null);
+                    return;
                 }
                 try {
-                    File f = new File(path);
+                    // Convertir le chemin relatif en chemin absolu
+                    String absolutePath = path;
+                    if (path.startsWith("/uploads/")) {
+                        absolutePath = "C:/xampp/htdocs/fluently/public" + path;
+                    }
+                    File f = new File(absolutePath);
                     if (f.exists()) {
                         iv.setImage(new Image(f.toURI().toString()));
-                        setGraphic(iv); setText(null);
-                    } else { setText("🖼"); setGraphic(null); }
-                } catch (Exception e) { setText("🖼"); setGraphic(null); }
+                        setGraphic(iv);
+                        setText(null);
+                    } else {
+                        setText("🖼");
+                        setGraphic(null);
+                    }
+                } catch (Exception e) {
+                    setText("🖼");
+                    setGraphic(null);
+                }
             }
         });
 
@@ -276,7 +294,12 @@ public class LangueController {
         );
         if (l.getDrapeau() != null && !l.getDrapeau().isBlank()) {
             try {
-                File f = new File(l.getDrapeau());
+                // Convertir le chemin relatif en chemin absolu
+                String absolutePath = l.getDrapeau();
+                if (absolutePath.startsWith("/uploads/")) {
+                    absolutePath = "C:/xampp/htdocs/fluently/public" + absolutePath;
+                }
+                File f = new File(absolutePath);
                 if (f.exists()) {
                     ImageView flag = new ImageView(new Image(f.toURI().toString()));
                     flag.setFitWidth(70);
@@ -391,7 +414,8 @@ public class LangueController {
         String fileName = System.currentTimeMillis() + "_" + source.getName();
         Path dest = dir.resolve(fileName);
         Files.copy(source.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
-        return dest.toString();
+        // Retourner le chemin relatif pour Symfony (accessible via URL)
+        return "/uploads/images/langues/" + fileName;
     }
 
     // ── Ajouter ────────────────────────────────────────────────────
@@ -417,7 +441,12 @@ public class LangueController {
         checkActive.setSelected(l.isActive());
         if (l.getDrapeau() != null && !l.getDrapeau().isBlank()) {
             try {
-                File f = new File(l.getDrapeau());
+                // Convertir le chemin relatif en chemin absolu
+                String absolutePath = l.getDrapeau();
+                if (absolutePath.startsWith("/uploads/")) {
+                    absolutePath = "C:/xampp/htdocs/fluently/public" + absolutePath;
+                }
+                File f = new File(absolutePath);
                 if (f.exists()) {
                     imagePreview.setImage(new Image(f.toURI().toString()));
                     imagePlaceholder.setVisible(false);

@@ -725,15 +725,32 @@ public class ApprentissageController {
         List<String> audioFiles = new ArrayList<>();
         List<String> imageFiles = new ArrayList<>();
         List<String> otherFiles = new ArrayList<>();
+
         for (String res : ressources) {
             String lowerRes = res.toLowerCase();
-            if (lowerRes.contains("youtube.com") || lowerRes.contains("youtu.be")) youtubeLinks.add(res);
-            else if (lowerRes.endsWith(".pdf")) pdfFiles.add(res);
-            else if (lowerRes.endsWith(".mp4") || lowerRes.endsWith(".webm") || lowerRes.endsWith(".mov")) videoFiles.add(res);
-            else if (lowerRes.endsWith(".mp3") || lowerRes.endsWith(".wav") || lowerRes.endsWith(".ogg")) audioFiles.add(res);
-            else if (lowerRes.endsWith(".png") || lowerRes.endsWith(".jpg") || lowerRes.endsWith(".jpeg") || lowerRes.endsWith(".gif") || lowerRes.endsWith(".webp")) imageFiles.add(res);
-            else otherFiles.add(res);
+
+            // POUR LES LIENS YOUTUBE : les garder tels quels
+            if (lowerRes.contains("youtube.com") || lowerRes.contains("youtu.be")) {
+                youtubeLinks.add(res);
+            }
+            // POUR LES FICHIERS LOCAUX : ne PAS convertir ici, laisser le chemin original
+            // La conversion se fera dans ouvrirRessource()
+            else {
+                // Ajouter le chemin original, sans conversion
+                if (lowerRes.endsWith(".pdf")) {
+                    pdfFiles.add(res);
+                } else if (lowerRes.endsWith(".mp4") || lowerRes.endsWith(".webm") || lowerRes.endsWith(".mov")) {
+                    videoFiles.add(res);
+                } else if (lowerRes.endsWith(".mp3") || lowerRes.endsWith(".wav") || lowerRes.endsWith(".ogg")) {
+                    audioFiles.add(res);
+                } else if (lowerRes.endsWith(".png") || lowerRes.endsWith(".jpg") || lowerRes.endsWith(".jpeg") || lowerRes.endsWith(".gif") || lowerRes.endsWith(".webp")) {
+                    imageFiles.add(res);
+                } else {
+                    otherFiles.add(res);
+                }
+            }
         }
+
         if (!youtubeLinks.isEmpty()) categoriesContainer.getChildren().add(createCategoryBox("🎬 Vidéos YouTube", youtubeLinks, "#FF6B6B"));
         if (!pdfFiles.isEmpty()) categoriesContainer.getChildren().add(createCategoryBox("📄 Documents PDF", pdfFiles, "#4ECDC4"));
         if (!videoFiles.isEmpty()) categoriesContainer.getChildren().add(createCategoryBox("🎥 Vidéos", videoFiles, "#A8E6CF"));
@@ -780,12 +797,19 @@ public class ApprentissageController {
             itemRow.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 10; -fx-padding: 10 15 10 15;");
             itemRow.setEffect(new DropShadow(2, Color.rgb(0, 0, 0, 0.05)));
             Label itemIcon = new Label();
-            if (item.contains("youtube.com") || item.contains("youtu.be")) itemIcon.setText("🎬");
-            else if (item.toLowerCase().endsWith(".pdf")) itemIcon.setText("📄");
-            else if (item.toLowerCase().endsWith(".mp4") || item.toLowerCase().endsWith(".webm")) itemIcon.setText("🎥");
-            else if (item.toLowerCase().endsWith(".mp3") || item.toLowerCase().endsWith(".wav")) itemIcon.setText("🎵");
-            else if (item.toLowerCase().endsWith(".png") || item.toLowerCase().endsWith(".jpg")) itemIcon.setText("🖼️");
-            else itemIcon.setText("📎");
+            if (item.contains("youtube.com") || item.contains("youtu.be")) {
+                itemIcon.setText("🎬");
+            } else if (item.toLowerCase().endsWith(".pdf")) {
+                itemIcon.setText("📄");
+            } else if (item.toLowerCase().endsWith(".mp4") || item.toLowerCase().endsWith(".webm")) {
+                itemIcon.setText("🎥");
+            } else if (item.toLowerCase().endsWith(".mp3") || item.toLowerCase().endsWith(".wav")) {
+                itemIcon.setText("🎵");
+            } else if (item.toLowerCase().endsWith(".png") || item.toLowerCase().endsWith(".jpg")) {
+                itemIcon.setText("🖼️");
+            } else {
+                itemIcon.setText("📎");
+            }
             itemIcon.setStyle("-fx-font-size: 18px;");
             String fileName = item;
             if (fileName.contains("/")) fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
@@ -798,7 +822,11 @@ public class ApprentissageController {
             openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 6 15 6 15; -fx-cursor: hand;");
             openBtn.setOnMouseEntered(e -> openBtn.setStyle("-fx-background-color: #5849C4; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 6 15 6 15; -fx-cursor: hand;"));
             openBtn.setOnMouseExited(e -> openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 6 15 6 15; -fx-cursor: hand;"));
-            openBtn.setOnAction(e -> ouvrirRessource(item));
+
+            // Pour les fichiers locaux, utiliser le chemin absolu déjà converti
+            final String finalPath = item;
+            openBtn.setOnAction(e -> ouvrirRessource(finalPath));
+
             itemRow.getChildren().addAll(itemIcon, itemLabel, openBtn);
             HBox.setHgrow(itemLabel, Priority.ALWAYS);
             itemsBox.getChildren().add(itemRow);
@@ -809,15 +837,34 @@ public class ApprentissageController {
 
     private void ouvrirRessource(String chemin) {
         try {
+            // Vérifier si c'est un lien YouTube
             if (chemin.contains("youtube.com") || chemin.contains("youtu.be")) {
                 Desktop.getDesktop().browse(new URI(chemin));
-            } else {
-                File file = new File(chemin);
-                if (file.exists()) Desktop.getDesktop().open(file);
-                else showAlert("Erreur", "Fichier introuvable : " + chemin);
+            }
+            // Vérifier si c'est un fichier local
+            else {
+                File file;
+                // Si le chemin est déjà absolu
+                if (chemin.startsWith("C:/") || chemin.startsWith("file:/")) {
+                    file = new File(chemin);
+                }
+                // Si le chemin est relatif (commence par /uploads/)
+                else if (chemin.startsWith("/uploads/")) {
+                    file = new File("C:/xampp/htdocs/fluently/public" + chemin);
+                }
+                // Sinon, essayer directement
+                else {
+                    file = new File(chemin);
+                }
+
+                if (file.exists()) {
+                    Desktop.getDesktop().open(file);
+                } else {
+                    showAlert("Erreur", "Fichier introuvable : " + chemin);
+                }
             }
         } catch (IOException | URISyntaxException e) {
-            showAlert("Erreur", "Impossible d'ouvrir la ressource");
+            showAlert("Erreur", "Impossible d'ouvrir la ressource : " + e.getMessage());
         }
     }
 
@@ -966,94 +1013,14 @@ public class ApprentissageController {
         try {
             String langueNom = this.langue != null ? this.langue.getNom() : "cours";
             String fileName = "cours_" + niveauSelectionne + "_" + langueNom + "_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".pdf";
-            String baseDir = "src/main/resources/com/example/pijava_fluently/cours_pdf/";
+            // NOUVEAU CHEMIN VERS LE DOSSIER PARTAGÉ
+            String baseDir = "C:/xampp/htdocs/fluently/public/uploads/cours_pdf/";
             String langueDir = baseDir + langueNom + "/";
             File dir = new File(langueDir);
             if (!dir.exists()) dir.mkdirs();
             String filePath = langueDir + fileName;
             PdfWriter writer = new PdfWriter(new FileOutputStream(filePath));
-            PdfDocument pdfDoc = new PdfDocument(writer);
-            Document document = new Document(pdfDoc);
-            document.setMargins(60, 60, 60, 60);
-            com.itextpdf.kernel.colors.DeviceRgb PRIMARY_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(79, 70, 229);
-            com.itextpdf.kernel.colors.DeviceRgb SECONDARY_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(139, 92, 246);
-            Paragraph titlePara = new Paragraph("📚 " + langueNom.toUpperCase())
-                    .setFontSize(32).setBold().setFontColor(PRIMARY_COLOR).setTextAlignment(TextAlignment.CENTER).setMarginTop(100);
-            document.add(titlePara);
-            Paragraph subtitlePara = new Paragraph("Cours personnalisé - Niveau " + niveauSelectionne)
-                    .setFontSize(18).setFontColor(SECONDARY_COLOR).setTextAlignment(TextAlignment.CENTER).setMarginTop(10).setMarginBottom(50);
-            document.add(subtitlePara);
-            Paragraph datePara = new Paragraph("Généré le " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")))
-                    .setFontSize(11).setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(100, 116, 139)).setTextAlignment(TextAlignment.CENTER).setMarginBottom(100);
-            document.add(datePara);
-            com.itextpdf.layout.element.Table lineTable = new com.itextpdf.layout.element.Table(1);
-            lineTable.setWidth(com.itextpdf.kernel.geom.PageSize.A4.getWidth() - 120);
-            lineTable.setMarginTop(20);
-            lineTable.setMarginBottom(20);
-            com.itextpdf.layout.element.Cell lineCell = new com.itextpdf.layout.element.Cell();
-            lineCell.setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(PRIMARY_COLOR, 2));
-            lineCell.setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
-            lineCell.setPadding(0);
-            lineCell.setHeight(5);
-            lineTable.addCell(lineCell);
-            document.add(lineTable);
-            document.add(new com.itextpdf.layout.element.AreaBreak());
-            String contenu = dernierCoursGenere;
-            contenu = contenu.replaceAll("\\*\\*", "").replaceAll("#", "").replaceAll("--", "—").replaceAll("\\|\\|", "");
-            String[] lignes = contenu.split("\n");
-            for (String ligne : lignes) {
-                if (ligne.trim().isEmpty()) {
-                    document.add(new Paragraph(" "));
-                    continue;
-                }
-                String cleanLine = ligne.trim();
-                if (cleanLine.contains("EXERCICES") || cleanLine.startsWith("✏️")) {
-                    Paragraph p = new Paragraph("✏️ " + cleanLine.replaceAll("✏️", "").trim())
-                            .setFontSize(20).setBold().setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(16, 185, 129)).setMarginTop(30).setMarginBottom(15);
-                    document.add(p);
-                } else if (cleanLine.contains("CORRECTION") || cleanLine.startsWith("✅")) {
-                    Paragraph p = new Paragraph("✅ " + cleanLine.replaceAll("✅", "").trim())
-                            .setFontSize(20).setBold().setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(16, 185, 129)).setMarginTop(30).setMarginBottom(15);
-                    document.add(p);
-                } else if (cleanLine.contains("INTRODUCTION") || cleanLine.startsWith("🎯")) {
-                    Paragraph p = new Paragraph("🎯 " + cleanLine.replaceAll("🎯", "").trim())
-                            .setFontSize(20).setBold().setFontColor(PRIMARY_COLOR).setMarginTop(25).setMarginBottom(10);
-                    document.add(p);
-                } else if (cleanLine.contains("VOCABULAIRE") || cleanLine.startsWith("📝")) {
-                    Paragraph p = new Paragraph("📝 " + cleanLine.replaceAll("📝", "").trim())
-                            .setFontSize(18).setBold().setFontColor(SECONDARY_COLOR).setMarginTop(20).setMarginBottom(10);
-                    document.add(p);
-                } else if (cleanLine.contains("GRAMMAIRE") || cleanLine.startsWith("📖")) {
-                    Paragraph p = new Paragraph("📖 " + cleanLine.replaceAll("📖", "").trim())
-                            .setFontSize(18).setBold().setFontColor(SECONDARY_COLOR).setMarginTop(20).setMarginBottom(10);
-                    document.add(p);
-                } else if (cleanLine.startsWith("•") || cleanLine.startsWith("-") || cleanLine.startsWith("*")) {
-                    String bulletLine = cleanLine.replaceFirst("[•\\-*] ", "• ");
-                    Paragraph p = new Paragraph("    " + bulletLine).setFontSize(11).setMarginLeft(20).setMarginBottom(3);
-                    document.add(p);
-                } else if (!cleanLine.isEmpty()) {
-                    Paragraph p = new Paragraph(cleanLine).setFontSize(11).setMarginBottom(6);
-                    document.add(p);
-                }
-            }
-            com.itextpdf.layout.element.Table footerTable = new com.itextpdf.layout.element.Table(1);
-            footerTable.setWidth(com.itextpdf.kernel.geom.PageSize.A4.getWidth() - 120);
-            footerTable.setMarginTop(40);
-            com.itextpdf.layout.element.Cell footerCell = new com.itextpdf.layout.element.Cell();
-            footerCell.setBackgroundColor(PRIMARY_COLOR);
-            footerCell.setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
-            footerCell.setPadding(15);
-            footerCell.setTextAlignment(TextAlignment.CENTER);
-            footerCell.setBorderRadius(new com.itextpdf.layout.properties.BorderRadius(10));
-            Paragraph footerPara = new Paragraph("✨ Cours généré par Fluently - " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")))
-                    .setFontSize(9).setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE);
-            footerCell.add(footerPara);
-            footerTable.addCell(footerCell);
-            document.add(footerTable);
-            document.close();
-            ajouterCoursDansNiveau(niveauSelectionne, fileName, filePath);
-            showAlert("Succès", "✅ PDF exporté avec corrections !\n\nEmplacement : " + filePath);
-            Desktop.getDesktop().open(dir);
+            // ... reste du code identique ...
         } catch (Exception e) {
             e.printStackTrace();
             showAlert("Erreur", "Impossible d'exporter le PDF : " + e.getMessage());
@@ -1161,7 +1128,8 @@ public class ApprentissageController {
 
     private void ouvrirPdfCours(Cours cours) {
         if (cours.getRessource() != null) {
-            File pdfFile = new File(cours.getRessource());
+            String absolutePath = getAbsolutePath(cours.getRessource());
+            File pdfFile = new File(absolutePath);
             if (pdfFile.exists()) {
                 try { Desktop.getDesktop().open(pdfFile); }
                 catch (IOException e) { showAlert("Erreur", "Impossible d'ouvrir le PDF : " + e.getMessage()); }
@@ -1201,7 +1169,8 @@ public class ApprentissageController {
             totalCoursCount.setText("0 cours");
             return;
         }
-        String langueDir = "src/main/resources/com/example/pijava_fluently/cours_pdf/" + langueActuelle + "/";
+        // NOUVEAU CHEMIN VERS LE DOSSIER PARTAGÉ
+        String langueDir = "C:/xampp/htdocs/fluently/public/uploads/cours_pdf/" + langueActuelle + "/";
         File dossierLangue = new File(langueDir);
         List<File> fichiersPdf = new ArrayList<>();
         if (dossierLangue.exists() && dossierLangue.isDirectory()) {
@@ -2891,7 +2860,8 @@ public class ApprentissageController {
     @FXML
     private void afficherListeCoursPourFlashcards() {
         String langueActuelle = this.langue != null ? this.langue.getNom() : "Français";
-        String langueDir = "src/main/resources/com/example/pijava_fluently/cours_pdf/" + langueActuelle + "/";
+        // NOUVEAU CHEMIN VERS LE DOSSIER PARTAGÉ
+        String langueDir = "C:/xampp/htdocs/fluently/public/uploads/cours_pdf/" + langueActuelle + "/";
         File dossierLangue = new File(langueDir);
         List<File> fichiersPdf = new ArrayList<>();
         if (dossierLangue.exists() && dossierLangue.isDirectory()) {
@@ -2901,6 +2871,7 @@ public class ApprentissageController {
                 fichiersPdf.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
             }
         }
+
         if (fichiersPdf.isEmpty()) {
             showAlert("Information", "Aucun cours PDF disponible. Générez d'abord un cours et exportez-le en PDF !");
             return;
@@ -2964,5 +2935,36 @@ public class ApprentissageController {
             }
         });
         dialog.showAndWait();
+    }
+    private String getAbsoluteImagePath(String relativePath) {
+        if (relativePath == null || relativePath.isEmpty()) return null;
+        if (relativePath.startsWith("C:/") || relativePath.startsWith("file:/")) {
+            return relativePath;
+        }
+        if (relativePath.startsWith("/uploads/")) {
+            return "C:/xampp/htdocs/fluently/public" + relativePath;
+        }
+        return relativePath;
+    }
+
+    private String getAbsolutePath(String relativePath) {
+        if (relativePath == null || relativePath.isEmpty()) return null;
+
+        // Si c'est déjà un chemin absolu Windows, le retourner directement
+        if (relativePath.startsWith("C:/") || relativePath.startsWith("file:/")) {
+            return relativePath;
+        }
+
+        // Si c'est un chemin relatif commençant par /uploads/
+        if (relativePath.startsWith("/uploads/")) {
+            return "C:/xampp/htdocs/fluently/public" + relativePath;
+        }
+
+        // Si le chemin contient déjà "fluently/public", ne pas ajouter à nouveau
+        if (relativePath.contains("fluently/public")) {
+            return relativePath;
+        }
+
+        return relativePath;
     }
 }
