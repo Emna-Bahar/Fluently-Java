@@ -4,6 +4,7 @@ import com.example.pijava_fluently.entites.Langue;
 import com.example.pijava_fluently.entites.Niveau;
 import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.entites.TestPassage;
+import com.example.pijava_fluently.services.FraudeTrackerService;
 import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.LangueService;
 import com.example.pijava_fluently.services.NiveauService;
@@ -823,6 +824,68 @@ public class MesTestsController implements Initializable { //initializable
         } catch (IOException e) {
             e.printStackTrace();
             showAlert("Erreur", "Impossible de charger le lobby duel.");
+        }
+    }
+    @FXML
+    private void handleMesInfractions() {
+        try {
+            FraudeTrackerService tracker = new FraudeTrackerService();
+            List<FraudeTrackerService.Infraction> infractions =
+                    tracker.charger(currentUser.getId());
+            int maxAutorise = tracker.getMaxTentativesAutorisees(currentUser.getId());
+
+            // Construire la vue inline dans vboxContenu
+            vboxContenu.getChildren().clear();
+
+            // En-tête
+            VBox header = new VBox(4);
+            header.setStyle("-fx-background-color:white;-fx-background-radius:14;" +
+                    "-fx-padding:20 24;");
+            Label titre = new Label("🔍 Mon historique de comportement en examen");
+            titre.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;");
+
+            String niveauTexte = switch (maxAutorise) {
+                case 1 -> "⚠️ Surveillance renforcée — 1 seule tentative autorisée";
+                case 2 -> "🟡 Surveillance modérée — 2 tentatives autorisées";
+                default -> "🟢 Normal — 3 tentatives autorisées";
+            };
+            Label niveau = new Label(niveauTexte);
+            niveau.setStyle("-fx-font-size:13px;-fx-text-fill:#6B7280;");
+            header.getChildren().addAll(titre, niveau);
+            vboxContenu.getChildren().add(header);
+
+            if (infractions.isEmpty()) {
+                Label aucune = new Label("✅ Aucune infraction enregistrée. Continuez comme ça !");
+                aucune.setStyle("-fx-font-size:14px;-fx-text-fill:#059669;-fx-padding:20;");
+                vboxContenu.getChildren().add(aucune);
+                return;
+            }
+
+            // Liste des infractions
+            for (FraudeTrackerService.Infraction inf : infractions) {
+                HBox ligne = new HBox(16);
+                ligne.setAlignment(Pos.CENTER_LEFT);
+                ligne.setStyle("-fx-background-color:white;-fx-background-radius:10;" +
+                        "-fx-padding:12 16;-fx-border-color:#FEE2E2;" +
+                        "-fx-border-radius:10;-fx-border-width:1;");
+
+                Label icone = new Label("⚠️");
+                icone.setStyle("-fx-font-size:16px;");
+
+                VBox info = new VBox(3);
+                HBox.setHgrow(info, Priority.ALWAYS);
+                Label raison = new Label(inf.raison());
+                raison.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#DC2626;");
+                Label details = new Label("Test : " + inf.testTitre() + "  •  " + inf.date());
+                details.setStyle("-fx-font-size:11px;-fx-text-fill:#9CA3AF;");
+                info.getChildren().addAll(raison, details);
+
+                ligne.getChildren().addAll(icone, info);
+                vboxContenu.getChildren().add(ligne);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

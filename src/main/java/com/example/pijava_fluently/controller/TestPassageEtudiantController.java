@@ -4,13 +4,7 @@ import com.example.pijava_fluently.entites.Question;
 import com.example.pijava_fluently.entites.Reponse;
 import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.entites.TestPassage;
-import com.example.pijava_fluently.services.QuestionService;
-import com.example.pijava_fluently.services.ReponseService;
-import com.example.pijava_fluently.services.TestPassageService;
-import com.example.pijava_fluently.services.SpeechRecognitionService;
-import com.example.pijava_fluently.services.ExamModeService;
-import com.example.pijava_fluently.services.SpeechEvaluationService;
-import com.example.pijava_fluently.services.AITextCorrectionService;
+import com.example.pijava_fluently.services.*;
 import com.example.pijava_fluently.utils.LoggerUtil;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,6 +76,7 @@ public class TestPassageEtudiantController {
     private final QuestionService    questionService    = new QuestionService();
     private final ReponseService     reponseService     = new ReponseService();
     private final TestPassageService testPassageService = new TestPassageService();
+    private final FraudeTrackerService fraudeTracker = new FraudeTrackerService();
 
     // ── Initialisation avec le test ───────────────────────
     public void initTest(Test test, int userId, MesTestsController mesTestsController) {
@@ -95,6 +90,10 @@ public class TestPassageEtudiantController {
         labelTitreTest.setText(test.getTitre());
 
         if (isExamMode) {
+            MAX_INFRACTIONS = fraudeTracker.getMaxTentativesAutorisees(userId);
+            LoggerUtil.info("Exam mode",
+                    "maxInfractions", String.valueOf(MAX_INFRACTIONS),
+                    "userId",         String.valueOf(userId));
             labelTitreTest.setStyle("-fx-text-fill: #dc2626; -fx-font-weight: bold;");
             labelTitreTest.setText("🔒 MODE EXAMEN - " + test.getTitre());
             setupExamModeDetection();
@@ -731,13 +730,25 @@ public class TestPassageEtudiantController {
     private int     totalInfractions  = 0;
     private boolean testTermine       = false;  // stopper tout après fin
     private boolean alerteEnCours     = false;  // éviter les boucles focus
-    private static final int MAX_INFRACTIONS = 3;
+    private int MAX_INFRACTIONS = 3;
 
     private void setupExamModeDetection() {
         labelTitreTest.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene == null) return;
             javafx.stage.Stage stage = (javafx.stage.Stage) newScene.getWindow();
-
+            if (isExamMode) {
+                stage.setFullScreen(true);
+                stage.setFullScreenExitHint(
+                        "⚠️ MODE EXAMEN — Rester en plein écran");
+                // Empêcher la sortie du plein écran
+                stage.fullScreenProperty().addListener((o, wasFS, isNowFS) -> {
+                    if (!isNowFS && isExamMode && !testTermine && !alerteEnCours) {
+                        // Forcer le retour en plein écran
+                        Platform.runLater(() -> stage.setFullScreen(true));
+                        logInfraction("Tentative de quitter le plein écran");
+                    }
+                });
+            }
             // ── Perte de focus ────────────────────────────────────────
             stage.focusedProperty().addListener((obs2, wasActive, isNowActive) -> {
                 // Ignorer si : test fini, alerte déjà ouverte, ou fenêtre
@@ -784,49 +795,47 @@ public class TestPassageEtudiantController {
     }
 
     private void logInfraction(String raison) {
-        // Ne rien faire si test déjà terminé ou alerte déjà ouverte
         if (testTermine || alerteEnCours) return;
 
         totalInfractions++;
-        int restantes = MAX_INFRACTIONS - totalInfractions;
 
+        // ── Enregistrer dans le fichier de fraude ────────────────────
+        fraudeTracker.enregistrer(userId, raison,
+                test.getId(), test.getTitre());
+
+        int restantes = MAX_INFRACTIONS - totalInfractions;
         LoggerUtil.warning("INFRACTION " + totalInfractions + "/" + MAX_INFRACTIONS,
                 "raison", raison);
 
         Platform.runLater(() -> {
-            // Double-vérification sur le thread FX
             if (testTermine) return;
-
-            alerteEnCours = true; // bloquer les événements focus pendant l'alerte
+            alerteEnCours = true;
 
             if (totalInfractions >= MAX_INFRACTIONS) {
-                // ── Terminer le test ──────────────────────────────────
-                testTermine = true; // poser le flag AVANT d'ouvrir l'alerte
-
+                testTermine = true;
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("🔒 Test annulé");
                 alert.setHeaderText("Trop d'infractions — test annulé");
                 alert.setContentText(
-                        "Dernière infraction : " + raison + "\n\n" +
+                        "Infraction : " + raison + "\n\n" +
                                 MAX_INFRACTIONS + " infractions atteintes.\n" +
-                                "Le test est soumis automatiquement avec un score de 0.");
+                                "Le test est soumis avec un score de 0.");
+                // Sortir du plein écran pour afficher l'alerte
+                if (labelTitreTest.getScene() != null) {
+                    javafx.stage.Stage s = (javafx.stage.Stage)
+                            labelTitreTest.getScene().getWindow();
+                    s.setFullScreen(false);
+                }
                 alert.showAndWait();
-
                 alerteEnCours = false;
                 terminerTestForce();
-
             } else {
-                // ── Avertissement simple ──────────────────────────────
                 Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("⚠️ Avertissement — Mode Examen");
+                alert.setTitle("⚠️ Avertissement");
                 alert.setHeaderText("Infraction " + totalInfractions + "/" + MAX_INFRACTIONS);
-                alert.setContentText(
-                        "Infraction : " + raison + "\n\n" +
-                                "Encore " + restantes + " infraction(s) avant annulation.");
+                alert.setContentText("Infraction : " + raison + "\n\nEncore "
+                        + restantes + " infraction(s) avant annulation.");
                 alert.showAndWait();
-
-                // Remettre le flag APRÈS fermeture de l'alerte
-                // (showAndWait bloque ici jusqu'à ce que l'user clique OK)
                 alerteEnCours = false;
             }
         });

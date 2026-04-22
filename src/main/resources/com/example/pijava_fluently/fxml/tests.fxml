@@ -29,6 +29,12 @@
                        -fx-background-radius:12;-fx-padding:11 24;-fx-cursor:hand;
                        -fx-border-color:transparent;
                        -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.40),12,0,0,4);"/>
+        <Button text="🚨 Surveillance fraude"
+                onAction="#handleFraudeAdmin"
+                style="-fx-background-color:#FEF2F2;-fx-text-fill:#DC2626;
+               -fx-font-size:13px;-fx-font-weight:bold;
+               -fx-background-radius:10;-fx-padding:9 18;-fx-cursor:hand;
+               -fx-border-color:#FECDD3;-fx-border-radius:10;-fx-border-width:1;"/>
     </HBox>
 
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"

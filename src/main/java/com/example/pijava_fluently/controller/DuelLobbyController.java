@@ -73,6 +73,9 @@ public class DuelLobbyController {
     public void setHomeController(HomeController hc) { this.homeController = hc; }
 
     // ── Hôte : créer le duel ──────────────────────────────────────
+
+    // Remplacer la méthode handleCreerDuel par :
+
     @FXML
     private void handleCreerDuel() {
         Test selectedTest = testComboBox.getValue();
@@ -86,15 +89,10 @@ public class DuelLobbyController {
         server = new DuelServer(
                 msg -> handleMessageHote(msg, selectedTest),
                 () -> {
-                    // Client connecté
                     labelStatutHote.setText("✅ Adversaire connecté ! Lancement...");
-
-                    // Envoyer le nom
                     DuelMessage nameMsg = new DuelMessage(DuelMessage.Action.NAME);
                     nameMsg.playerName = currentUser.getPrenom();
                     server.send(nameMsg);
-
-                    // Lancer l'écran de jeu
                     lancerDuel(selectedTest, true);
                 }
         );
@@ -102,18 +100,60 @@ public class DuelLobbyController {
 
         panelIP.setVisible(true);
         panelIP.setManaged(true);
-        labelIP.setText(DuelServer.getLocalIP() + " : 9090");
-        // Après labelIP.setText(...)
+
+        // Afficher l'IP principale (la meilleure)
+        String meilleureIP = DuelServer.getBestLocalIP();
+        String toutesLesIP = DuelServer.getAllLocalIPs();
+
+        labelIP.setText(meilleureIP);
+
+        // Ajouter une info supplémentaire si plusieurs IP
+        if (!toutesLesIP.equals(meilleureIP)) {
+            Label infoLabel = new Label("Autres IP possibles :\n" + toutesLesIP);
+            infoLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7280; -fx-wrap-text: true;");
+            panelIP.getChildren().add(infoLabel);
+        }
+
+        labelStatutHote.setText("⏳ En attente de l'adversaire...");
+
+        // Afficher la commande pour le pare-feu (optionnel)
         if (labelCommande != null) {
             labelCommande.setText(
-                    "netsh advfirewall firewall add rule " +
-                            "name=\"Fluently Duel\" dir=in action=allow " +
-                            "protocol=TCP localport=9090"
+                    "Si l'adversaire ne peut pas se connecter :\n" +
+                            "Désactivez le pare-feu Windows temporairement\n" +
+                            "Ou ajoutez une règle :\n" +
+                            "netsh advfirewall firewall add rule name=\"Fluently Duel\" dir=in action=allow protocol=TCP localport=9090"
             );
+            labelCommande.setStyle("-fx-font-size: 11px; -fx-text-fill: #D97706; -fx-wrap-text: true;");
         }
-        labelStatutHote.setText("⏳ En attente de l'adversaire...");
     }
 
+    // Remplacer getAllLocalIPs par l'appel à DuelServer.getAllLocalIPs()
+    private String getAllLocalIPs() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            java.util.Enumeration<java.net.NetworkInterface> interfaces =
+                    java.net.NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                java.net.NetworkInterface ni = interfaces.nextElement();
+                if (ni.isLoopback() || !ni.isUp()) continue;
+
+                java.util.Enumeration<java.net.InetAddress> addrs =
+                        ni.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    java.net.InetAddress addr = addrs.nextElement();
+                    if (addr instanceof java.net.Inet4Address
+                            && !addr.isLoopbackAddress()) {
+                        if (sb.length() > 0) sb.append("  /  ");
+                        sb.append(addr.getHostAddress());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return DuelServer.getAllLocalIPs();
+        }
+        return sb.length() > 0 ? sb.toString() : DuelServer.getAllLocalIPs();
+    }
     // ── Client : rejoindre le duel ────────────────────────────────
     @FXML
     private void handleRejoindre() {

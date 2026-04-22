@@ -11,8 +11,10 @@ import com.example.pijava_fluently.services.TestService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
@@ -564,5 +566,38 @@ public class TestController {
     private void showAlert(Alert.AlertType type, String title, String msg) {
         Alert a = new Alert(type, msg, ButtonType.OK);
         a.setTitle(title); a.setHeaderText(null); a.showAndWait();
+    }
+    @FXML
+    private void handleFraudeAdmin() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/fraude-admin.fxml"));
+            Node vue = loader.load();
+
+            // Chercher le contentArea dans la scène courante
+            javafx.scene.Scene scene = tableTests.getScene();
+            if (scene == null) {
+                showAlert(Alert.AlertType.ERROR, "Erreur",
+                        "Impossible de naviguer : scène non disponible.");
+                return;
+            }
+
+            StackPane contentArea = (StackPane) scene.lookup("#contentArea");
+            if (contentArea != null) {
+                contentArea.getChildren().setAll(vue);
+            } else {
+                // Fallback : ouvrir dans une nouvelle fenêtre
+                javafx.stage.Stage stage = new javafx.stage.Stage();
+                stage.setTitle("🚨 Surveillance des examens");
+                stage.setScene(new javafx.scene.Scene(
+                        (javafx.scene.Parent) vue, 900, 650));
+                stage.show();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur",
+                    "Impossible de charger la vue fraude : " + e.getMessage());
+        }
     }
 }

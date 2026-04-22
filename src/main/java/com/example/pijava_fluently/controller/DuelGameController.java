@@ -85,7 +85,7 @@ public class DuelGameController {
     private void chargerEtEnvoyerQuestions() {
         try {
             List<Question> rawQuestions = questionService.recupererParTest(test.getId());
-            rawQuestions.removeIf(q -> !"qcm".equals(q.getType()));
+            rawQuestions.removeIf(q -> q.getType() == null);
 
             questions = new ArrayList<>();
             scoreMaxTotal = 0;
@@ -130,15 +130,23 @@ public class DuelGameController {
         }
 
         indexCourant = idx;
-        aRepondu = false;
+        aRepondu     = false;
         DuelMessage.QuestionDto q = questions.get(idx);
 
-        labelProgression.setText("Question " + (idx + 1) + "/" + questions.size());
+        labelProgression.setText("Question " + (idx+1) + "/" + questions.size());
         labelQuestion.setText(q.enonce);
         vboxReponses.getChildren().clear();
 
-        ToggleGroup group = new ToggleGroup();
+        switch (q.type) {
+            case "qcm"         -> afficherQCM(q, idx);
+            case "oral"        -> afficherOral(q, idx);
+            case "texte_libre" -> afficherTexteLibre(q, idx);
+            default            -> afficherQCM(q, idx);
+        }
+    }
 
+    private void afficherQCM(DuelMessage.QuestionDto q, int idx) {
+        ToggleGroup group = new ToggleGroup();
         for (DuelMessage.ReponseDto r : q.reponses) {
             RadioButton rb = new RadioButton(r.contenuRep);
             rb.setToggleGroup(group);
@@ -147,39 +155,135 @@ public class DuelGameController {
             HBox card = new HBox(12, rb);
             card.setAlignment(Pos.CENTER_LEFT);
             card.setPadding(new Insets(12, 16, 12, 16));
-            card.setStyle("-fx-background-color:white;-fx-background-radius:12;" +
-                    "-fx-border-color:#E8EAF0;-fx-border-radius:12;-fx-border-width:1.5;-fx-cursor:hand;");
+            card.setStyle(
+                    "-fx-background-color:white;-fx-background-radius:12;" +
+                            "-fx-border-color:#E8EAF0;-fx-border-radius:12;" +
+                            "-fx-border-width:1.5;-fx-cursor:hand;");
 
             rb.selectedProperty().addListener((obs, o, selected) -> {
                 if (!selected || aRepondu) return;
                 aRepondu = true;
-
                 boolean correct = r.isCorrect;
                 if (correct) scoreMoi += q.scoreMax;
-
-                card.setStyle("-fx-background-color:" + (correct ? "#F0FDF4" : "#FFF1F2") + ";" +
-                        "-fx-background-radius:12;-fx-border-color:" +
-                        (correct ? "#16A34A" : "#DC2626") + ";-fx-border-radius:12;-fx-border-width:2;");
-
-                group.getToggles().forEach(t -> ((RadioButton) t).setDisable(true));
+                card.setStyle(
+                        "-fx-background-color:" + (correct ? "#F0FDF4" : "#FFF1F2") + ";" +
+                                "-fx-background-radius:12;-fx-border-color:" +
+                                (correct ? "#16A34A" : "#DC2626") + ";" +
+                                "-fx-border-radius:12;-fx-border-width:2;");
+                group.getToggles().forEach(t -> ((RadioButton)t).setDisable(true));
                 stopTimer();
-
-                DuelMessage answerMsg = new DuelMessage(DuelMessage.Action.ANSWER);
-                answerMsg.questionIndex = idx;
-                answerMsg.reponseId = r.id;
-                answerMsg.isCorrect = correct;
-                sendMessage(answerMsg);
-
+                envoyerReponse(idx, r.id, correct);
                 mettreAJourScores();
-
-                new Timeline(new KeyFrame(Duration.millis(1500), e -> {
-                    afficherQuestion(idx + 1);
-                    demarrerTimer();
-                })).play();
+                passerQuestionSuivante(idx);
             });
-
             vboxReponses.getChildren().add(card);
         }
+    }
+
+    private void afficherOral(DuelMessage.QuestionDto q, int idx) {
+        VBox box = new VBox(12);
+        box.setStyle("-fx-padding:16;-fx-background-color:#F8F7FF;" +
+                "-fx-background-radius:12;");
+
+        Label inst = new Label("🎤 Lisez à voix haute, puis saisissez ce que vous avez dit");
+        inst.setStyle("-fx-font-size:13px;-fx-text-fill:#6C63FF;-fx-font-weight:bold;");
+        inst.setWrapText(true);
+
+        TextField champOral = new TextField();
+        champOral.setPromptText("Tapez votre réponse orale ici...");
+        champOral.setStyle("-fx-font-size:14px;-fx-padding:10;-fx-background-radius:8;");
+
+        Button btnValider = new Button("✅ Valider");
+        btnValider.setStyle(
+                "-fx-background-color:#6C63FF;-fx-text-fill:white;" +
+                        "-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20;");
+
+        btnValider.setOnAction(e -> {
+            if (aRepondu) return;
+            String texte = champOral.getText().trim();
+            if (texte.isEmpty()) return;
+            aRepondu = true;
+
+            // Évaluation Levenshtein
+            SpeechEvaluationService eval = new SpeechEvaluationService();
+            String status = eval.evaluateAnswer(texte, q.enonce);
+            double pts    = eval.calculateScore(status, q.scoreMax);
+            scoreMoi     += (int) pts;
+
+            boolean correct = "correct".equals(status) || "partial".equals(status);
+            champOral.setDisable(true);
+            btnValider.setDisable(true);
+            stopTimer();
+            envoyerReponse(idx, -1, correct);
+            mettreAJourScores();
+            passerQuestionSuivante(idx);
+        });
+
+        box.getChildren().addAll(inst, champOral, btnValider);
+        vboxReponses.getChildren().add(box);
+    }
+
+    private void afficherTexteLibre(DuelMessage.QuestionDto q, int idx) {
+        VBox box = new VBox(12);
+        box.setStyle("-fx-padding:16;-fx-background-color:#F8F9FF;" +
+                "-fx-background-radius:12;");
+
+        Label inst = new Label("✍️ Rédigez votre réponse (sera corrigée par l'IA après le duel)");
+        inst.setStyle("-fx-font-size:13px;-fx-text-fill:#374151;-fx-font-weight:bold;");
+        inst.setWrapText(true);
+
+        TextArea textArea = new TextArea();
+        textArea.setPromptText("Écrivez votre réponse ici...");
+        textArea.setPrefHeight(120);
+        textArea.setWrapText(true);
+        textArea.setStyle("-fx-font-size:14px;-fx-background-radius:8;");
+
+        Label compteur = new Label("0 caractères");
+        compteur.setStyle("-fx-font-size:11px;-fx-text-fill:#9CA3AF;");
+        textArea.textProperty().addListener((obs, o, n) ->
+                compteur.setText(n.length() + " caractères"));
+
+        Button btnValider = new Button("✅ Valider");
+        btnValider.setStyle(
+                "-fx-background-color:#059669;-fx-text-fill:white;" +
+                        "-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20;");
+
+        btnValider.setOnAction(e -> {
+            if (aRepondu) return;
+            String texte = textArea.getText().trim();
+            if (texte.isEmpty()) return;
+            aRepondu = true;
+
+            // Score basique longueur (correction IA différée, pas en duel)
+            int pts = texte.length() >= 30 ? q.scoreMax : q.scoreMax / 2;
+            scoreMoi += pts;
+
+            textArea.setDisable(true);
+            btnValider.setDisable(true);
+            stopTimer();
+            envoyerReponse(idx, -1, pts > 0);
+            mettreAJourScores();
+            passerQuestionSuivante(idx);
+        });
+
+        box.getChildren().addAll(inst, textArea, compteur, btnValider);
+        vboxReponses.getChildren().add(box);
+    }
+
+    // Méthodes utilitaires extraites
+    private void envoyerReponse(int idx, int reponseId, boolean correct) {
+        DuelMessage msg = new DuelMessage(DuelMessage.Action.ANSWER);
+        msg.questionIndex = idx;
+        msg.reponseId     = reponseId;
+        msg.isCorrect     = correct;
+        sendMessage(msg);
+    }
+
+    private void passerQuestionSuivante(int idx) {
+        new Timeline(new KeyFrame(Duration.millis(1500), e -> {
+            afficherQuestion(idx + 1);
+            demarrerTimer();
+        })).play();
     }
 
     private void demarrerTimer() {
@@ -270,6 +374,19 @@ public class DuelGameController {
         if (duelTermine) return;
         duelTermine = true;
         stopTimer();
+        new Thread(() -> {
+            try {
+                LeaderboardService lb = new LeaderboardService();
+                boolean jaGagne  = gagnant.contains(currentUser.getPrenom());
+                boolean egalite  = gagnant.contains("Égalité");
+                int     testId   = (test != null) ? test.getId() : 0;
+                lb.sauvegarderResultatDuel(
+                        currentUser.getId(), testId,
+                        scoreMoi, scoreMaxTotal, jaGagne, egalite);
+            } catch (Exception e) {
+                LoggerUtil.error("Erreur sauvegarde leaderboard", e);
+            }
+        }).start();
 
         vboxReponses.setVisible(false);
         vboxReponses.setManaged(false);

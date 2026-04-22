@@ -465,21 +465,48 @@ public class AITextCorrectionService {
     // ── Builders de prompt ────────────────────────────────────────
     private String buildPrompt(String studentText, String theme,
                                String langue, String niveau) {
-        return "Évalue ce texte d'étudiant (niveau " + niveau + ", thème: " + theme + ", langue: " + langue + ").\n\n" +
-                "TEXTE:\n" + studentText + "\n\n" +
-                "Réponds avec ce JSON EXACT (pas de guillemets dans les chaînes, " +
-                "utilise des tirets pour séparer l'erreur de la correction):\n" +
-                "{\n" +
-                "  \"score\": 75,\n" +
-                "  \"grammaire\": 70,\n" +
-                "  \"vocabulaire\": 80,\n" +
-                "  \"coherence\": 75,\n" +
-                "  \"erreurs\": [\"description erreur 1\", \"description erreur 2\"],\n" +
-                "  \"corrections\": [\"correction 1\", \"correction 2\"],\n" +
-                "  \"commentaire\": \"commentaire global sans guillemets internes\"\n" +
-                "}\n\n" +
-                "INTERDIT: guillemets a l interieur des valeurs des chaines. " +
-                "Commence par { directement.";
+        return """
+Évalue ce texte d'étudiant selon une grille précise. Sois STRICT — un texte hors sujet doit avoir un score bas.
+
+THÈME IMPOSÉ : "%s"
+LANGUE : %s
+NIVEAU : %s
+
+TEXTE DE L'ÉTUDIANT :
+\"\"\"%s\"\"\"
+
+GRILLE D'ÉVALUATION (total 30 points, convertis en score /100) :
+1. Respect du sujet (0-4 pts) : le texte répond-il AU SUJET IMPOSÉ ?
+   - Hors sujet total = 0 pts. Partiellement = 2 pts. Respecté = 4 pts.
+2. Cohérence (0-4 pts) : les idées s'enchaînent-elles logiquement ?
+3. Expression des idées (0-4 pts) : présentation de faits et opinions clairs.
+4. Vocabulaire - étendue (0-3 pts) : richesse du vocabulaire utilisé.
+5. Vocabulaire - maîtrise (0-3 pts) : mots utilisés correctement.
+6. Grammaire - orthographe lexicale (0-2 pts) :
+   0-4 fautes=2pts, 5-6 fautes=1.5pts, 7-8 fautes=1pt, 9-10=0.5pt, >10=0pt
+7. Grammaire - orthographe grammaticale (0-2 pts) : même barème.
+8. Structure des phrases (0-2 pts) : phrases correctement construites.
+9. Mise en page / longueur (0-2 pts) : texte suffisamment développé.
+10. Lisibilité (0-2 pts) : texte clair et compréhensible.
+11. Capacité à présenter des faits (0-2 pts).
+
+RÈGLE ABSOLUE : si le texte est hors sujet, le score total NE PEUT PAS dépasser 30/100.
+Un texte de 3 mots ne peut pas dépasser 20/100 même sans fautes.
+
+Réponds UNIQUEMENT avec ce JSON (pas de guillemets dans les valeurs) :
+{
+  "score": nombre entre 0 et 100,
+  "grammaire": nombre entre 0 et 100,
+  "vocabulaire": nombre entre 0 et 100,
+  "coherence": nombre entre 0 et 100,
+  "respect_sujet": nombre entre 0 et 100,
+  "erreurs": ["erreur 1", "erreur 2"],
+  "corrections": ["correction 1", "correction 2"],
+  "commentaire": "commentaire global de 2-3 phrases en %s"
+}
+
+Commence par { directement.
+""".formatted(theme, langue, niveau, studentText, langue);
     }
 
     // ── Defaults ──────────────────────────────────────────────────

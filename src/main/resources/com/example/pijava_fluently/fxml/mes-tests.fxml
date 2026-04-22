@@ -45,6 +45,11 @@
                -fx-font-size:13px;-fx-font-weight:bold;
                -fx-background-radius:10;-fx-padding:9 18;
                -fx-cursor:hand;-fx-border-color:transparent;"/>
+        <Button text="🔍 Mon comportement"
+                onAction="#handleMesInfractions"
+                style="-fx-background-color:#FEF2F2;-fx-text-fill:#DC2626;
+               -fx-font-size:13px;-fx-font-weight:bold;
+               -fx-background-radius:10;-fx-padding:9 18;-fx-cursor:hand;"/>
         <Button text="📊 Performances"
                 onAction="#handlePerformances"
                 style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:9 18;-fx-cursor:hand;-fx-border-color:transparent;"/>
