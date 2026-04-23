@@ -36,7 +36,7 @@
             </HBox>
         </HBox>
 
-        <!-- Barre recherche + Ajouter -->
+        <!-- Barre recherche + Ajouter + Tâches IA -->
         <HBox spacing="12" alignment="CENTER_LEFT">
             <HBox spacing="8" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="380"
                   style="-fx-background-color:#FFFFFF;-fx-background-radius:11;
@@ -51,11 +51,17 @@
                                   -fx-font-size:12px;-fx-text-fill:#374151;"
                            HBox.hgrow="ALWAYS"/>
             </HBox>
+
             <Button fx:id="btnAjouter" text="✚  Ajouter une tâche" onAction="#handleAjouter"
                     style="-fx-background-color:linear-gradient(to right,#3B82F6,#6C63FF);
                            -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
                            -fx-background-radius:11;-fx-padding:10 18 10 18;-fx-cursor:hand;
                            -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.4),12,0,0,4);"/>
+
+            <Button text="🤖  IA Générer tâches" onAction="#handleGenerateAI"
+                    style="-fx-background-color:#8B5CF6;-fx-text-fill:white;-fx-font-size:13px;
+               -fx-font-weight:bold;-fx-background-radius:11;-fx-padding:10 18 10 18;
+               -fx-cursor:hand;-fx-effect:dropshadow(gaussian,rgba(139,92,246,0.4),12,0,0,4);"/>
         </HBox>
 
         <!-- Formulaire -->

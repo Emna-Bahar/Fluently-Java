@@ -12,6 +12,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -19,6 +20,7 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -97,11 +99,11 @@ public class TacheController {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final String ERROR_STYLE      = "-fx-border-color:#E11D48;-fx-border-width:2;-fx-border-radius:10;";
-    private static final String VALID_STYLE       = "-fx-border-color:#10B981;-fx-border-width:2;-fx-border-radius:10;";
-    private static final String NORMAL_STYLE      = "-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;";
-    private static final String AREA_ERROR_STYLE  = "-fx-border-color:#E11D48;-fx-border-width:2;-fx-border-radius:10;";
-    private static final String AREA_VALID_STYLE  = "-fx-border-color:#10B981;-fx-border-width:2;-fx-border-radius:10;";
-    private static final String AREA_NORMAL_STYLE = "-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;";
+    private static final String VALID_STYLE      = "-fx-border-color:#10B981;-fx-border-width:2;-fx-border-radius:10;";
+    private static final String NORMAL_STYLE     = "-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;";
+    private static final String AREA_ERROR_STYLE = "-fx-border-color:#E11D48;-fx-border-width:2;-fx-border-radius:10;";
+    private static final String AREA_VALID_STYLE = "-fx-border-color:#10B981;-fx-border-width:2;-fx-border-radius:10;";
+    private static final String AREA_NORMAL_STYLE= "-fx-border-color:#E2E8F0;-fx-border-width:1.5;-fx-border-radius:10;";
 
     // ════════════════════════════════════════════════════════════
     //  SETTERS
@@ -178,7 +180,6 @@ public class TacheController {
     // ════════════════════════════════════════════════════════════
 
     private void setupLiveValidation() {
-        // Validation du titre en temps réel
         fieldTitre.textProperty().addListener((obs, old, val) -> {
             if (val != null && !val.trim().isEmpty()) {
                 validateTitre(val.trim());
@@ -187,7 +188,6 @@ public class TacheController {
             }
         });
 
-        // Validation de la description en temps réel
         fieldDescription.textProperty().addListener((obs, old, val) -> {
             if (val != null && !val.trim().isEmpty()) {
                 validateDescription(val.trim());
@@ -196,7 +196,6 @@ public class TacheController {
             }
         });
 
-        // Validation de la date limite en temps réel
         fieldDateLimite.valueProperty().addListener((obs, old, val) -> {
             if (val != null) {
                 validateDate(val);
@@ -205,7 +204,6 @@ public class TacheController {
             }
         });
 
-        // Validation du statut
         comboStatut.valueProperty().addListener((obs, old, val) -> {
             if (val != null && !val.isEmpty()) {
                 clearError(errStatut);
@@ -213,7 +211,6 @@ public class TacheController {
             }
         });
 
-        // Validation de la priorité
         comboPriorite.valueProperty().addListener((obs, old, val) -> {
             if (val != null && !val.isEmpty()) {
                 clearError(errPriorite);
@@ -344,10 +341,6 @@ public class TacheController {
         }
     }
 
-    // ════════════════════════════════════════════════════════════
-    //  VALIDATION FINALE DU FORMULAIRE (appelée dans handleSave)
-    // ════════════════════════════════════════════════════════════
-
     private boolean validateForm() {
         boolean ok = true;
 
@@ -377,21 +370,18 @@ public class TacheController {
     // ════════════════════════════════════════════════════════════
 
     private void setupAutoCorrection() {
-        // Debounce pour le titre (500ms)
         fieldTitre.textProperty().addListener((obs, old, newVal) -> {
             if (titreDebounceTimer != null) titreDebounceTimer.stop();
             titreDebounceTimer = new Timeline(new KeyFrame(Duration.millis(500), e -> checkTitreSuggestions()));
             titreDebounceTimer.play();
         });
 
-        // Debounce pour la description (500ms)
         fieldDescription.textProperty().addListener((obs, old, newVal) -> {
             if (descDebounceTimer != null) descDebounceTimer.stop();
             descDebounceTimer = new Timeline(new KeyFrame(Duration.millis(500), e -> checkDescriptionSuggestions()));
             descDebounceTimer.play();
         });
 
-        // Changement de langue
         comboLangue.valueProperty().addListener((obs, old, newVal) -> {
             checkTitreSuggestions();
             checkDescriptionSuggestions();
@@ -436,10 +426,8 @@ public class TacheController {
 
     private void showSuggestionsForTitre(List<SpellCheckerService.SpellingError> errors) {
         if (titreSuggestionsMenu != null) titreSuggestionsMenu.hide();
-
         titreSuggestionsMenu = new ContextMenu();
 
-        // En-tête
         Label headerLabel = new Label("✏️ Suggestions de correction");
         headerLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #1E293B; -fx-padding: 8 12 4 12; -fx-font-size: 12px;");
         CustomMenuItem headerItem = new CustomMenuItem(headerLabel);
@@ -454,7 +442,6 @@ public class TacheController {
                         Math.min(error.getOffset() + error.getLength(), fieldTitre.getText().length()));
             } catch (Exception e) { continue; }
 
-            // Mot erroné
             Label errorLabel = new Label("❌ " + wrongWord);
             errorLabel.setStyle("-fx-text-fill: #E11D48; -fx-font-weight: bold; -fx-padding: 6 12 2 12; -fx-font-size: 11px;");
             errorLabel.setWrapText(true);
@@ -463,7 +450,6 @@ public class TacheController {
             errorItem.setDisable(true);
             titreSuggestionsMenu.getItems().add(errorItem);
 
-            // Suggestions cliquables
             if (error.getSuggestions() != null && !error.getSuggestions().isEmpty()) {
                 FlowPane suggestionsFlow = new FlowPane(8, 8);
                 suggestionsFlow.setPadding(new Insets(4, 12, 8, 24));
@@ -497,17 +483,14 @@ public class TacheController {
                 noSuggestionItem.setDisable(true);
                 titreSuggestionsMenu.getItems().add(noSuggestionItem);
             }
-
             titreSuggestionsMenu.getItems().add(new SeparatorMenuItem());
         }
 
-        // Ignorer tout
         MenuItem ignoreAll = new MenuItem("Ignorer toutes les suggestions");
         ignoreAll.setStyle("-fx-text-fill: #64748B; -fx-font-size: 11px; -fx-padding: 8 12 8 12;");
         ignoreAll.setOnAction(e -> titreSuggestionsMenu.hide());
         titreSuggestionsMenu.getItems().add(ignoreAll);
 
-        // Positionner sous le champ
         titreSuggestionsMenu.show(fieldTitre,
                 fieldTitre.localToScreen(fieldTitre.getBoundsInLocal()).getMinX(),
                 fieldTitre.localToScreen(fieldTitre.getBoundsInLocal()).getMaxY());
@@ -515,10 +498,8 @@ public class TacheController {
 
     private void showSuggestionsForDescription(List<SpellCheckerService.SpellingError> errors) {
         if (descriptionSuggestionsMenu != null) descriptionSuggestionsMenu.hide();
-
         descriptionSuggestionsMenu = new ContextMenu();
 
-        // En-tête
         Label headerLabel = new Label("✏️ Suggestions de correction");
         headerLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #1E293B; -fx-padding: 8 12 4 12; -fx-font-size: 12px;");
         CustomMenuItem headerItem = new CustomMenuItem(headerLabel);
@@ -533,7 +514,6 @@ public class TacheController {
                         Math.min(error.getOffset() + error.getLength(), fieldDescription.getText().length()));
             } catch (Exception e) { continue; }
 
-            // Mot erroné
             Label errorLabel = new Label("❌ " + wrongWord);
             errorLabel.setStyle("-fx-text-fill: #E11D48; -fx-font-weight: bold; -fx-padding: 6 12 2 12; -fx-font-size: 11px;");
             errorLabel.setWrapText(true);
@@ -542,7 +522,6 @@ public class TacheController {
             errorItem.setDisable(true);
             descriptionSuggestionsMenu.getItems().add(errorItem);
 
-            // Suggestions cliquables
             if (error.getSuggestions() != null && !error.getSuggestions().isEmpty()) {
                 FlowPane suggestionsFlow = new FlowPane(8, 8);
                 suggestionsFlow.setPadding(new Insets(4, 12, 8, 24));
@@ -576,17 +555,14 @@ public class TacheController {
                 noSuggestionItem.setDisable(true);
                 descriptionSuggestionsMenu.getItems().add(noSuggestionItem);
             }
-
             descriptionSuggestionsMenu.getItems().add(new SeparatorMenuItem());
         }
 
-        // Ignorer tout
         MenuItem ignoreAll = new MenuItem("Ignorer toutes les suggestions");
         ignoreAll.setStyle("-fx-text-fill: #64748B; -fx-font-size: 11px; -fx-padding: 8 12 8 12;");
         ignoreAll.setOnAction(e -> descriptionSuggestionsMenu.hide());
         descriptionSuggestionsMenu.getItems().add(ignoreAll);
 
-        // Positionner sous le champ
         descriptionSuggestionsMenu.show(fieldDescription,
                 fieldDescription.localToScreen(fieldDescription.getBoundsInLocal()).getMinX(),
                 fieldDescription.localToScreen(fieldDescription.getBoundsInLocal()).getMaxY());
@@ -1113,31 +1089,28 @@ public class TacheController {
             case "Normale" -> "🟡";
             default -> "🟢";
         };
-
     }
-    /**
-     * Affiche les détails d'une tâche et la met en évidence
-     */
+
+    // ════════════════════════════════════════════════════════════
+    //  AFFICHAGE ET SURVOL D'UNE CARTE
+    // ════════════════════════════════════════════════════════════
+
     public void showDetailsAndHighlight(Tache tache) {
         Platform.runLater(() -> {
-            // Afficher les détails
             showDetailsTache(tache);
 
-            // Mettre en évidence la carte dans le Kanban
             String statut = tache.getStatut();
             VBox colonne = getColonneByStatut(statut);
 
             if (colonne != null) {
                 for (javafx.scene.Node node : colonne.getChildren()) {
                     if (node instanceof VBox && node.getUserData() != null) {
-                        // La carte contient la tâche, on cherche par titre
                         VBox card = (VBox) node;
                         for (javafx.scene.Node child : card.getChildren()) {
                             if (child instanceof Label && ((Label) child).getText().equals(tache.getTitre())) {
                                 card.setStyle(card.getStyle() +
                                         "-fx-border-color: #6C63FF; -fx-border-width: 2; -fx-border-radius: 13;");
 
-                                // Animation
                                 Timeline blink = new Timeline(
                                         new KeyFrame(Duration.seconds(0), e -> card.setOpacity(1.0)),
                                         new KeyFrame(Duration.seconds(0.3), e -> card.setOpacity(0.5)),
@@ -1162,5 +1135,53 @@ public class TacheController {
             case "Annulée": return colAnnulee;
             default: return colAFaire;
         }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  GÉNÉRATION IA
+    // ════════════════════════════════════════════════════════════
+
+    @FXML
+    private void handleGenerateAI() {
+        if (currentObjectif == null) {
+            showAlert(Alert.AlertType.WARNING, "Attention", "Aucun objectif sélectionné.");
+            return;
+        }
+        if (!isOwner()) {
+            showAlert(Alert.AlertType.WARNING, "Accès refusé",
+                    "Vous ne pouvez générer des tâches que pour vos propres objectifs.");
+            return;
+        }
+        openAIGeneratorDialog();
+    }
+
+    private void openAIGeneratorDialog() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/AITaskGenerator-dialog.fxml")
+            );
+            DialogPane dialogPane = loader.load();
+            AITaskGeneratorController ctrl = loader.getController();
+            ctrl.setObjectif(currentObjectif);
+            ctrl.setCurrentUser(currentUser);
+            ctrl.setTacheController(this);
+
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("🤖 Génération de tâches par IA");
+            dialog.initOwner(formCard.getScene().getWindow());
+            dialog.showAndWait();
+
+            loadData();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur",
+                    "Impossible d'ouvrir le générateur IA : " + e.getMessage());
+        }
+    }
+
+    public void refreshFromDialog() {
+        loadData();
     }
 }

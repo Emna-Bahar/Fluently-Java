@@ -1,6 +1,7 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.User;
+import com.example.pijava_fluently.services.NotificationService;
 import com.example.pijava_fluently.services.UserService;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -50,7 +51,11 @@ public class HomeController implements Initializable {
         if (navUsername != null && currentUser == null) {
             navUsername.setText("Utilisateur");
         }
-        // Charger la page d'accueil avec le bon contrôleur
+
+        // Initialiser NotificationService avec HomeController
+        NotificationService.setHomeController(this);
+
+        // Charger la page d'accueil
         showAccueil();
     }
 
@@ -59,6 +64,8 @@ public class HomeController implements Initializable {
         if (navUsername != null && user != null) {
             navUsername.setText(user.getPrenom() + " " + user.getNom());
         }
+
+
     }
 
     // ============================================================
@@ -118,17 +125,13 @@ public class HomeController implements Initializable {
     // NAVIGATION
     // ============================================================
 
-    @FXML
-    public void showAccueil() {
+    @FXML public void showAccueil() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/home-content.fxml"));
             Node view = loader.load();
-
-            // Lier le contrôleur de la page d'accueil avec HomeController
             HomeContentController contentController = loader.getController();
             contentController.setHomeController(this);
-
             setContent(view);
             setActiveButton(btnAccueil);
         } catch (IOException e) {
@@ -182,8 +185,7 @@ public class HomeController implements Initializable {
         }
     }
 
-    @FXML
-    public void showSessions() {
+    @FXML public void showSessions() {
         boolean isProf = currentUser != null
                 && currentUser.getRoles() != null
                 && (currentUser.getRoles().contains("ROLE_PROF")
@@ -197,8 +199,7 @@ public class HomeController implements Initializable {
         setActiveButton(btnSessions);
     }
 
-    @FXML
-    public void showSessionsProf() {
+    @FXML public void showSessionsProf() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/session-prof-view.fxml"));
@@ -242,6 +243,10 @@ public class HomeController implements Initializable {
             ObjectifController ctrl = loader.getController();
             ctrl.setHomeController(this);
             ctrl.setCurrentUser(currentUser);
+
+            // Lier ObjectifController à NotificationService
+            NotificationService.setObjectifController(ctrl);
+
             setContent(view);
             setActiveButton(btnObjectifs);
         } catch (IOException e) {
@@ -308,6 +313,7 @@ public class HomeController implements Initializable {
     }
 
     private void handleLogout() {
+
         if (currentUser != null) {
             try {
                 userService.updateStatut(currentUser.getId(), "offline");

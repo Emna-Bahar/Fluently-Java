@@ -104,7 +104,6 @@ public class NotificationService {
             }
         }
 
-        // Récupérer les IDs des objectifs de l'utilisateur
         Set<Integer> userObjectifIds = objectifs.stream()
                 .filter(o -> o.getIdUserId() == userId)
                 .map(Objectif::getId)
@@ -175,30 +174,11 @@ public class NotificationService {
         allNotifications.clear();
     }
 
-    private static void showObjectifDetails(int objectifId) {
-        try {
-            Objectif obj = objectifService.recupererParId(objectifId);
-            if (obj != null && objectifController != null) {
-                Platform.runLater(() -> objectifController.showDetails(obj));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void showTacheDetails(int tacheId) {
-        try {
-            Tache tache = tacheService.recupererParId(tacheId);
-            if (tache != null && objectifController != null) {
-                Platform.runLater(() -> objectifController.navigateToTacheAndShowDetails(tache));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public static void openNotificationCenter() {
-        if (homeController == null) return;
+        if (homeController == null) {
+            System.err.println("NotificationService: homeController est null");
+            return;
+        }
 
         Stage stage = new Stage();
         stage.setTitle("Centre de notifications");
@@ -316,9 +296,18 @@ public class NotificationService {
                 "-fx-padding: 6 12 6 12; -fx-cursor: hand;");
         voirDetailsBtn.setOnAction(e -> {
             if (notif.type.equals("objectif")) {
-                showObjectifDetails(notif.id);
+                if (objectifController != null) {
+                    objectifController.navigateToObjectifAndShowDetails(notif.id);
+                }
             } else {
-                showTacheDetails(notif.id);
+                try {
+                    Tache tache = tacheService.recupererParId(notif.id);
+                    if (tache != null && objectifController != null) {
+                        objectifController.navigateToTacheAndShowDetails(tache);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
             if (!notif.isRead()) {
                 markAsRead(notif.id, notif.type);
@@ -332,9 +321,9 @@ public class NotificationService {
 
         card.setOnMouseClicked(e -> {
             if (notif.type.equals("objectif")) {
-                showObjectifDetails(notif.id);
-            } else {
-                showTacheDetails(notif.id);
+                if (objectifController != null) {
+                    objectifController.navigateToObjectifAndShowDetails(notif.id);
+                }
             }
             if (!notif.isRead()) {
                 markAsRead(notif.id, notif.type);
@@ -357,8 +346,8 @@ public class NotificationService {
         VBox root = new VBox(0);
         root.setStyle("-fx-background-color: #1E293B; -fx-background-radius: 20; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 24, 0, 0, 8);");
-        root.setPrefWidth(420);
-        root.setMaxWidth(420);
+        root.setPrefWidth(400);
+        root.setMaxWidth(400);
 
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
@@ -378,7 +367,7 @@ public class NotificationService {
         VBox headerText = new VBox(3);
         Label titleLbl = new Label("Nouvelles notifications");
         titleLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;");
-        Label countLbl = new Label(notifications.size() + " notification(s) à consulter");
+        Label countLbl = new Label(notifications.size() + " notification(s)");
         countLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: rgba(255,255,255,0.75);");
         headerText.getChildren().addAll(titleLbl, countLbl);
 
@@ -395,7 +384,7 @@ public class NotificationService {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         scrollPane.setFitToWidth(true);
-        scrollPane.setMaxHeight(400);
+        scrollPane.setMaxHeight(350);
 
         VBox body = new VBox(8);
         body.setPadding(new Insets(12));
@@ -456,7 +445,7 @@ public class NotificationService {
         );
         fadeIn.play();
 
-        PauseTransition delay = new PauseTransition(Duration.seconds(10));
+        PauseTransition delay = new PauseTransition(Duration.seconds(8));
         delay.setOnFinished(e -> fadeOutAndClose(stage));
         delay.play();
     }
@@ -487,29 +476,16 @@ public class NotificationService {
         message.setStyle("-fx-font-size: 10px; -fx-text-fill: #CBD5E1; -fx-wrap-text: true;");
         message.setWrapText(true);
 
-        Button voirBtn = new Button("Voir détails →");
-        voirBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; " +
-                "-fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 6; " +
-                "-fx-padding: 4 10 4 10; -fx-cursor: hand;");
-        voirBtn.setOnMouseClicked(e -> {
-            Stage stage = (Stage) card.getScene().getWindow();
-            fadeOutAndClose(stage);
-            if (n.type.equals("objectif")) {
-                showObjectifDetails(n.id);
-            } else {
-                showTacheDetails(n.id);
-            }
-        });
-
-        card.getChildren().addAll(header, message, voirBtn);
+        card.getChildren().addAll(header, message);
 
         card.setOnMouseClicked(e -> {
             Stage stage = (Stage) card.getScene().getWindow();
             fadeOutAndClose(stage);
-            if (n.type.equals("objectif")) {
-                showObjectifDetails(n.id);
-            } else {
-                showTacheDetails(n.id);
+            if (homeController != null) {
+                homeController.showObjectifs();
+                if (objectifController != null && n.type.equals("objectif")) {
+                    objectifController.navigateToObjectifAndShowDetails(n.id);
+                }
             }
         });
 
