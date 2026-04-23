@@ -4,6 +4,7 @@ import com.example.pijava_fluently.entites.Langue;
 import com.example.pijava_fluently.entites.TestPassage;
 import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.utils.ConfigLoader;
+import com.example.pijava_fluently.utils.HttpClientUtil;
 import com.example.pijava_fluently.utils.LoggerUtil;
 
 import java.sql.SQLException;
@@ -151,10 +152,75 @@ public class PerformanceAnalyzerService {
         String prompt = buildRecommendationPrompt(user, langue, competences, stats);
 
         try {
-            Map<String, Object> result = aiService.generateRecommendations(prompt);
-            return parseAIRecommendations(result);
+            // Appel direct sans passer par correctFreeText
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", ConfigLoader.get("ai.model",
+                    "llama-3.3-70b-versatile"));
+            requestBody.put("temperature", 0.8); // plus créatif
+            requestBody.put("max_tokens", 2000);
+
+            List<Map<String, String>> messages = new ArrayList<>();
+
+            Map<String, String> sys = new HashMap<>();
+            sys.put("role", "system");
+            sys.put("content",
+                    "Tu es un conseiller pedagogique expert. " +
+                            "Reponds UNIQUEMENT avec du JSON valide. " +
+                            "Commence par { et termine par }. " +
+                            "Pas de guillemets dans les valeurs des chaines.");
+            messages.add(sys);
+
+            Map<String, String> usr = new HashMap<>();
+            usr.put("role", "user");
+            usr.put("content", prompt);
+            messages.add(usr);
+
+            requestBody.put("messages", messages);
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization",
+                    "Bearer " + ConfigLoader.get("groq.api.key"));
+            headers.put("Content-Type", "application/json");
+
+            Map<String, Object> response =
+                    HttpClientUtil.postJson(
+                            "https://api.groq.com/openai/v1/chat/completions",
+                            requestBody, headers);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> choices =
+                    (List<Map<String, Object>>) response.get("choices");
+            if (choices == null || choices.isEmpty())
+                return generateDefaultRecommendations(competences);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> message =
+                    (Map<String, Object>) choices.get(0).get("message");
+            String content = (String) message.get("content");
+
+            LoggerUtil.info("Raw recommendations",
+                    "preview", content.substring(0, Math.min(200, content.length())));
+
+            // Nettoyage JSON
+            content = content.replaceAll("```json\\s*", "")
+                    .replaceAll("```\\s*", "").trim();
+            int start = content.indexOf('{');
+            int end   = content.lastIndexOf('}');
+            if (start != -1 && end != -1) content = content.substring(start, end+1);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result =
+                    new com.fasterxml.jackson.databind.ObjectMapper()
+                            .readValue(content, Map.class);
+
+            if (result.containsKey("recommandations")) {
+                LoggerUtil.info("AI recommendations OK");
+                return result;
+            }
+            return generateDefaultRecommendations(competences);
+
         } catch (Exception e) {
-            LoggerUtil.error("Error generating AI recommendations", e);
+            LoggerUtil.error("Erreur recommandations IA", e);
             return generateDefaultRecommendations(competences);
         }
     }

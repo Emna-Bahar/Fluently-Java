@@ -6,11 +6,13 @@ import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.services.QuestionService;
 import com.example.pijava_fluently.services.ReponseService;
 import com.example.pijava_fluently.services.TestService;
+import com.example.pijava_fluently.utils.LoggerUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
@@ -18,6 +20,16 @@ import javafx.scene.layout.*;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.example.pijava_fluently.services.AIQuizGeneratorService;
+import com.example.pijava_fluently.services.ReponseService;
+import javafx.application.Platform;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class QuestionController {
 
@@ -44,6 +56,8 @@ public class QuestionController {
     private final ReponseService  reponseService = new ReponseService();
     private ObservableList<Question> allData     = FXCollections.observableArrayList();
     private Question selectedQuestion            = null;
+    private final AIQuizGeneratorService aiQuizService = new AIQuizGeneratorService();
+
 
     @FXML
     public void initialize() {
@@ -67,6 +81,7 @@ public class QuestionController {
         } catch (SQLException e) { e.printStackTrace(); }
         setupColumns();
         loadData();
+        ajouterBoutonIA();
     }
 
     private void setupColumns() {
@@ -450,5 +465,414 @@ public class QuestionController {
     private void showAlert(Alert.AlertType type, String title, String msg) {
         Alert a = new Alert(type, msg, ButtonType.OK);
         a.setTitle(title); a.setHeaderText(null); a.showAndWait();
+    }
+    private void ajouterBoutonIA() {
+        // Le bouton IA est géré via handleGenererIA() appelé depuis le FXML
+    }
+
+    @FXML
+    private void handleGenererIA() {
+        // Créer une boîte de dialogue de configuration
+        Dialog<Map<String, String>> dialog = new Dialog<>();
+        dialog.setTitle("🤖 Générer des questions avec l'IA");
+        dialog.setHeaderText(null);
+
+        VBox root = new VBox(0);
+        root.setPrefWidth(480);
+
+        // Header
+        HBox header = new HBox(12);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setStyle(
+                "-fx-background-color:linear-gradient(to right,#7C3AED,#6C63FF);" +
+                        "-fx-padding:20 24;");
+        Label ico = new Label("🤖");
+        ico.setStyle("-fx-font-size:28px;");
+        VBox hInfo = new VBox(4);
+        Label hTitre = new Label("Générateur de QCM par IA");
+        hTitre.setStyle(
+                "-fx-font-size:17px;-fx-font-weight:bold;-fx-text-fill:white;");
+        Label hSous = new Label("Groq LLaMA — Génération automatique de questions");
+        hSous.setStyle("-fx-font-size:11px;-fx-text-fill:rgba(255,255,255,0.75);");
+        hInfo.getChildren().addAll(hTitre, hSous);
+        header.getChildren().addAll(ico, hInfo);
+
+        VBox body = new VBox(16);
+        body.setPadding(new Insets(22, 24, 22, 24));
+        body.setStyle("-fx-background-color:#F8F9FD;");
+
+        // Thème
+        VBox themeBox = new VBox(5);
+        Label themeLbl = new Label("THÈME / SUJET *");
+        themeLbl.setStyle(
+                "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
+        TextField fieldTheme = new TextField();
+        fieldTheme.setPromptText("Ex: conjugaison du présent, vocabulaire des couleurs...");
+        fieldTheme.setStyle(
+                "-fx-background-color:white;-fx-border-color:#E5E7EB;" +
+                        "-fx-border-radius:10;-fx-background-radius:10;" +
+                        "-fx-padding:10 14;-fx-font-size:13px;");
+        themeBox.getChildren().addAll(themeLbl, fieldTheme);
+
+        // Ligne Langue + Niveau + Nombre
+        HBox row = new HBox(12);
+
+        VBox langueBox = new VBox(5);
+        Label langueLbl = new Label("LANGUE *");
+        langueLbl.setStyle(
+                "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
+        ComboBox<String> comboLangueIA = new ComboBox<>();
+        comboLangueIA.getItems().addAll(
+                "Français", "English", "Español", "Deutsch");
+        comboLangueIA.setValue("Français");
+        comboLangueIA.setMaxWidth(Double.MAX_VALUE);
+        comboLangueIA.setStyle(
+                "-fx-background-color:white;-fx-border-color:#E5E7EB;" +
+                        "-fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;");
+        langueBox.getChildren().addAll(langueLbl, comboLangueIA);
+        HBox.setHgrow(langueBox, Priority.ALWAYS);
+
+        VBox niveauBox = new VBox(5);
+        Label niveauLbl = new Label("NIVEAU *");
+        niveauLbl.setStyle(
+                "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
+        ComboBox<String> comboNiveauIA = new ComboBox<>();
+        comboNiveauIA.getItems().addAll("A1", "A2", "B1", "B2", "C1", "C2");
+        comboNiveauIA.setValue("A1");
+        comboNiveauIA.setMaxWidth(Double.MAX_VALUE);
+        comboNiveauIA.setStyle(
+                "-fx-background-color:white;-fx-border-color:#E5E7EB;" +
+                        "-fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;");
+        niveauBox.getChildren().addAll(niveauLbl, comboNiveauIA);
+        HBox.setHgrow(niveauBox, Priority.ALWAYS);
+
+        VBox nombreBox = new VBox(5);
+        Label nombreLbl = new Label("NOMBRE (1-10)");
+        nombreLbl.setStyle(
+                "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
+        Spinner<Integer> spinnerNombre = new Spinner<>(1, 10, 5);
+        spinnerNombre.setPrefWidth(90);
+        spinnerNombre.setStyle("-fx-font-size:13px;");
+        nombreBox.getChildren().addAll(nombreLbl, spinnerNombre);
+
+        row.getChildren().addAll(langueBox, niveauBox, nombreBox);
+
+        // Test cible
+        VBox testBox = new VBox(5);
+        Label testLbl = new Label("AJOUTER AU TEST *");
+        testLbl.setStyle(
+                "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
+        ComboBox<Test> comboTestIA = new ComboBox<>();
+        comboTestIA.getItems().addAll(comboTest.getItems());
+        comboTestIA.setCellFactory(lv -> new ListCell<>() {
+            @Override protected void updateItem(Test t, boolean empty) {
+                super.updateItem(t, empty);
+                setText(empty || t == null ? "" : t.getTitre());
+            }
+        });
+        comboTestIA.setButtonCell(new ListCell<>() {
+            @Override protected void updateItem(Test t, boolean empty) {
+                super.updateItem(t, empty);
+                setText(empty || t == null ? "Sélectionner un test..." : t.getTitre());
+            }
+        });
+        comboTestIA.setMaxWidth(Double.MAX_VALUE);
+        comboTestIA.setStyle(
+                "-fx-background-color:white;-fx-border-color:#E5E7EB;" +
+                        "-fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;");
+        testBox.getChildren().addAll(testLbl, comboTestIA);
+
+        body.getChildren().addAll(themeBox, row, testBox);
+        root.getChildren().addAll(header, body);
+
+        dialog.getDialogPane().setContent(root);
+        dialog.getDialogPane().setStyle("-fx-background-color:#F8F9FD;-fx-padding:0;");
+
+        ButtonType btnGenerer = new ButtonType(
+                "🚀 Générer", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes()
+                .addAll(btnGenerer, ButtonType.CANCEL);
+
+        Button btnG = (Button) dialog.getDialogPane().lookupButton(btnGenerer);
+        btnG.setStyle(
+                "-fx-background-color:linear-gradient(to right,#7C3AED,#6C63FF);" +
+                        "-fx-text-fill:white;-fx-font-weight:bold;" +
+                        "-fx-background-radius:10;-fx-padding:10 22;-fx-cursor:hand;");
+
+        dialog.setResultConverter(bt -> {
+            if (bt == btnGenerer) {
+                Map<String, String> params = new HashMap<>();
+                params.put("theme",  fieldTheme.getText().trim());
+                params.put("langue", comboLangueIA.getValue());
+                params.put("niveau", comboNiveauIA.getValue());
+                params.put("nombre", String.valueOf(spinnerNombre.getValue()));
+                params.put("testId", comboTestIA.getValue() != null
+                        ? String.valueOf(comboTestIA.getValue().getId()) : "");
+                return params;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(params -> {
+            String theme  = params.get("theme");
+            String langue = params.get("langue");
+            String niveau = params.get("niveau");
+            int    nombre = Integer.parseInt(params.get("nombre"));
+            String testId = params.get("testId");
+
+            if (theme.isEmpty()) {
+                showAlert(Alert.AlertType.WARNING,
+                        "Validation", "Le thème est obligatoire.");
+                return;
+            }
+            if (testId.isEmpty()) {
+                showAlert(Alert.AlertType.WARNING,
+                        "Validation", "Sélectionnez un test cible.");
+                return;
+            }
+
+            lancerGenerationIA(theme, langue, niveau, nombre,
+                    Integer.parseInt(testId));
+        });
+    }
+
+    private void lancerGenerationIA(String theme, String langue,
+                                    String niveau, int nombre, int testId) {
+
+        // Créer un Stage personnalisé pour la progression
+        Stage progressStage = new Stage();
+        progressStage.initModality(Modality.APPLICATION_MODAL);
+        progressStage.setTitle("⏳ Génération en cours...");
+        progressStage.setResizable(false);
+
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(30, 50, 30, 50));
+        root.setStyle("-fx-background-color: white; -fx-background-radius: 15;");
+
+        // Icône animée
+        Label iconLabel = new Label("🤖");
+        iconLabel.setStyle("-fx-font-size: 48px;");
+
+        // ProgressIndicator
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setPrefSize(50, 50);
+
+        // Texte de statut
+        Label statusLabel = new Label("L'IA génère " + nombre + " question(s)...");
+        statusLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #4A4D6A;");
+
+        // Sous-texte
+        Label subLabel = new Label("Thème : " + theme + " (" + langue + " — " + niveau + ")");
+        subLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #8A8FA8;");
+
+        // Bouton Annuler
+        Button cancelButton = new Button("Annuler");
+        cancelButton.setStyle(
+                "-fx-background-color: #EF4444; -fx-text-fill: white; " +
+                        "-fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 8 20; " +
+                        "-fx-cursor: hand;");
+
+        root.getChildren().addAll(iconLabel, progressIndicator, statusLabel, subLabel, cancelButton);
+
+        Scene scene = new Scene(root);
+        progressStage.setScene(scene);
+
+        // Gérer l'annulation
+        final Thread[] generationThread = new Thread[1];
+
+        cancelButton.setOnAction(e -> {
+            if (generationThread[0] != null && generationThread[0].isAlive()) {
+                generationThread[0].interrupt();
+            }
+            progressStage.close();
+        });
+
+        progressStage.show();
+
+        // Lancer la génération
+        generationThread[0] = new Thread(() -> {
+            try {
+                List<AIQuizGeneratorService.QuestionGeneree> questions =
+                        aiQuizService.generer(theme, langue, niveau, nombre);
+
+                Platform.runLater(() -> {
+                    progressStage.close();
+                    afficherPreviewQuestions(questions, testId, theme);
+                });
+
+            } catch (Exception e) {
+                LoggerUtil.error("Erreur pendant la génération IA", e);
+                Platform.runLater(() -> {
+                    progressStage.close();
+                    showAlert(Alert.AlertType.ERROR,
+                            "Erreur",
+                            "Erreur lors de la génération : " + e.getMessage());
+                });
+            }
+        });
+
+        generationThread[0].setDaemon(true);
+        generationThread[0].start();
+    }
+
+    private void afficherPreviewQuestions(
+            List<AIQuizGeneratorService.QuestionGeneree> questions,
+            int testId, String theme) {
+
+        if (questions.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR,
+                    "Erreur", "Aucune question générée. Réessayez.");
+            return;
+        }
+
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("✅ Questions générées — Validation");
+        dialog.setHeaderText(null);
+
+        VBox root = new VBox(0);
+        root.setPrefWidth(640);
+        root.setMaxHeight(600);
+
+        // Header
+        HBox header = new HBox(12);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setStyle(
+                "-fx-background-color:linear-gradient(to right,#059669,#10B981);" +
+                        "-fx-padding:18 24;");
+        Label ico = new Label("✅");
+        ico.setStyle("-fx-font-size:24px;");
+        VBox hInfo = new VBox(3);
+        Label hT = new Label(questions.size() + " questions générées sur « " + theme + " »");
+        hT.setStyle(
+                "-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:white;");
+        Label hS = new Label(
+                "Vérifiez et validez avant d'insérer en base de données");
+        hS.setStyle("-fx-font-size:11px;-fx-text-fill:rgba(255,255,255,0.8);");
+        hInfo.getChildren().addAll(hT, hS);
+        header.getChildren().addAll(ico, hInfo);
+
+        // Liste scrollable des questions
+        VBox listeQ = new VBox(12);
+        listeQ.setStyle("-fx-padding:20 24;");
+
+        for (int i = 0; i < questions.size(); i++) {
+            AIQuizGeneratorService.QuestionGeneree q = questions.get(i);
+            VBox qCard = new VBox(8);
+            qCard.setStyle(
+                    "-fx-background-color:white;-fx-background-radius:12;" +
+                            "-fx-border-color:#E8EAF0;-fx-border-radius:12;" +
+                            "-fx-border-width:1;-fx-padding:14 16;");
+
+            HBox qHeader = new HBox(8);
+            qHeader.setAlignment(Pos.CENTER_LEFT);
+            Label numLbl = new Label("Q" + (i + 1));
+            numLbl.setStyle(
+                    "-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#7C3AED;" +
+                            "-fx-background-color:#F5F3FF;-fx-background-radius:20;" +
+                            "-fx-padding:3 8;");
+            Label enonceLbl = new Label(q.enonce());
+            enonceLbl.setWrapText(true);
+            enonceLbl.setStyle(
+                    "-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;");
+            HBox.setHgrow(enonceLbl, Priority.ALWAYS);
+            qHeader.getChildren().addAll(numLbl, enonceLbl);
+
+            VBox repsBox = new VBox(4);
+            repsBox.setStyle("-fx-padding:4 0 0 12;");
+            for (AIQuizGeneratorService.ReponseGeneree r : q.reponses()) {
+                HBox rLine = new HBox(8);
+                rLine.setAlignment(Pos.CENTER_LEFT);
+                Label rIco = new Label(r.isCorrecte() ? "✅" : "○");
+                rIco.setStyle("-fx-font-size:12px;");
+                Label rTxt = new Label(r.contenu());
+                rTxt.setStyle(
+                        "-fx-font-size:12px;-fx-text-fill:" +
+                                (r.isCorrecte() ? "#059669" : "#6B7280") + ";" +
+                                (r.isCorrecte() ? "-fx-font-weight:bold;" : ""));
+                rLine.getChildren().addAll(rIco, rTxt);
+                repsBox.getChildren().add(rLine);
+            }
+
+            qCard.getChildren().addAll(qHeader, repsBox);
+            listeQ.getChildren().add(qCard);
+        }
+
+        ScrollPane scroll = new ScrollPane(listeQ);
+        scroll.setFitToWidth(true);
+        scroll.setPrefHeight(400);
+        scroll.setStyle(
+                "-fx-background:transparent;-fx-background-color:#F8F9FD;" +
+                        "-fx-border-color:transparent;");
+
+        root.getChildren().addAll(header, scroll);
+
+        dialog.getDialogPane().setContent(root);
+        dialog.getDialogPane().setStyle(
+                "-fx-background-color:#F8F9FD;-fx-padding:0;");
+
+        ButtonType btnInserer = new ButtonType(
+                "💾 Insérer en BD", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes()
+                .addAll(btnInserer, ButtonType.CANCEL);
+
+        Button btnI = (Button) dialog.getDialogPane().lookupButton(btnInserer);
+        btnI.setStyle(
+                "-fx-background-color:linear-gradient(to right,#059669,#10B981);" +
+                        "-fx-text-fill:white;-fx-font-weight:bold;" +
+                        "-fx-background-radius:10;-fx-padding:10 22;-fx-cursor:hand;");
+
+        dialog.setResultConverter(bt -> bt == btnInserer);
+
+        dialog.showAndWait().ifPresent(confirme -> {
+            if (confirme) insererQuestionsEnBD(questions, testId);
+        });
+    }
+
+    private void insererQuestionsEnBD(
+            List<AIQuizGeneratorService.QuestionGeneree> questions, int testId) {
+        int success = 0;
+        int errors  = 0;
+
+        for (AIQuizGeneratorService.QuestionGeneree qg : questions) {
+            try {
+                // Insérer la question
+                Question q = new Question(qg.enonce(), "qcm", qg.scoreMax(), testId);
+                service.ajouter(q);
+
+                // Récupérer l'ID de la question insérée
+                List<Question> toutes = service.recupererParTest(testId);
+                Question derniere = toutes.get(toutes.size() - 1);
+
+                // Insérer les réponses
+                for (AIQuizGeneratorService.ReponseGeneree rg : qg.reponses()) {
+                    com.example.pijava_fluently.entites.Reponse r =
+                            new com.example.pijava_fluently.entites.Reponse(
+                                    rg.contenu(),
+                                    rg.isCorrecte(),
+                                    rg.isCorrecte() ? qg.scoreMax() : 0,
+                                    java.time.LocalDate.now(),
+                                    derniere.getId()
+                            );
+                    reponseService.ajouter(r);
+                }
+                success++;
+            } catch (Exception e) {
+                LoggerUtil.error("Erreur insertion question IA", e);
+                errors++;
+            }
+        }
+
+        final int s = success, err = errors;
+        Platform.runLater(() -> {
+            if (err == 0) {
+                showAlert(Alert.AlertType.INFORMATION, "✅ Succès",
+                        s + " question(s) et leurs réponses insérées avec succès !");
+            } else {
+                showAlert(Alert.AlertType.WARNING, "⚠️ Partiel",
+                        s + " question(s) insérée(s), " + err + " erreur(s).");
+            }
+            loadData();
+        });
     }
 }

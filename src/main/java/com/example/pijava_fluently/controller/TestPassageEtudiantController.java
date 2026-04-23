@@ -751,13 +751,21 @@ public class TestPassageEtudiantController {
             }
             // ── Perte de focus ────────────────────────────────────────
             stage.focusedProperty().addListener((obs2, wasActive, isNowActive) -> {
-                // Ignorer si : test fini, alerte déjà ouverte, ou fenêtre
-                // qui regagne le focus (isNowActive = true)
                 if (!isNowActive && isExamMode && !testTermine && !alerteEnCours) {
                     blurCount++;
                     LoggerUtil.warning("Focus perdu", "count", String.valueOf(blurCount));
+
+                    // Afficher un toast à CHAQUE changement (pas juste après 2)
+                    Platform.runLater(() -> afficherToastAvertissement(
+                            "⚠️ Changement de fenêtre détecté ! (" + blurCount + ")" +
+                                    (blurCount > 2
+                                            ? " — " + (MAX_INFRACTIONS - (blurCount - 2)) +
+                                            " infraction(s) restante(s)"
+                                            : " — Restez sur cet écran !")
+                    ));
+
                     if (blurCount > 2) {
-                        logInfraction("Changement de fenêtre (" + blurCount + " fois)");
+                        logInfraction("Changement de fenêtre/bureau (" + blurCount + " fois)");
                     }
                 }
             });
@@ -792,6 +800,44 @@ public class TestPassageEtudiantController {
                         }
                     });
         });
+    }
+    /**
+     * Affiche un bandeau d'avertissement NON BLOQUANT en haut de l'écran.
+     * Disparaît automatiquement après 3 secondes.
+     */
+    private void afficherToastAvertissement(String message) {
+        if (testTermine) return;
+
+        // Trouver la scène
+        javafx.scene.Scene scene = labelTitreTest.getScene();
+        if (scene == null) return;
+
+        // Créer le bandeau
+        Label toast = new Label(message);
+        toast.setStyle(
+                "-fx-background-color:#FEF3C7;-fx-text-fill:#92400E;" +
+                        "-fx-font-size:13px;-fx-font-weight:bold;" +
+                        "-fx-background-radius:0;-fx-padding:12 20;" +
+                        "-fx-border-color:#FDE68A;-fx-border-width:0 0 2 0;");
+        toast.setMaxWidth(Double.MAX_VALUE);
+        toast.setAlignment(Pos.CENTER);
+
+        // Chercher le conteneur principal (VBox ou BorderPane)
+        if (scene.getRoot() instanceof VBox root) {
+            root.getChildren().add(0, toast);
+            // Supprimer après 3 secondes
+            new Timeline(new KeyFrame(Duration.seconds(3),
+                    e -> root.getChildren().remove(toast))).play();
+        } else {
+            // Fallback : StackPane overlay
+            if (scene.getRoot() instanceof StackPane sp) {
+                toast.setAlignment(Pos.CENTER);
+                StackPane.setAlignment(toast, Pos.TOP_CENTER);
+                sp.getChildren().add(toast);
+                new Timeline(new KeyFrame(Duration.seconds(3),
+                        e -> sp.getChildren().remove(toast))).play();
+            }
+        }
     }
 
     private void logInfraction(String raison) {

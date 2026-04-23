@@ -3,4 +3,24 @@
   "raison" : "Tentative de quitter le plein écran",
   "testId" : 17,
   "testTitre" : "Test de niveau francais"
+}, {
+  "date" : "23/04/2026 12:23:23",
+  "raison" : "Changement de fenêtre (3 fois)",
+  "testId" : 17,
+  "testTitre" : "Test de niveau francais"
+}, {
+  "date" : "23/04/2026 12:24:54",
+  "raison" : "Changement de fenêtre (4 fois)",
+  "testId" : 17,
+  "testTitre" : "Test de niveau francais"
+}, {
+  "date" : "23/04/2026 12:37:47",
+  "raison" : "Clic droit détecté",
+  "testId" : 9,
+  "testTitre" : "Tes de niveau"
+}, {
+  "date" : "23/04/2026 12:38:27",
+  "raison" : "Changement de fenêtre (3 fois)",
+  "testId" : 9,
+  "testTitre" : "Tes de niveau"
 } ]
