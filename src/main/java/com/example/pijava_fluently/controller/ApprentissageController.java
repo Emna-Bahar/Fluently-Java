@@ -3,6 +3,9 @@ package com.example.pijava_fluently.controller;
 import com.example.pijava_fluently.entites.QuizQuestion;
 import com.example.pijava_fluently.entites.*;
 import com.example.pijava_fluently.services.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -16,9 +19,8 @@ import javafx.scene.Node;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import java.awt.Desktop;
-import java.io.File;
+import java.io.*;
 import java.util.*;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -32,7 +34,7 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.properties.TextAlignment;
-import java.io.FileOutputStream;
+
 import java.time.format.DateTimeFormatter;
 
 public class ApprentissageController {
@@ -1013,17 +1015,160 @@ public class ApprentissageController {
         try {
             String langueNom = this.langue != null ? this.langue.getNom() : "cours";
             String fileName = "cours_" + niveauSelectionne + "_" + langueNom + "_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".pdf";
-            // NOUVEAU CHEMIN VERS LE DOSSIER PARTAGÉ
+            // Chemin vers le dossier partagé
             String baseDir = "C:/xampp/htdocs/fluently/public/uploads/cours_pdf/";
             String langueDir = baseDir + langueNom + "/";
             File dir = new File(langueDir);
             if (!dir.exists()) dir.mkdirs();
             String filePath = langueDir + fileName;
+
             PdfWriter writer = new PdfWriter(new FileOutputStream(filePath));
-            // ... reste du code identique ...
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+            document.setMargins(60, 60, 60, 60);
+
+            com.itextpdf.kernel.colors.DeviceRgb PRIMARY_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(79, 70, 229);
+            com.itextpdf.kernel.colors.DeviceRgb SECONDARY_COLOR = new com.itextpdf.kernel.colors.DeviceRgb(139, 92, 246);
+
+            // Titre
+            Paragraph titlePara = new Paragraph("📚 " + langueNom.toUpperCase())
+                    .setFontSize(32).setBold().setFontColor(PRIMARY_COLOR).setTextAlignment(TextAlignment.CENTER).setMarginTop(100);
+            document.add(titlePara);
+
+            // Sous-titre
+            Paragraph subtitlePara = new Paragraph("Cours personnalisé - Niveau " + niveauSelectionne)
+                    .setFontSize(18).setFontColor(SECONDARY_COLOR).setTextAlignment(TextAlignment.CENTER).setMarginTop(10).setMarginBottom(50);
+            document.add(subtitlePara);
+
+            // Date
+            Paragraph datePara = new Paragraph("Généré le " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")))
+                    .setFontSize(11).setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(100, 116, 139)).setTextAlignment(TextAlignment.CENTER).setMarginBottom(100);
+            document.add(datePara);
+
+            // Ligne de séparation
+            com.itextpdf.layout.element.Table lineTable = new com.itextpdf.layout.element.Table(1);
+            lineTable.setWidth(com.itextpdf.kernel.geom.PageSize.A4.getWidth() - 120);
+            lineTable.setMarginTop(20);
+            lineTable.setMarginBottom(20);
+            com.itextpdf.layout.element.Cell lineCell = new com.itextpdf.layout.element.Cell();
+            lineCell.setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(PRIMARY_COLOR, 2));
+            lineCell.setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+            lineCell.setPadding(0);
+            lineCell.setHeight(5);
+            lineTable.addCell(lineCell);
+            document.add(lineTable);
+
+            // Contenu du cours
+            String contenu = dernierCoursGenere;
+            contenu = contenu.replaceAll("\\*\\*", "").replaceAll("#", "").replaceAll("--", "—").replaceAll("\\|\\|", "");
+            String[] lignes = contenu.split("\n");
+
+            for (String ligne : lignes) {
+                if (ligne.trim().isEmpty()) {
+                    document.add(new Paragraph(" "));
+                    continue;
+                }
+                String cleanLine = ligne.trim();
+
+                if (cleanLine.contains("EXERCICES") || cleanLine.startsWith("✏️")) {
+                    Paragraph p = new Paragraph("✏️ " + cleanLine.replaceAll("✏️", "").trim())
+                            .setFontSize(20).setBold().setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(16, 185, 129)).setMarginTop(30).setMarginBottom(15);
+                    document.add(p);
+                } else if (cleanLine.contains("CORRECTION") || cleanLine.startsWith("✅")) {
+                    Paragraph p = new Paragraph("✅ " + cleanLine.replaceAll("✅", "").trim())
+                            .setFontSize(20).setBold().setFontColor(new com.itextpdf.kernel.colors.DeviceRgb(16, 185, 129)).setMarginTop(30).setMarginBottom(15);
+                    document.add(p);
+                } else if (cleanLine.contains("INTRODUCTION") || cleanLine.startsWith("🎯")) {
+                    Paragraph p = new Paragraph("🎯 " + cleanLine.replaceAll("🎯", "").trim())
+                            .setFontSize(20).setBold().setFontColor(PRIMARY_COLOR).setMarginTop(25).setMarginBottom(10);
+                    document.add(p);
+                } else if (cleanLine.contains("VOCABULAIRE") || cleanLine.startsWith("📝")) {
+                    Paragraph p = new Paragraph("📝 " + cleanLine.replaceAll("📝", "").trim())
+                            .setFontSize(18).setBold().setFontColor(SECONDARY_COLOR).setMarginTop(20).setMarginBottom(10);
+                    document.add(p);
+                } else if (cleanLine.contains("GRAMMAIRE") || cleanLine.startsWith("📖")) {
+                    Paragraph p = new Paragraph("📖 " + cleanLine.replaceAll("📖", "").trim())
+                            .setFontSize(18).setBold().setFontColor(SECONDARY_COLOR).setMarginTop(20).setMarginBottom(10);
+                    document.add(p);
+                } else if (cleanLine.startsWith("•") || cleanLine.startsWith("-") || cleanLine.startsWith("*")) {
+                    String bulletLine = cleanLine.replaceFirst("[•\\-*] ", "• ");
+                    Paragraph p = new Paragraph("    " + bulletLine).setFontSize(11).setMarginLeft(20).setMarginBottom(3);
+                    document.add(p);
+                } else if (!cleanLine.isEmpty()) {
+                    Paragraph p = new Paragraph(cleanLine).setFontSize(11).setMarginBottom(6);
+                    document.add(p);
+                }
+            }
+
+            // Pied de page
+            com.itextpdf.layout.element.Table footerTable = new com.itextpdf.layout.element.Table(1);
+            footerTable.setWidth(com.itextpdf.kernel.geom.PageSize.A4.getWidth() - 120);
+            footerTable.setMarginTop(40);
+            com.itextpdf.layout.element.Cell footerCell = new com.itextpdf.layout.element.Cell();
+            footerCell.setBackgroundColor(PRIMARY_COLOR);
+            footerCell.setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+            footerCell.setPadding(15);
+            footerCell.setTextAlignment(TextAlignment.CENTER);
+            footerCell.setBorderRadius(new com.itextpdf.layout.properties.BorderRadius(10));
+            Paragraph footerPara = new Paragraph("✨ Cours généré par Fluently - " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")))
+                    .setFontSize(9).setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE);
+            footerCell.add(footerPara);
+            footerTable.addCell(footerCell);
+            document.add(footerTable);
+
+            document.close();
+
+            // Ajouter le cours dans la liste
+            ajouterCoursDansNiveau(niveauSelectionne, fileName, filePath);
+
+
+            showAlert("Succès", "✅ PDF exporté avec succès !\n\nEmplacement : " + filePath);
+            Desktop.getDesktop().open(dir);
+
         } catch (Exception e) {
             e.printStackTrace();
             showAlert("Erreur", "Impossible d'exporter le PDF : " + e.getMessage());
+        }
+    }
+    // Nouvelles variables pour le Quiz IA amélioré
+    @FXML private ToggleButton levelA1Btn, levelA2Btn, levelB1Btn, levelB2Btn, levelC1Btn;
+    @FXML private Label selectedLevelLabel;
+    @FXML private RadioButton nbQuestions5, nbQuestions10, nbQuestions15;
+    @FXML private CheckBox typeGrammar, typeVocabulary, typeConjugation;
+    @FXML private ProgressBar quizProgressBar;
+    @FXML private Label quizNiveauLabel;
+    @FXML private StackPane resultIconContainer;
+    @FXML private Label resultIcon, resultTitle, resultScore, resultMessage;
+    @FXML private ProgressBar resultProgressBar;
+    @FXML private ScrollPane resultDetailsScroll;
+    @FXML private VBox resultDetailsContainer;
+
+    // Variable pour stocker le niveau sélectionné
+    private String selectedQuizLevel = null;
+    // Gestion du niveau
+    @FXML private void setLevelA1() { setQuizLevel("A1", levelA1Btn); }
+    @FXML private void setLevelA2() { setQuizLevel("A2", levelA2Btn); }
+    @FXML private void setLevelB1() { setQuizLevel("B1", levelB1Btn); }
+    @FXML private void setLevelB2() { setQuizLevel("B2", levelB2Btn); }
+    @FXML private void setLevelC1() { setQuizLevel("C1", levelC1Btn); }
+
+    private void setQuizLevel(String level, ToggleButton selectedBtn) {
+        selectedQuizLevel = level;
+        selectedLevelLabel.setText("Niveau sélectionné : " + level);
+        quizNiveauLabel.setText(level);
+
+        ToggleButton[] btns = {levelA1Btn, levelA2Btn, levelB1Btn, levelB2Btn, levelC1Btn};
+        for (ToggleButton btn : btns) {
+            if (btn == selectedBtn) {
+                btn.setStyle("-fx-background-color: #22C55E; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 30; -fx-padding: 10 20; -fx-cursor: hand;");
+                btn.setSelected(true);
+            } else {
+                String originalStyle = btn.getText().startsWith("A") ? "-fx-background-color: #F3E8FF; -fx-text-fill: #6B21A5;" :
+                        btn.getText().startsWith("B") ? "-fx-background-color: #FEF3C7; -fx-text-fill: #B45309;" :
+                                "-fx-background-color: #EFF6FF; -fx-text-fill: #1E40AF;";
+                btn.setStyle(originalStyle + " -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 30; -fx-padding: 10 20; -fx-cursor: hand;");
+                btn.setSelected(false);
+            }
         }
     }
 
@@ -1528,11 +1673,23 @@ public class ApprentissageController {
         quizScore.setText("Score: " + currentScore);
         quizAnswersContainer.getChildren().clear();
         currentToggleGroup = new ToggleGroup();
+
+        // Style amélioré pour les options - texte visible
         for (int i = 0; i < q.getOptions().length; i++) {
             RadioButton rb = new RadioButton(q.getOptions()[i]);
             rb.setToggleGroup(currentToggleGroup);
             rb.setUserData(i + 1);
-            rb.setStyle("-fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8;");
+            // Style avec texte foncé sur fond clair
+            rb.setStyle("-fx-font-size: 14px; -fx-text-fill: #1E293B; -fx-padding: 10 15; " +
+                    "-fx-background-color: #F1F5F9; -fx-background-radius: 10; -fx-cursor: hand;");
+            rb.setPrefWidth(Double.MAX_VALUE);
+
+            // Effet hover
+            rb.setOnMouseEntered(e -> rb.setStyle("-fx-font-size: 14px; -fx-text-fill: #1E293B; -fx-padding: 10 15; " +
+                    "-fx-background-color: #E2E8F0; -fx-background-radius: 10; -fx-cursor: hand;"));
+            rb.setOnMouseExited(e -> rb.setStyle("-fx-font-size: 14px; -fx-text-fill: #1E293B; -fx-padding: 10 15; " +
+                    "-fx-background-color: #F1F5F9; -fx-background-radius: 10; -fx-cursor: hand;"));
+
             rb.setOnAction(e -> verifierReponse((int) rb.getUserData()));
             quizAnswersContainer.getChildren().add(rb);
         }
@@ -1556,12 +1713,22 @@ public class ApprentissageController {
     }
 
     private void showFeedback(String message) {
+        HBox feedbackBox = new HBox(10);
+        feedbackBox.setAlignment(Pos.CENTER);
+        feedbackBox.setStyle("-fx-background-color: #FEF3C7; -fx-background-radius: 10; -fx-padding: 10 15;");
+
+        Label icon = new Label(message.contains("✅") ? "✅" : "❌");
+        icon.setStyle("-fx-font-size: 16px;");
+
         Label feedback = new Label(message);
-        feedback.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 12px; -fx-padding: 5;");
-        quizAnswersContainer.getChildren().add(feedback);
+        feedback.setStyle("-fx-text-fill: #92400E; -fx-font-size: 13px; -fx-font-weight: bold;");
+
+        feedbackBox.getChildren().addAll(icon, feedback);
+        quizAnswersContainer.getChildren().add(feedbackBox);
+
         new Thread(() -> {
-            try { Thread.sleep(1500); } catch (InterruptedException e) {}
-            Platform.runLater(() -> quizAnswersContainer.getChildren().remove(feedback));
+            try { Thread.sleep(2000); } catch (InterruptedException e) {}
+            Platform.runLater(() -> quizAnswersContainer.getChildren().remove(feedbackBox));
         }).start();
     }
 
@@ -1572,13 +1739,135 @@ public class ApprentissageController {
         nextQuestionBtn.setManaged(false);
         int totalPoints = questionsList.size() * 10;
         double pourcentage = (double) currentScore / totalPoints * 100;
-        quizFinalScore.setText("🎉 Score final : " + currentScore + "/" + totalPoints + " (" + (int)pourcentage + "%)");
+
+        // Créer un conteneur stylisé pour les résultats
+        VBox resultContent = new VBox(15);
+        resultContent.setAlignment(Pos.CENTER);
+        resultContent.setPadding(new Insets(20));
+        resultContent.setStyle("-fx-background-color: linear-gradient(to bottom, #F8FAFC, #F1F5F9); -fx-background-radius: 20;");
+
+        // Couleur selon le score
+        String scoreColor;
+        String titleIcon;
+        if (pourcentage >= 80) {
+            scoreColor = "#10B981";
+            titleIcon = "🏆";
+        } else if (pourcentage >= 60) {
+            scoreColor = "#F59E0B";
+            titleIcon = "👍";
+        } else if (pourcentage >= 40) {
+            scoreColor = "#3B82F6";
+            titleIcon = "📚";
+        } else {
+            scoreColor = "#EF4444";
+            titleIcon = "💪";
+        }
+
+        // Titre
+        Label titleLabel = new Label(titleIcon + " RÉSULTATS DU QUIZ " + titleIcon);
+        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: " + scoreColor + ";");
+        titleLabel.setAlignment(Pos.CENTER);
+
+        // Score
+        Label scoreLabel = new Label(currentScore + " / " + totalPoints);
+        scoreLabel.setStyle("-fx-font-size: 48px; -fx-font-weight: bold; -fx-text-fill: " + scoreColor + ";");
+        scoreLabel.setAlignment(Pos.CENTER);
+
+        // Pourcentage avec barre
+        Label percentageLabel = new Label(String.format("%.1f%%", pourcentage));
+        percentageLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #64748B;");
+
+        ProgressBar progressBar = new ProgressBar(pourcentage / 100);
+        progressBar.setPrefWidth(300);
+        progressBar.setStyle("-fx-accent: " + scoreColor + ";");
+
+        // Message d'appréciation
         String appreciation;
-        if (pourcentage >= 80) appreciation = "Excellent ! Vous maîtrisez très bien ce niveau ! 🏆";
-        else if (pourcentage >= 60) appreciation = "Très bien ! Continuez à pratiquer ! 👍";
-        else if (pourcentage >= 40) appreciation = "Pas mal ! Révisez un peu et réessayez ! 📚";
-        else appreciation = "Continuez vos efforts ! Refaites le quiz après révision ! 💪";
-        quizFeedback.setText(appreciation);
+        if (pourcentage >= 80) {
+            appreciation = "🏆 EXCELLENT ! Vous maîtrisez très bien ce niveau !";
+        } else if (pourcentage >= 60) {
+            appreciation = "👍 TRÈS BIEN ! Continuez à pratiquer !";
+        } else if (pourcentage >= 40) {
+            appreciation = "📚 PAS MAL ! Révisez un peu et réessayez !";
+        } else {
+            appreciation = "💪 CONTINUEZ VOS EFFORTS ! Refaites le quiz après révision !";
+        }
+
+        Label appreciationLabel = new Label(appreciation);
+        appreciationLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: " + scoreColor + "; -fx-wrap-text: true;");
+        appreciationLabel.setAlignment(Pos.CENTER);
+        appreciationLabel.setMaxWidth(400);
+
+        // Séparateur
+        Separator separator = new Separator();
+        separator.setStyle("-fx-background-color: #E2E8F0;");
+
+        // Détail des réponses
+        Label detailsTitle = new Label("📝 DÉTAIL DE VOS RÉPONSES");
+        detailsTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1E293B;");
+
+        VBox detailsContainer = new VBox(10);
+        detailsContainer.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;");
+        detailsContainer.setMaxHeight(300);
+
+        ScrollPane detailsScroll = new ScrollPane(detailsContainer);
+        detailsScroll.setFitToWidth(true);
+        detailsScroll.setPrefHeight(250);
+        detailsScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;");
+
+        // Afficher chaque question avec la réponse
+        for (int i = 0; i < questionsList.size(); i++) {
+            QuizQuestion q = questionsList.get(i);
+            boolean estCorrecte = (i < currentScore / 10);
+
+            HBox questionRow = new HBox(10);
+            questionRow.setAlignment(Pos.CENTER_LEFT);
+            questionRow.setStyle("-fx-padding: 10; -fx-background-color: " + (estCorrecte ? "#D1FAE5" : "#FEE2E2") + "; -fx-background-radius: 8;");
+
+            Label statusIcon = new Label(estCorrecte ? "✅" : "❌");
+            statusIcon.setStyle("-fx-font-size: 16px;");
+
+            VBox questionContent = new VBox(5);
+
+            Label questionText = new Label("Q" + (i+1) + ": " + q.getQuestion());
+            questionText.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1E293B; -fx-wrap-text: true;");
+
+            String bonneReponse = q.getOptions()[q.getCorrectAnswer() - 1];
+            Label answerText = new Label("✓ Bonne réponse : " + bonneReponse);
+            answerText.setStyle("-fx-font-size: 11px; -fx-text-fill: #10B981;");
+
+            questionContent.getChildren().addAll(questionText, answerText);
+            questionRow.getChildren().addAll(statusIcon, questionContent);
+
+            detailsContainer.getChildren().add(questionRow);
+        }
+
+        // Boutons d'action
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        Button replayBtn = new Button("🔄 Rejouer");
+        replayBtn.setStyle("-fx-background-color: #8B5CF6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24; -fx-cursor: hand;");
+        replayBtn.setOnAction(e -> startGame());
+
+        Button closeBtn = new Button("✕ Fermer");
+        closeBtn.setStyle("-fx-background-color: #E2E8F0; -fx-text-fill: #475569; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 24; -fx-cursor: hand;");
+        closeBtn.setOnAction(e -> {
+            quizResultContainer.setVisible(false);
+            quizContainer.setVisible(false);
+        });
+
+        buttonBox.getChildren().addAll(replayBtn, closeBtn);
+
+        // Assembler tout
+        resultContent.getChildren().addAll(
+                titleLabel, scoreLabel, percentageLabel, progressBar,
+                appreciationLabel, separator, detailsTitle, detailsScroll, buttonBox
+        );
+
+        // Mettre à jour le conteneur existant
+        quizResultContainer.getChildren().clear();
+        quizResultContainer.getChildren().add(resultContent);
         quizResultContainer.setVisible(true);
         quizResultContainer.setManaged(true);
     }
@@ -2967,4 +3256,5 @@ public class ApprentissageController {
 
         return relativePath;
     }
+
 }
