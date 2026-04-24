@@ -4,7 +4,11 @@ module com.example.pijava_fluently {
     requires java.sql;
     requires java.desktop;
     requires com.google.gson;
-
+    requires jdk.httpserver;
+    requires javafx.web;
+    requires java.net.http;
+    requires jbcrypt;
+    requires jakarta.mail;
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;
     opens com.example.pijava_fluently.entites to javafx.base, javafx.fxml;

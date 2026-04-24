@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -52,7 +53,7 @@
                     <VBox styleClass="fp-avatar-card" spacing="20" alignment="TOP_CENTER" prefWidth="220">
                         <padding><Insets top="32" left="24" right="24" bottom="32"/></padding>
 
-                        <StackPane styleClass="fp-avatar-circle">
+                        <StackPane fx:id="fpAvatarPane" styleClass="fp-avatar-circle" prefWidth="96" prefHeight="96">
                             <Label fx:id="fpInitials" text="??" styleClass="fp-initials"/>
                         </StackPane>
 

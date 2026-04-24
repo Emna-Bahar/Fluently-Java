@@ -5,7 +5,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
+import com.example.pijava_fluently.utils.TranslateButton;
 import java.io.IOException;
 
 public class HelloApplication extends Application {
@@ -34,6 +34,13 @@ public class HelloApplication extends Application {
 
         stage.setTitle("Fluently");
         stage.setScene(scene);
+        TranslateButton.attachTo(scene);
+        // Auto-attach translate button on every scene/root change
+        scene.rootProperty().addListener((obs, oldRoot, newRoot) -> {
+            if (newRoot != null) {
+                javafx.application.Platform.runLater(() -> TranslateButton.attachTo(scene));
+            }
+        });
         stage.setResizable(true);
         stage.show();
     }

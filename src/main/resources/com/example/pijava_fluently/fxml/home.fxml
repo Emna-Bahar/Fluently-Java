@@ -46,6 +46,10 @@
                         onAction="#showObjectifs"/>
             </HBox>
 
+            <!-- Language toggle -->
+            <Button fx:id="btnLang" text="🌐 EN" styleClass="btn-lang"
+                    onAction="#toggleLanguage" prefWidth="72"/>
+
             <!-- Utilisateur à droite -->
             <HBox fx:id="navUserPill" styleClass="nav-user-pill"
                   spacing="6" alignment="CENTER" prefWidth="160"

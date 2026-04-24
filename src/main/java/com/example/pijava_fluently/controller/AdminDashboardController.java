@@ -4,10 +4,12 @@ import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.entites.TestPassage;
 import com.example.pijava_fluently.services.UserService;
+import com.example.pijava_fluently.utils.ConfigLoader;
 import com.example.pijava_fluently.services.TestService;
 import com.example.pijava_fluently.services.TestPassageService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -20,10 +22,13 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
+import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -415,12 +420,37 @@ public class AdminDashboardController implements Initializable {
                 super.updateItem(item, empty);
                 if (empty || getTableRow() == null || getTableRow().getItem() == null) { setGraphic(null); return; }
                 User u = (User) getTableRow().getItem();
-                StackPane av = new StackPane(); av.getStyleClass().add("row-avatar"); av.setPrefSize(36,36);
-                Label lbl = new Label(initials(u.getPrenom(), u.getNom())); lbl.getStyleClass().add("row-avatar-text");
-                av.getChildren().add(lbl);
-                Label name = new Label(u.getPrenom() + " " + u.getNom()); name.getStyleClass().add("row-name");
-                HBox cell = new HBox(12, av, name); cell.setAlignment(Pos.CENTER_LEFT);
-                setGraphic(cell); setText(null);
+
+                // ── Avatar: SVG if generated, initials otherwise ───────────────
+                StackPane av = new StackPane();
+                av.getStyleClass().add("row-avatar");
+                av.setPrefSize(36, 36);
+                av.setMaxSize(36, 36);
+
+                String svg = u.getAvatarSvg();
+                if (svg != null && !svg.isBlank()) {
+                    WebView wv = new WebView();
+                    wv.setPrefSize(36, 36);
+                    wv.setMaxSize(36, 36);
+
+                    String html = "<!DOCTYPE html><html><head>"
+                            + "<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}"
+                            + "svg{width:100%;height:100%;display:block;}</style>"
+                            + "</head><body>" + svg + "</body></html>";
+                    wv.getEngine().loadContent(html);
+                    av.getChildren().add(wv);
+                } else {
+                    Label lbl = new Label(initials(u.getPrenom(), u.getNom()));
+                    lbl.getStyleClass().add("row-avatar-text");
+                    av.getChildren().add(lbl);
+                }
+
+                Label name = new Label(u.getPrenom() + " " + u.getNom());
+                name.getStyleClass().add("row-name");
+                HBox cell = new HBox(12, av, name);
+                cell.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(cell);
+                setText(null);
             }
         });
 
@@ -516,13 +546,226 @@ public class AdminDashboardController implements Initializable {
         } catch (IOException e) { e.printStackTrace(); }
     }
 
+    // ── GOOGLE SHEETS CREDENTIALS (same OAuth app as Google Login) ───────────
+    private static final String GOOGLE_CLIENT_ID     = ConfigLoader.get("google.sheets.client.id");
+    private static final String GOOGLE_CLIENT_SECRET = ConfigLoader.get("google.sheets.client.secret");
+    private static final String GOOGLE_AUTH_URL      = "https://accounts.google.com/o/oauth2/v2/auth";
+    private static final String GOOGLE_TOKEN_URL     = "https://oauth2.googleapis.com/token";
+    private static final String SHEETS_API_BASE      = "https://sheets.googleapis.com/v4/spreadsheets";
+
+    @FXML
+    private void handleExportGoogleSheets() {
+        // Run entirely in background — OAuth + API calls are blocking
+        new Thread(() -> {
+            try {
+                // ── 1. OAuth: get access token with Sheets scope ───────────
+                Platform.runLater(() -> showInfo("Export en cours…", "Ouverture de Google pour autorisation…"));
+                String accessToken = authorizeGoogleSheets();
+                if (accessToken == null) {
+                    Platform.runLater(() -> showError("Export annulé", "Autorisation Google refusée ou expirée."));
+                    return;
+                }
+
+                // ── 2. Create a new Google Sheet ──────────────────────────
+                String spreadsheetId = createSheet(accessToken, "Fluently – Utilisateurs");
+
+                // ── 3. Write the data rows ────────────────────────────────
+                writeUsersToSheet(accessToken, spreadsheetId);
+
+                // ── 4. Open the sheet in the browser ─────────────────────
+                String url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/edit";
+                Desktop.getDesktop().browse(new java.net.URI(url));
+
+                Platform.runLater(() -> showInfo("✅ Export réussi !",
+                        "Le tableau des utilisateurs a été créé dans Google Sheets.\n" +
+                                "Il s\'est ouvert dans votre navigateur."));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> showError("Erreur export", e.getMessage()));
+            }
+        }).start();
+    }
+
+    // ── OAUTH: open browser, catch redirect, exchange code for token ─────────
+
+    private String authorizeGoogleSheets() throws Exception {
+        final String[] result = {null};
+
+        // Fixed port so it matches Google Cloud Console redirect URI exactly
+        int port = 8888;
+        String redirectUri = "http://localhost:" + port + "/callback";
+
+        // Start local callback server
+        com.sun.net.httpserver.HttpServer server =
+                com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(port), 0);
+        server.createContext("/callback", exchange -> {
+            String query = exchange.getRequestURI().getQuery();
+            if (query != null) {
+                for (String p : query.split("&")) {
+                    String[] kv = p.split("=", 2);
+                    if (kv.length == 2 && kv[0].equals("code"))
+                        result[0] = java.net.URLDecoder.decode(kv[1], "UTF-8");
+                }
+            }
+            String html = "<html><body style=\'font-family:sans-serif;text-align:center;padding:60px\'>"
+                    + "<h2>✅ Autorisé ! Retourne sur Fluently.</h2></body></html>";
+            byte[] bytes = html.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.getResponseBody().close();
+            server.stop(1);
+        });
+        server.start();
+
+        // Open browser to Google consent screen (Sheets scope)
+        String scope = java.net.URLEncoder.encode(
+                "https://www.googleapis.com/auth/spreadsheets", "UTF-8");
+        String authUrl = GOOGLE_AUTH_URL
+                + "?client_id="     + java.net.URLEncoder.encode(GOOGLE_CLIENT_ID, "UTF-8")
+                + "&redirect_uri="  + java.net.URLEncoder.encode(redirectUri, "UTF-8")
+                + "&response_type=code"
+                + "&scope="         + scope
+                + "&access_type=offline"
+                + "&prompt=consent";
+        Desktop.getDesktop().browse(new java.net.URI(authUrl));
+
+        // Wait up to 2 minutes for the user to approve
+        long start = System.currentTimeMillis();
+        while (result[0] == null && System.currentTimeMillis() - start < 120_000)
+            Thread.sleep(300);
+
+        if (result[0] == null) return null;
+
+        // Exchange code for access token
+        String body = "code="           + java.net.URLEncoder.encode(result[0],           "UTF-8")
+                + "&client_id="     + java.net.URLEncoder.encode(GOOGLE_CLIENT_ID,     "UTF-8")
+                + "&client_secret=" + java.net.URLEncoder.encode(GOOGLE_CLIENT_SECRET, "UTF-8")
+                + "&redirect_uri="  + java.net.URLEncoder.encode(redirectUri,          "UTF-8")
+                + "&grant_type=authorization_code";
+
+        java.net.HttpURLConnection conn =
+                (java.net.HttpURLConnection) new java.net.URL(GOOGLE_TOKEN_URL).openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.getOutputStream().write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String tokenJson = new String(conn.getInputStream().readAllBytes(),
+                java.nio.charset.StandardCharsets.UTF_8);
+        conn.disconnect();
+
+        // Extract access_token from JSON
+        return extractJsonField(tokenJson, "access_token");
+    }
+
+    // ── CREATE SPREADSHEET ────────────────────────────────────────────────────
+
+    private String createSheet(String accessToken, String title) throws Exception {
+        String json = "{\"properties\":{\"title\":\"" + title + "\"}}";
+        java.net.HttpURLConnection conn =
+                (java.net.HttpURLConnection) new java.net.URL(SHEETS_API_BASE).openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+        conn.setRequestProperty("Content-Type",  "application/json");
+        conn.getOutputStream().write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String response = new String(conn.getInputStream().readAllBytes(),
+                java.nio.charset.StandardCharsets.UTF_8);
+        conn.disconnect();
+        return extractJsonField(response, "spreadsheetId");
+    }
+
+    // ── WRITE USERS TO SHEET ──────────────────────────────────────────────────
+
+    private void writeUsersToSheet(String accessToken, String spreadsheetId) throws Exception {
+        // Build the JSON values array
+        StringBuilder values = new StringBuilder();
+        values.append("[");
+
+        // Header row
+        values.append("[\"ID\",\"Prénom\",\"Nom\",\"Email\",\"Rôle\",\"Statut\",\"Langue étudiée\"]");
+
+        // Data rows
+        for (User u : usersList) {
+            values.append(",[")
+                    .append(jsonCell(String.valueOf(u.getId()))).append(",")
+                    .append(jsonCell(u.getPrenom())).append(",")
+                    .append(jsonCell(u.getNom())).append(",")
+                    .append(jsonCell(u.getEmail())).append(",")
+                    .append(jsonCell(u.getRoles() != null && u.getRoles().contains("ROLE_ADMIN") ? "Admin" : u.getRoles() != null && u.getRoles().contains("ROLE_PROF") ? "Professeur" : "Etudiant")).append(",")
+                    .append(jsonCell(u.getStatut())).append(",")
+                    .append(jsonCell(u.getChosenLanguage()))
+                    .append("]");
+        }
+        values.append("]");
+
+        String body = "{\"values\":" + values + "}";
+        String url  = SHEETS_API_BASE + "/" + spreadsheetId
+                + "/values/A1?valueInputOption=RAW";
+
+        java.net.HttpURLConnection conn =
+                (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+        conn.setRequestMethod("PUT");
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+        conn.setRequestProperty("Content-Type",  "application/json");
+        conn.getOutputStream().write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        int status = conn.getResponseCode();
+        if (status < 200 || status >= 300) {
+            String err = new String(conn.getErrorStream().readAllBytes(),
+                    java.nio.charset.StandardCharsets.UTF_8);
+            conn.disconnect();
+            throw new IOException("Sheets write error " + status + ": " + err);
+        }
+        conn.disconnect();
+    }
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+
+    private static String jsonCell(String val) {
+        if (val == null || val.isBlank()) return "\"\"";
+        return "\"" + val.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    private static String extractJsonField(String json, String key) {
+        String search = "\"" + key + "\"";
+        int idx = json.indexOf(search);
+        if (idx < 0) return null;
+        int colon = json.indexOf(':', idx + search.length());
+        if (colon < 0) return null;
+        // Could be string value or number value
+        int start = colon + 1;
+        while (start < json.length() && json.charAt(start) == ' ') start++;
+        if (json.charAt(start) == '"') {
+            int end = json.indexOf('"', start + 1);
+            return end > 0 ? json.substring(start + 1, end) : null;
+        }
+        // number value
+        int end = start;
+        while (end < json.length() && ",}\n\r".indexOf(json.charAt(end)) < 0) end++;
+        return json.substring(start, end).trim();
+    }
+
+    private void showInfo(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setTitle(title); a.setHeaderText(null); a.setContentText(msg);
+        a.showAndWait();
+    }
+
+    private void showError(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setTitle(title); a.setHeaderText(null); a.setContentText(msg);
+        a.showAndWait();
+    }
+
     private void confirmAndDelete(User u) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirmation");
         confirm.setHeaderText("Supprimer " + u.getPrenom() + " " + u.getNom() + " ?");
         confirm.setContentText("Cette action est irréversible.");
         Optional<ButtonType> res = confirm.showAndWait();
-        if (res.isPresent() && res.get() == ButtonType.YES) {
+        if (res.isPresent() && res.get() == ButtonType.OK) {
             try { userService.supprimer(u.getId()); loadUsers(); loadStats(); }
             catch (SQLException e) { e.printStackTrace(); }
         }

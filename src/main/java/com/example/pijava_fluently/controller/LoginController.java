@@ -8,18 +8,24 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import com.example.pijava_fluently.utils.TranslateButton;
 import java.io.IOException;
 import java.sql.SQLException;
+import com.example.pijava_fluently.utils.LanguageManager;
 
 public class LoginController {
 
-    // Login
+    private String capturedFaceDescriptor = null;
+
+    // ── LOGIN FIELDS ──────────────────────────────────────────────────────────
     @FXML private TextField     loginEmail;
     @FXML private PasswordField loginPassword;
     @FXML private Label         loginError;
+    @FXML private Label         faceStatusLabel;
 
-    // Register
+    // ── REGISTER FIELDS ───────────────────────────────────────────────────────
     @FXML private TextField     regPrenom;
     @FXML private TextField     regNom;
     @FXML private TextField     regEmail;
@@ -29,22 +35,52 @@ public class LoginController {
     @FXML private ToggleButton  btnEtudiant;
     @FXML private ToggleButton  btnProf;
 
-    // Containers
+    @FXML private javafx.scene.control.Button btnLang;
+
+    // ── CONTAINERS ────────────────────────────────────────────────────────────
     @FXML private javafx.scene.layout.VBox loginForm;
     @FXML private javafx.scene.layout.VBox registerForm;
 
-    // Tabs
+    // ── TRANSLATABLE LABELS ───────────────────────────────────────────────────
+    @FXML private Label loginWelcomeLabel;
+    @FXML private Label loginSubtitleLabel;
+    @FXML private Label loginEmailLabel;
+    @FXML private Label loginPasswordLabel;
+    @FXML private Label loginNoAccountLabel;
+    @FXML private Label regTitleLabel;
+    @FXML private Label regSubtitleLabel;
+
+    // ── TABS ─────────────────────────────────────────────────────────────────
     @FXML private Button loginTabBtn;
     @FXML private Button registerTabBtn;
 
     private String selectedRole = null;
-
     private final UserService userService = new UserService();
+
+    // ── INIT ─────────────────────────────────────────────────────────────────
 
     @FXML
     public void initialize() {
         selectEtudiant();
+        setupLanguage();
     }
+
+    private void setupLanguage() {
+        LanguageManager lm = LanguageManager.getInstance();
+        lm.languageProperty().addListener((obs, o, n) -> applyLanguage());
+        applyLanguage();
+    }
+
+    private void applyLanguage() {
+        LanguageManager lm = LanguageManager.getInstance();
+        if (loginTabBtn    != null) loginTabBtn.setText(lm.t("login.tab"));
+        if (registerTabBtn != null) registerTabBtn.setText(lm.t("register.tab"));
+        if (btnLang        != null) btnLang.setText(lm.t("lang.btn"));
+    }
+
+    @FXML private void toggleLanguage() { LanguageManager.getInstance().toggle(); }
+
+    // ── ROLE SELECTION ────────────────────────────────────────────────────────
 
     @FXML
     private void selectEtudiant() {
@@ -64,6 +100,8 @@ public class LoginController {
         btnEtudiant.getStyleClass().remove("role-toggle-active");
     }
 
+    // ── TAB SWITCHING ─────────────────────────────────────────────────────────
+
     @FXML
     private void switchToLogin() {
         loginForm.setVisible(true);     loginForm.setManaged(true);
@@ -80,6 +118,8 @@ public class LoginController {
         loginTabBtn.getStyleClass().remove("tab-active");
     }
 
+    // ── LOGIN ─────────────────────────────────────────────────────────────────
+
     @FXML
     private void handleLogin() {
         String email    = loginEmail.getText().trim();
@@ -93,33 +133,13 @@ public class LoginController {
             User user = userService.authenticate(email, password);
             if (user == null) { showLoginError("Email ou mot de passe incorrect."); return; }
 
-            // Mark user as online
             userService.updateStatut(user.getId(), "online");
             user.setStatut("online");
 
             if (user.isAdmin()) {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/com/example/pijava_fluently/fxml/admin-dashboard.fxml")
-                );
-                Parent root = loader.load();
-                AdminDashboardController ctrl = loader.getController();
-                ctrl.setCurrentUser(user);
-                Stage stage = (Stage) loginEmail.getScene().getWindow();
-                stage.setTitle("Fluently - Administration");
-                stage.setScene(buildScene(root));
-                stage.centerOnScreen();
+                navigateToAdmin(user);
             } else {
-                // Pass the real logged-in user to HomeController
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
-                );
-                Parent root = loader.load();
-                HomeController homeCtrl = loader.getController();
-                homeCtrl.setCurrentUser(user);
-                Stage stage = (Stage) loginEmail.getScene().getWindow();
-                stage.setTitle("Fluently - Mon Espace");
-                stage.setScene(buildScene(root));
-                stage.centerOnScreen();
+                navigateToHome(user);
             }
         } catch (SQLException e) {
             showLoginError("Erreur de connexion à la base de données."); e.printStackTrace();
@@ -128,7 +148,7 @@ public class LoginController {
         }
     }
 
-    @FXML private void forgotPassword() { System.out.println("Mot de passe oublié"); }
+    // ── REGISTER ──────────────────────────────────────────────────────────────
 
     @FXML
     private void handleRegister() {
@@ -172,20 +192,13 @@ public class LoginController {
             newUser.setPassword(password);
             newUser.setStatut("actif");
             newUser.setRoles("[\"" + selectedRole + "\"]");
+            newUser.setFaceDescriptor(capturedFaceDescriptor);
 
             userService.ajouter(newUser);
 
-            // After register, load home and pass user
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
-            );
-            Parent root = loader.load();
-            HomeController homeCtrl = loader.getController();
-            homeCtrl.setCurrentUser(newUser);
-            Stage stage = (Stage) loginEmail.getScene().getWindow();
-            stage.setTitle("Fluently - Mon Espace");
-            stage.setScene(buildScene(root));
-            stage.centerOnScreen();
+            // ── NEW: go to language picker so the user picks a language
+            //        and gets an AI-generated avatar BEFORE reaching home ──
+            navigateToLanguagePicker(newUser);
 
         } catch (SQLException e) {
             showRegisterError("Erreur lors de la création du compte."); e.printStackTrace();
@@ -193,6 +206,121 @@ public class LoginController {
             showRegisterError("Erreur lors du chargement de la page."); e.printStackTrace();
         }
     }
+
+    // ── FACE AUTH ─────────────────────────────────────────────────────────────
+
+    @FXML
+    private void handleCaptureFace() {
+        faceStatusLabel.setText("📷 Ouverture caméra...");
+        faceStatusLabel.setVisible(true);
+        faceStatusLabel.setManaged(true);
+
+        new Thread(() -> {
+            try {
+                String scriptPath = "C:/Users/MSI/Desktop/java-git/Fluently-Java/face_register.py";
+                ProcessBuilder pb = new ProcessBuilder("python", scriptPath);
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream()));
+                String line;
+                String descriptorJson = null;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("{\"descriptor\"")) descriptorJson = line;
+                }
+                process.waitFor();
+
+                final String result = descriptorJson;
+                javafx.application.Platform.runLater(() -> {
+                    if (result != null) {
+                        capturedFaceDescriptor = result
+                                .replace("{\"descriptor\":", "")
+                                .replace("}", "").trim();
+                        faceStatusLabel.setText("✅ Visage enregistré !");
+                    } else {
+                        faceStatusLabel.setText("❌ Aucun visage détecté. Réessayez.");
+                    }
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                        faceStatusLabel.setText("❌ Erreur: " + e.getMessage()));
+            }
+        }).start();
+    }
+
+    @FXML
+    private void handleFaceLogin() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/face-login.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) loginEmail.getScene().getWindow();
+            stage.setTitle("Fluently - Face Login");
+            stage.setScene(buildScene(root));
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            showLoginError("Impossible d'ouvrir la page Face Login.");
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleGoogleLogin() {
+        Stage stage = (Stage) loginEmail.getScene().getWindow();
+        GoogleAuthController google = new GoogleAuthController(stage, loginError);
+        google.startGoogleLogin();
+    }
+
+    @FXML
+    private void forgotPassword() {
+        Stage owner = (Stage) loginEmail.getScene().getWindow();
+        new ForgotPasswordController().show(owner);
+    }
+
+    // ── NAVIGATION HELPERS ────────────────────────────────────────────────────
+
+    /** After registration → language picker → avatar generation → home */
+    private void navigateToLanguagePicker(User user) throws IOException {
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/com/example/pijava_fluently/fxml/language-picker.fxml")
+        );
+        Parent root = loader.load();
+        LanguagePickerController ctrl = loader.getController();
+        ctrl.setCurrentUser(user);
+        Stage stage = (Stage) loginEmail.getScene().getWindow();
+        stage.setTitle("Fluently – Choisissez votre langue");
+        stage.setScene(buildScene(root));
+        stage.centerOnScreen();
+    }
+
+    private void navigateToHome(User user) throws IOException {
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
+        );
+        Parent root = loader.load();
+        HomeController homeCtrl = loader.getController();
+        homeCtrl.setCurrentUser(user);
+        Stage stage = (Stage) loginEmail.getScene().getWindow();
+        stage.setTitle("Fluently - Mon Espace");
+        stage.setScene(buildScene(root));
+        stage.centerOnScreen();
+    }
+
+    private void navigateToAdmin(User user) throws IOException {
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/com/example/pijava_fluently/fxml/admin-dashboard.fxml")
+        );
+        Parent root = loader.load();
+        AdminDashboardController ctrl = loader.getController();
+        ctrl.setCurrentUser(user);
+        Stage stage = (Stage) loginEmail.getScene().getWindow();
+        stage.setTitle("Fluently - Administration");
+        stage.setScene(buildScene(root));
+        stage.centerOnScreen();
+    }
+
+    // ── ERROR HELPERS ─────────────────────────────────────────────────────────
 
     private void showLoginError(String msg) {
         loginError.setText(msg); loginError.setVisible(true); loginError.setManaged(true);
@@ -207,6 +335,7 @@ public class LoginController {
         scene.getStylesheets().add(
                 getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
         );
+        TranslateButton.attachTo(scene);
         return scene;
     }
 }

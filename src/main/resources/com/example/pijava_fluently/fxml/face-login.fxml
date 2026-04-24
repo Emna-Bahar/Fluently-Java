@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.FaceLoginController"
+      alignment="CENTER" spacing="0"
+      prefWidth="480" prefHeight="520"
+      style="-fx-background-color: #0F0F23;">
+
+    <!-- Top gradient header panel -->
+    <VBox alignment="CENTER" spacing="10"
+          style="-fx-background-color: linear-gradient(to bottom right, #1a1a3e, #0F0F23);
+                 -fx-padding: 36px 40px 28px 40px;">
+
+        <!-- Animated icon circle -->
+        <StackPane style="-fx-background-color: linear-gradient(to bottom right, #4C6EF5, #7C3AED);
+                          -fx-background-radius: 50%;
+                          -fx-min-width: 72px; -fx-max-width: 72px;
+                          -fx-min-height: 72px; -fx-max-height: 72px;
+                          -fx-effect: dropshadow(gaussian, rgba(76,110,245,0.55), 20, 0, 0, 6);">
+            <Label text="👁" style="-fx-font-size: 30px;"/>
+        </StackPane>
+
+        <Label text="Face Login"
+               style="-fx-font-size: 26px; -fx-font-weight: bold;
+                      -fx-text-fill: white;
+                      -fx-font-family: 'Segoe UI Semibold', 'SF Pro Display', sans-serif;"/>
+
+        <Label text="Fluently · Secure Biometric Access"
+               style="-fx-font-size: 12px; -fx-text-fill: #818CF8;
+                      -fx-letter-spacing: 1px;"/>
+    </VBox>
+
+    <!-- White card body -->
+    <VBox alignment="CENTER" spacing="18"
+          style="-fx-background-color: #ffffff;
+                 -fx-background-radius: 24px 24px 0 0;
+                 -fx-padding: 32px 40px 36px 40px;">
+
+        <!-- Instruction box -->
+        <HBox alignment="CENTER_LEFT" spacing="12"
+              style="-fx-background-color: #EEF2FF;
+                     -fx-background-radius: 12px;
+                     -fx-padding: 14px 18px;
+                     -fx-border-color: #C7D2FE;
+                     -fx-border-width: 1.5px;
+                     -fx-border-radius: 12px;">
+            <Label text="ℹ" style="-fx-font-size: 16px; -fx-text-fill: #4C6EF5;"/>
+            <Label text="Click Scan, look directly at the camera,&#10;then press SPACE to authenticate."
+                   wrapText="true"
+                   style="-fx-font-size: 12.5px; -fx-text-fill: #3730A3; -fx-line-spacing: 2;"/>
+        </HBox>
+
+        <!-- Status label -->
+        <Label fx:id="statusLabel" visible="false" managed="false"
+               wrapText="true" alignment="CENTER"
+               style="-fx-font-size: 13px; -fx-text-fill: #2c3e50;
+                      -fx-padding: 10px 16px;
+                      -fx-background-radius: 10px;
+                      -fx-background-color: #F8FAFC;
+                      -fx-border-color: #E2E8F0;
+                      -fx-border-width: 1px;
+                      -fx-border-radius: 10px;"
+               maxWidth="380"/>
+
+        <!-- Primary scan button -->
+        <Button fx:id="scanBtn" text="📷  Scan My Face"
+                onAction="#handleScan" prefWidth="340" prefHeight="52"
+                style="-fx-background-color: linear-gradient(to right, #4C6EF5, #7C3AED);
+                       -fx-text-fill: white;
+                       -fx-font-size: 15px;
+                       -fx-font-weight: bold;
+                       -fx-background-radius: 14px;
+                       -fx-cursor: hand;
+                       -fx-border-color: transparent;
+                       -fx-effect: dropshadow(gaussian, rgba(76,110,245,0.45), 14, 0, 0, 5);"/>
+
+        <!-- Back button -->
+        <Button text="← Back to Login"
+                onAction="#handleBack"
+                prefWidth="340" prefHeight="42"
+                style="-fx-background-color: #F1F5F9;
+                       -fx-text-fill: #4C6EF5;
+                       -fx-font-size: 13px;
+                       -fx-font-weight: bold;
+                       -fx-background-radius: 10px;
+                       -fx-border-color: #C7D2FE;
+                       -fx-border-width: 1.5px;
+                       -fx-cursor: hand;"/>
+
+        <!-- Security note -->
+        <HBox alignment="CENTER" spacing="6" style="-fx-padding: 4px 0 0 0;">
+            <Label text="🔒" style="-fx-font-size: 11px;"/>
+            <Label text="Face data is never stored in plain text"
+                   style="-fx-font-size: 11px; -fx-text-fill: #94A3B8;"/>
+        </HBox>
+    </VBox>
+</VBox>

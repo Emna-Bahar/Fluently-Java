@@ -1,0 +1,5 @@
+anthropic.api.key=YOUR_ANTHROPIC_KEY_HERE
+google.sheets.client.id=YOUR_GOOGLE_CLIENT_ID_HERE
+google.sheets.client.secret=YOUR_GOOGLE_CLIENT_SECRET_HERE
+google.auth.client.id=YOUR_GOOGLE_AUTH_CLIENT_ID_HERE
+google.auth.client.secret=YOUR_GOOGLE_AUTH_CLIENT_SECRET_HERE

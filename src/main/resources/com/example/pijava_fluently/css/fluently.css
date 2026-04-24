@@ -893,6 +893,22 @@
     -fx-background-color: linear-gradient(to right, #3B5BDB, #6D28D9);
 }
 
+/* Export Google Sheets button */
+.btn-export-sheets {
+    -fx-background-color: linear-gradient(to right, #16A34A, #15803D);
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 10px;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(22,163,74,0.35), 10, 0, 0, 3);
+}
+.btn-export-sheets:hover {
+    -fx-background-color: linear-gradient(to right, #15803D, #166534);
+}
+
 /* Search bar box */
 .search-bar-box {
     -fx-background-color: white;
@@ -2697,4 +2713,83 @@
 
 .social-icon:hover {
     -fx-text-fill: #667eea;
+}
+/* ── Google button ─────────────────────────────────────────────────────── */
+.btn-google {
+    -fx-background-color: #dd4b39;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 12 16 12 16;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 6, 0, 0, 2);
+}
+.btn-google:hover {
+    -fx-background-color: #c23321;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.32), 10, 0, 0, 3);
+}
+.btn-google:pressed {
+    -fx-background-color: #a52714;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 3, 0, 0, 1);
+}
+.btn-google-g {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-background-color: white;
+    -fx-background-radius: 2px;
+    -fx-padding: 2 6 2 6;
+}
+.btn-google-g-b { -fx-text-fill: #4285F4; }
+.btn-google-g-r { -fx-text-fill: #EA4335; }
+.btn-google-g-y { -fx-text-fill: #FBBC05; }
+.btn-google-g-g { -fx-text-fill: #34A853; }
+.btn-google-label {
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────── */
+.divider-text {
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 11px;
+}
+.divider-line {
+    -fx-background-color: #e0e0e0;
+    -fx-pref-height: 1px;
+    -fx-max-height: 1px;
+}
+.divider-or {
+    -fx-text-fill: #999999;
+    -fx-font-size: 12px;
+    -fx-padding: 0 10 0 10;
+}
+
+/* ── Language toggle button ────────────────────────────────────────────── */
+.btn-lang {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6c63ff;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-border-color: #6c63ff;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 20px;
+    -fx-background-radius: 20px;
+    -fx-padding: 5 14 5 14;
+    -fx-cursor: hand;
+}
+.btn-lang:hover {
+    -fx-background-color: #6c63ff;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(108,99,255,0.35), 8, 0, 0, 2);
+}
+.btn-lang:pressed {
+    -fx-background-color: #5a52d5;
+    -fx-text-fill: white;
 }

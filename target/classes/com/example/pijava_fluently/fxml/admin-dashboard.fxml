@@ -263,6 +263,7 @@
                                 <Label fx:id="userCountLabel" text="" styleClass="page-breadcrumb"/>
                             </VBox>
                             <Button text="＋  Nouvel utilisateur" styleClass="btn-add-user" onAction="#handleNewUser"/>
+                            <Button text="📊  Exporter Google Sheets" styleClass="btn-export-sheets" onAction="#handleExportGoogleSheets"/>
                         </HBox>
                         <HBox styleClass="search-bar-box" spacing="10" alignment="CENTER_LEFT">
                             <padding><Insets top="12" left="16" right="16" bottom="12"/></padding>

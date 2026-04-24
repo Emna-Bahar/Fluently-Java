@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
+import com.example.pijava_fluently.utils.LanguageManager;
 
 public class HomeController implements Initializable {
 
@@ -34,15 +35,12 @@ public class HomeController implements Initializable {
     @FXML private Button btnSessions;
     @FXML private Button btnObjectifs;
     @FXML private Button btnTheme;
+    @FXML private Button btnLang;
     @FXML private VBox   rootPane;
 
     private ContextMenu   userMenu;
     private User          currentUser;
     private final UserService userService = new UserService();
-
-    // ============================================================
-    // INITIALISATION
-    // ============================================================
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -50,7 +48,7 @@ public class HomeController implements Initializable {
         if (navUsername != null && currentUser == null) {
             navUsername.setText("Utilisateur");
         }
-        // Charger la page d'accueil avec le bon contrôleur
+        setupLanguage();
         showAccueil();
     }
 
@@ -61,9 +59,29 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ============================================================
-    // THEME SOMBRE / CLAIR
-    // ============================================================
+    private void setupLanguage() {
+        LanguageManager lm = LanguageManager.getInstance();
+        lm.languageProperty().addListener((obs, oldVal, newVal) -> applyLanguage());
+        applyLanguage();
+    }
+
+    private void applyLanguage() {
+        LanguageManager lm = LanguageManager.getInstance();
+        if (btnAccueil  != null) btnAccueil.setText(lm.t("nav.home"));
+        if (btnLangues  != null) btnLangues.setText(lm.t("nav.languages"));
+        if (btnTests    != null) btnTests.setText(lm.t("nav.tests"));
+        if (btnGroupes  != null) btnGroupes.setText(lm.t("nav.groups"));
+        if (btnSessions != null) btnSessions.setText(lm.t("nav.sessions"));
+        if (btnObjectifs!= null) btnObjectifs.setText(lm.t("nav.objectives"));
+        if (btnLang     != null) btnLang.setText(lm.t("lang.btn"));
+    }
+
+    @FXML
+    private void toggleLanguage() {
+        // Use scene-aware toggle to translate entire page
+        Scene scene = btnLang.getScene();
+        LanguageManager.getInstance().toggle(scene);
+    }
 
     @FXML
     private void toggleTheme() {
@@ -92,10 +110,6 @@ public class HomeController implements Initializable {
         return null;
     }
 
-    // ============================================================
-    // USER MENU
-    // ============================================================
-
     private void createUserMenu() {
         userMenu = new ContextMenu();
         MenuItem profile  = new MenuItem("Mon Profil");
@@ -114,21 +128,14 @@ public class HomeController implements Initializable {
             userMenu.show(navUserPill, event.getScreenX(), event.getScreenY() + 8);
     }
 
-    // ============================================================
-    // NAVIGATION
-    // ============================================================
-
     @FXML
     public void showAccueil() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/home-content.fxml"));
             Node view = loader.load();
-
-            // Lier le contrôleur de la page d'accueil avec HomeController
             HomeContentController contentController = loader.getController();
             contentController.setHomeController(this);
-
             setContent(view);
             setActiveButton(btnAccueil);
         } catch (IOException e) {
@@ -250,10 +257,6 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ============================================================
-    // CONTENU CENTRAL
-    // ============================================================
-
     public void setContent(Node view) {
         if (contentArea != null) {
             contentArea.getChildren().clear();
@@ -261,30 +264,17 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ============================================================
-    // HELPERS PRIVES
-    // ============================================================
-
     private void setActiveButton(Button activeBtn) {
         if (activeBtn == null) return;
         Button[] all = {btnAccueil, btnLangues, btnTests, btnGroupes, btnSessions, btnObjectifs};
         for (Button b : all) {
-            if (b != null) {
-                b.getStyleClass().remove("nav-link-active");
-            }
+            if (b != null) b.getStyleClass().remove("nav-link-active");
         }
         activeBtn.getStyleClass().add("nav-link-active");
     }
 
-    // ============================================================
-    // ACTIONS MENU UTILISATEUR
-    // ============================================================
-
     private void showProfile() {
-        if (currentUser == null) {
-            System.out.println("Aucun utilisateur connecte");
-            return;
-        }
+        if (currentUser == null) { System.out.println("Aucun utilisateur connecte"); return; }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/front-profile.fxml"));
@@ -303,9 +293,7 @@ public class HomeController implements Initializable {
         }
     }
 
-    private void showSettings() {
-        System.out.println("Parametres ouverts");
-    }
+    private void showSettings() { System.out.println("Parametres ouverts"); }
 
     private void handleLogout() {
         if (currentUser != null) {
