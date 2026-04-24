@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.example.pijava_fluently.services.AIQuizGeneratorService;
-import com.example.pijava_fluently.services.ReponseService;
 import javafx.application.Platform;
-import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -472,13 +470,12 @@ public class QuestionController {
 
     @FXML
     private void handleGenererIA() {
-        // Créer une boîte de dialogue de configuration
         Dialog<Map<String, String>> dialog = new Dialog<>();
         dialog.setTitle("🤖 Générer des questions avec l'IA");
         dialog.setHeaderText(null);
 
         VBox root = new VBox(0);
-        root.setPrefWidth(480);
+        root.setPrefWidth(500);
 
         // Header
         HBox header = new HBox(12);
@@ -487,18 +484,18 @@ public class QuestionController {
                 "-fx-background-color:linear-gradient(to right,#7C3AED,#6C63FF);" +
                         "-fx-padding:20 24;");
         Label ico = new Label("🤖");
-        ico.setStyle("-fx-font-size:28px;");
-        VBox hInfo = new VBox(4);
-        Label hTitre = new Label("Générateur de QCM par IA");
-        hTitre.setStyle(
-                "-fx-font-size:17px;-fx-font-weight:bold;-fx-text-fill:white;");
-        Label hSous = new Label("Groq LLaMA — Génération automatique de questions");
-        hSous.setStyle("-fx-font-size:11px;-fx-text-fill:rgba(255,255,255,0.75);");
-        hInfo.getChildren().addAll(hTitre, hSous);
+        ico.setStyle("-fx-font-size:26px;");
+        VBox hInfo = new VBox(3);
+        Label hT = new Label("Générateur de questions par IA");
+        hT.setStyle(
+                "-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:white;");
+        Label hS = new Label("Groq LLaMA — QCM, Oral, Texte libre");
+        hS.setStyle("-fx-font-size:11px;-fx-text-fill:rgba(255,255,255,0.75);");
+        hInfo.getChildren().addAll(hT, hS);
         header.getChildren().addAll(ico, hInfo);
 
-        VBox body = new VBox(16);
-        body.setPadding(new Insets(22, 24, 22, 24));
+        VBox body = new VBox(14);
+        body.setPadding(new Insets(20, 24, 20, 24));
         body.setStyle("-fx-background-color:#F8F9FD;");
 
         // Thème
@@ -507,12 +504,31 @@ public class QuestionController {
         themeLbl.setStyle(
                 "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
         TextField fieldTheme = new TextField();
-        fieldTheme.setPromptText("Ex: conjugaison du présent, vocabulaire des couleurs...");
+        fieldTheme.setPromptText("Ex: conjugaison du présent, vocabulaire...");
         fieldTheme.setStyle(
                 "-fx-background-color:white;-fx-border-color:#E5E7EB;" +
                         "-fx-border-radius:10;-fx-background-radius:10;" +
                         "-fx-padding:10 14;-fx-font-size:13px;");
         themeBox.getChildren().addAll(themeLbl, fieldTheme);
+
+        // Type de question
+        VBox typeBox = new VBox(5);
+        Label typeLbl = new Label("TYPE DE QUESTION *");
+        typeLbl.setStyle(
+                "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
+        ComboBox<String> comboTypeQ = new ComboBox<>();
+        comboTypeQ.getItems().addAll(
+                "qcm — Choix multiple",
+                "oral — Répétition orale",
+                "texte_libre — Rédaction libre",
+                "mixte — Mélange des 3 types"
+        );
+        comboTypeQ.setValue("qcm — Choix multiple");
+        comboTypeQ.setMaxWidth(Double.MAX_VALUE);
+        comboTypeQ.setStyle(
+                "-fx-background-color:white;-fx-border-color:#E5E7EB;" +
+                        "-fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;");
+        typeBox.getChildren().addAll(typeLbl, comboTypeQ);
 
         // Ligne Langue + Niveau + Nombre
         HBox row = new HBox(12);
@@ -522,8 +538,7 @@ public class QuestionController {
         langueLbl.setStyle(
                 "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
         ComboBox<String> comboLangueIA = new ComboBox<>();
-        comboLangueIA.getItems().addAll(
-                "Français", "English", "Español", "Deutsch");
+        comboLangueIA.getItems().addAll("Français", "English", "Español", "Deutsch");
         comboLangueIA.setValue("Français");
         comboLangueIA.setMaxWidth(Double.MAX_VALUE);
         comboLangueIA.setStyle(
@@ -537,7 +552,7 @@ public class QuestionController {
         niveauLbl.setStyle(
                 "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
         ComboBox<String> comboNiveauIA = new ComboBox<>();
-        comboNiveauIA.getItems().addAll("A1", "A2", "B1", "B2", "C1", "C2");
+        comboNiveauIA.getItems().addAll("A1","A2","B1","B2","C1","C2");
         comboNiveauIA.setValue("A1");
         comboNiveauIA.setMaxWidth(Double.MAX_VALUE);
         comboNiveauIA.setStyle(
@@ -547,12 +562,12 @@ public class QuestionController {
         HBox.setHgrow(niveauBox, Priority.ALWAYS);
 
         VBox nombreBox = new VBox(5);
-        Label nombreLbl = new Label("NOMBRE (1-10)");
+        Label nombreLbl = new Label("NOMBRE");
         nombreLbl.setStyle(
                 "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#9CA3AF;");
-        Spinner<Integer> spinnerNombre = new Spinner<>(1, 10, 5);
-        spinnerNombre.setPrefWidth(90);
+        Spinner<Integer> spinnerNombre = new Spinner<>(1, 10, 3);
         spinnerNombre.setStyle("-fx-font-size:13px;");
+        spinnerNombre.setPrefWidth(80);
         nombreBox.getChildren().addAll(nombreLbl, spinnerNombre);
 
         row.getChildren().addAll(langueBox, niveauBox, nombreBox);
@@ -573,7 +588,8 @@ public class QuestionController {
         comboTestIA.setButtonCell(new ListCell<>() {
             @Override protected void updateItem(Test t, boolean empty) {
                 super.updateItem(t, empty);
-                setText(empty || t == null ? "Sélectionner un test..." : t.getTitre());
+                setText(empty || t == null
+                        ? "Sélectionner un test..." : t.getTitre());
             }
         });
         comboTestIA.setMaxWidth(Double.MAX_VALUE);
@@ -582,11 +598,12 @@ public class QuestionController {
                         "-fx-border-radius:10;-fx-background-radius:10;-fx-font-size:13px;");
         testBox.getChildren().addAll(testLbl, comboTestIA);
 
-        body.getChildren().addAll(themeBox, row, testBox);
+        body.getChildren().addAll(themeBox, typeBox, row, testBox);
         root.getChildren().addAll(header, body);
 
         dialog.getDialogPane().setContent(root);
-        dialog.getDialogPane().setStyle("-fx-background-color:#F8F9FD;-fx-padding:0;");
+        dialog.getDialogPane().setStyle(
+                "-fx-background-color:#F8F9FD;-fx-padding:0;");
 
         ButtonType btnGenerer = new ButtonType(
                 "🚀 Générer", ButtonBar.ButtonData.OK_DONE);
@@ -601,43 +618,45 @@ public class QuestionController {
 
         dialog.setResultConverter(bt -> {
             if (bt == btnGenerer) {
-                Map<String, String> params = new HashMap<>();
-                params.put("theme",  fieldTheme.getText().trim());
-                params.put("langue", comboLangueIA.getValue());
-                params.put("niveau", comboNiveauIA.getValue());
-                params.put("nombre", String.valueOf(spinnerNombre.getValue()));
-                params.put("testId", comboTestIA.getValue() != null
+                Map<String, String> p = new HashMap<>();
+                p.put("theme",  fieldTheme.getText().trim());
+                // Extraire juste la clé avant " — "
+                String typeVal = comboTypeQ.getValue();
+                p.put("type",   typeVal.split(" — ")[0]);
+                p.put("langue", comboLangueIA.getValue());
+                p.put("niveau", comboNiveauIA.getValue());
+                p.put("nombre", String.valueOf(spinnerNombre.getValue()));
+                p.put("testId", comboTestIA.getValue() != null
                         ? String.valueOf(comboTestIA.getValue().getId()) : "");
-                return params;
+                return p;
             }
             return null;
         });
 
         dialog.showAndWait().ifPresent(params -> {
-            String theme  = params.get("theme");
-            String langue = params.get("langue");
-            String niveau = params.get("niveau");
-            int    nombre = Integer.parseInt(params.get("nombre"));
-            String testId = params.get("testId");
-
-            if (theme.isEmpty()) {
+            if (params.get("theme").isEmpty()) {
                 showAlert(Alert.AlertType.WARNING,
                         "Validation", "Le thème est obligatoire.");
                 return;
             }
-            if (testId.isEmpty()) {
+            if (params.get("testId").isEmpty()) {
                 showAlert(Alert.AlertType.WARNING,
                         "Validation", "Sélectionnez un test cible.");
                 return;
             }
-
-            lancerGenerationIA(theme, langue, niveau, nombre,
-                    Integer.parseInt(testId));
+            lancerGenerationIA(
+                    params.get("theme"),
+                    params.get("langue"),
+                    params.get("niveau"),
+                    Integer.parseInt(params.get("nombre")),
+                    params.get("type"),
+                    Integer.parseInt(params.get("testId"))
+            );
         });
     }
 
     private void lancerGenerationIA(String theme, String langue,
-                                    String niveau, int nombre, int testId) {
+                                    String niveau, int nombre, String type, int testId) {
 
         // Créer un Stage personnalisé pour la progression
         Stage progressStage = new Stage();
@@ -694,7 +713,7 @@ public class QuestionController {
         generationThread[0] = new Thread(() -> {
             try {
                 List<AIQuizGeneratorService.QuestionGeneree> questions =
-                        aiQuizService.generer(theme, langue, niveau, nombre);
+                        aiQuizService.generer(theme, langue, niveau, nombre, type);
 
                 Platform.runLater(() -> {
                     progressStage.close();
@@ -727,86 +746,112 @@ public class QuestionController {
         }
 
         Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("✅ Questions générées — Validation");
+        dialog.setTitle("✅ Prévisualisation — " + questions.size() + " question(s)");
         dialog.setHeaderText(null);
 
         VBox root = new VBox(0);
-        root.setPrefWidth(640);
-        root.setMaxHeight(600);
+        root.setPrefWidth(660);
 
         // Header
         HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setStyle(
                 "-fx-background-color:linear-gradient(to right,#059669,#10B981);" +
-                        "-fx-padding:18 24;");
-        Label ico = new Label("✅");
-        ico.setStyle("-fx-font-size:24px;");
-        VBox hInfo = new VBox(3);
-        Label hT = new Label(questions.size() + " questions générées sur « " + theme + " »");
+                        "-fx-padding:16 24;");
+        Label hT = new Label("✅ " + questions.size()
+                + " questions générées sur « " + theme + " »");
         hT.setStyle(
-                "-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:white;");
-        Label hS = new Label(
-                "Vérifiez et validez avant d'insérer en base de données");
-        hS.setStyle("-fx-font-size:11px;-fx-text-fill:rgba(255,255,255,0.8);");
-        hInfo.getChildren().addAll(hT, hS);
-        header.getChildren().addAll(ico, hInfo);
+                "-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:white;");
+        header.getChildren().add(hT);
 
-        // Liste scrollable des questions
-        VBox listeQ = new VBox(12);
-        listeQ.setStyle("-fx-padding:20 24;");
+        VBox listeQ = new VBox(10);
+        listeQ.setStyle("-fx-padding:16 20;-fx-background-color:#F8F9FD;");
 
         for (int i = 0; i < questions.size(); i++) {
             AIQuizGeneratorService.QuestionGeneree q = questions.get(i);
             VBox qCard = new VBox(8);
-            qCard.setStyle(
-                    "-fx-background-color:white;-fx-background-radius:12;" +
-                            "-fx-border-color:#E8EAF0;-fx-border-radius:12;" +
-                            "-fx-border-width:1;-fx-padding:14 16;");
 
-            HBox qHeader = new HBox(8);
-            qHeader.setAlignment(Pos.CENTER_LEFT);
+            // Couleur selon type
+            String borderColor = switch (q.type()) {
+                case "oral"         -> "#BBF7D0";
+                case "texte_libre"  -> "#FDE68A";
+                default             -> "#DDD6FE";
+            };
+            String bgColor = switch (q.type()) {
+                case "oral"         -> "#F0FDF4";
+                case "texte_libre"  -> "#FFFBEB";
+                default             -> "#F5F3FF";
+            };
+            qCard.setStyle(
+                    "-fx-background-color:white;-fx-background-radius:10;" +
+                            "-fx-border-color:" + borderColor + ";-fx-border-radius:10;" +
+                            "-fx-border-width:1.5;-fx-padding:12 14;");
+
+            HBox qHead = new HBox(8);
+            qHead.setAlignment(Pos.CENTER_LEFT);
+
             Label numLbl = new Label("Q" + (i + 1));
             numLbl.setStyle(
-                    "-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#7C3AED;" +
+                    "-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#7C3AED;" +
                             "-fx-background-color:#F5F3FF;-fx-background-radius:20;" +
-                            "-fx-padding:3 8;");
+                            "-fx-padding:2 7;");
+
+            String typeIcon = switch (q.type()) {
+                case "oral"        -> "🎤";
+                case "texte_libre" -> "✍️";
+                default            -> "🔘";
+            };
+            Label typeLabel = new Label(typeIcon + " " + q.type().toUpperCase()
+                    + " — " + q.scoreMax() + " pts");
+            typeLabel.setStyle(
+                    "-fx-font-size:10px;-fx-font-weight:bold;" +
+                            "-fx-background-color:" + bgColor + ";" +
+                            "-fx-background-radius:20;-fx-padding:2 8;" +
+                            "-fx-text-fill:" + (q.type().equals("oral") ? "#059669"
+                            : q.type().equals("texte_libre") ? "#D97706" : "#7C3AED") + ";");
+
             Label enonceLbl = new Label(q.enonce());
             enonceLbl.setWrapText(true);
             enonceLbl.setStyle(
                     "-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#1A1D2E;");
             HBox.setHgrow(enonceLbl, Priority.ALWAYS);
-            qHeader.getChildren().addAll(numLbl, enonceLbl);
+            qHead.getChildren().addAll(numLbl, typeLabel, enonceLbl);
 
-            VBox repsBox = new VBox(4);
-            repsBox.setStyle("-fx-padding:4 0 0 12;");
-            for (AIQuizGeneratorService.ReponseGeneree r : q.reponses()) {
-                HBox rLine = new HBox(8);
-                rLine.setAlignment(Pos.CENTER_LEFT);
-                Label rIco = new Label(r.isCorrecte() ? "✅" : "○");
-                rIco.setStyle("-fx-font-size:12px;");
-                Label rTxt = new Label(r.contenu());
-                rTxt.setStyle(
-                        "-fx-font-size:12px;-fx-text-fill:" +
-                                (r.isCorrecte() ? "#059669" : "#6B7280") + ";" +
-                                (r.isCorrecte() ? "-fx-font-weight:bold;" : ""));
-                rLine.getChildren().addAll(rIco, rTxt);
-                repsBox.getChildren().add(rLine);
+            qCard.getChildren().add(qHead);
+
+            // Afficher les réponses pour QCM seulement
+            if ("qcm".equals(q.type()) && !q.reponses().isEmpty()) {
+                VBox repsBox = new VBox(3);
+                repsBox.setStyle("-fx-padding:4 0 0 16;");
+                for (AIQuizGeneratorService.ReponseGeneree r : q.reponses()) {
+                    Label rLbl = new Label(
+                            (r.isCorrecte() ? "✅ " : "○  ") + r.contenu());
+                    rLbl.setStyle(
+                            "-fx-font-size:12px;-fx-text-fill:" +
+                                    (r.isCorrecte() ? "#059669" : "#6B7280") + ";" +
+                                    (r.isCorrecte() ? "-fx-font-weight:bold;" : ""));
+                    repsBox.getChildren().add(rLbl);
+                }
+                qCard.getChildren().add(repsBox);
+            } else if (!"qcm".equals(q.type())) {
+                Label note = new Label(
+                        q.type().equals("oral")
+                                ? "💡 L'étudiant devra répéter cette phrase à voix haute"
+                                : "💡 L'étudiant rédigera librement (corrigé par l'IA)");
+                note.setStyle("-fx-font-size:11px;-fx-text-fill:#9CA3AF;-fx-padding:4 0 0 0;");
+                qCard.getChildren().add(note);
             }
 
-            qCard.getChildren().addAll(qHeader, repsBox);
             listeQ.getChildren().add(qCard);
         }
 
         ScrollPane scroll = new ScrollPane(listeQ);
         scroll.setFitToWidth(true);
-        scroll.setPrefHeight(400);
+        scroll.setPrefHeight(420);
         scroll.setStyle(
-                "-fx-background:transparent;-fx-background-color:#F8F9FD;" +
-                        "-fx-border-color:transparent;");
+                "-fx-background:transparent;-fx-border-color:transparent;");
 
         root.getChildren().addAll(header, scroll);
-
         dialog.getDialogPane().setContent(root);
         dialog.getDialogPane().setStyle(
                 "-fx-background-color:#F8F9FD;-fx-padding:0;");
@@ -815,7 +860,6 @@ public class QuestionController {
                 "💾 Insérer en BD", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes()
                 .addAll(btnInserer, ButtonType.CANCEL);
-
         Button btnI = (Button) dialog.getDialogPane().lookupButton(btnInserer);
         btnI.setStyle(
                 "-fx-background-color:linear-gradient(to right,#059669,#10B981);" +
@@ -823,38 +867,35 @@ public class QuestionController {
                         "-fx-background-radius:10;-fx-padding:10 22;-fx-cursor:hand;");
 
         dialog.setResultConverter(bt -> bt == btnInserer);
-
-        dialog.showAndWait().ifPresent(confirme -> {
-            if (confirme) insererQuestionsEnBD(questions, testId);
+        dialog.showAndWait().ifPresent(ok -> {
+            if (ok) insererQuestionsEnBD(questions, testId);
         });
     }
 
     private void insererQuestionsEnBD(
             List<AIQuizGeneratorService.QuestionGeneree> questions, int testId) {
-        int success = 0;
-        int errors  = 0;
-
+        int success = 0, errors = 0;
         for (AIQuizGeneratorService.QuestionGeneree qg : questions) {
             try {
-                // Insérer la question
-                Question q = new Question(qg.enonce(), "qcm", qg.scoreMax(), testId);
-                service.ajouter(q);
+                service.ajouter(
+                        new Question(qg.enonce(), qg.type(), qg.scoreMax(), testId));
 
-                // Récupérer l'ID de la question insérée
+                // Récupérer la dernière question insérée
                 List<Question> toutes = service.recupererParTest(testId);
                 Question derniere = toutes.get(toutes.size() - 1);
 
-                // Insérer les réponses
-                for (AIQuizGeneratorService.ReponseGeneree rg : qg.reponses()) {
-                    com.example.pijava_fluently.entites.Reponse r =
-                            new com.example.pijava_fluently.entites.Reponse(
-                                    rg.contenu(),
-                                    rg.isCorrecte(),
-                                    rg.isCorrecte() ? qg.scoreMax() : 0,
-                                    java.time.LocalDate.now(),
-                                    derniere.getId()
-                            );
-                    reponseService.ajouter(r);
+                // Insérer les réponses seulement pour QCM
+                if ("qcm".equals(qg.type())) {
+                    for (AIQuizGeneratorService.ReponseGeneree rg : qg.reponses()) {
+                        reponseService.ajouter(
+                                new com.example.pijava_fluently.entites.Reponse(
+                                        rg.contenu(), rg.isCorrecte(),
+                                        rg.isCorrecte() ? qg.scoreMax() : 0,
+                                        java.time.LocalDate.now(),
+                                        derniere.getId()
+                                )
+                        );
+                    }
                 }
                 success++;
             } catch (Exception e) {
@@ -862,16 +903,12 @@ public class QuestionController {
                 errors++;
             }
         }
-
         final int s = success, err = errors;
         Platform.runLater(() -> {
-            if (err == 0) {
-                showAlert(Alert.AlertType.INFORMATION, "✅ Succès",
-                        s + " question(s) et leurs réponses insérées avec succès !");
-            } else {
-                showAlert(Alert.AlertType.WARNING, "⚠️ Partiel",
-                        s + " question(s) insérée(s), " + err + " erreur(s).");
-            }
+            showAlert(err == 0 ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING,
+                    err == 0 ? "✅ Succès" : "⚠️ Partiel",
+                    s + " question(s) insérée(s)" +
+                            (err > 0 ? ", " + err + " erreur(s)." : " !"));
             loadData();
         });
     }

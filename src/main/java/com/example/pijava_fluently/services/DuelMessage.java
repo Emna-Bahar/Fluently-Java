@@ -25,6 +25,7 @@ public class DuelMessage {
     public int     questionIndex;
     public int     reponseId;
     public boolean isCorrect;
+    public int testId; // Ajouter dans DuelMessage
 
     // ── FINISHED ──────────────────────────────────────────────────
     public int scoreFinal;

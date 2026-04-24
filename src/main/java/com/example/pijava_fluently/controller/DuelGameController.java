@@ -13,7 +13,8 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
-
+import java.util.HashMap;
+import java.util.Map;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,8 +56,15 @@ public class DuelGameController {
     private boolean moiATermine = false;
     private boolean advATermine = false;
 
+    // Stockage des réponses pour le détail
+    private List<String> mesReponsesTextes = new ArrayList<>();
+    private List<Integer> mesScoresParQuestion = new ArrayList<>();
+    private List<Boolean> mesReponsesCorrectes = new ArrayList<>();
+
     private final QuestionService questionService = new QuestionService();
     private final ReponseService reponseService = new ReponseService();
+    private int testIdClient = 0;
+    private boolean testTermine = false;
 
     private HomeController homeController;
 
@@ -71,6 +79,12 @@ public class DuelGameController {
         this.client = client;
         this.isHost = (server != null);
 
+        // Réinitialiser les listes
+        mesReponsesTextes.clear();
+        mesScoresParQuestion.clear();
+        mesReponsesCorrectes.clear();
+        testTermine = false;
+
         labelNomMoi.setText("🏆 " + user.getPrenom());
 
         if (isHost) server.onMessageReceived = this::handleMessage;
@@ -79,7 +93,6 @@ public class DuelGameController {
         if (isHost) {
             chargerEtEnvoyerQuestions();
         }
-        // Client attendra le message QUESTIONS
     }
 
     private void chargerEtEnvoyerQuestions() {
@@ -113,6 +126,7 @@ public class DuelGameController {
             msg.questions = questions;
             msg.scoreMaxTotal = scoreMaxTotal;
             msg.testTitre = test.getTitre();
+            msg.testId = test.getId();  // ← Envoyer l'ID du test
             sendMessage(msg);
 
             afficherQuestion(0);
@@ -130,21 +144,24 @@ public class DuelGameController {
         }
 
         indexCourant = idx;
-        aRepondu     = false;
+        aRepondu = false;
         DuelMessage.QuestionDto q = questions.get(idx);
 
-        labelProgression.setText("Question " + (idx+1) + "/" + questions.size());
+        labelProgression.setText("Question " + (idx + 1) + "/" + questions.size());
         labelQuestion.setText(q.enonce);
         vboxReponses.getChildren().clear();
 
         switch (q.type) {
-            case "qcm"         -> afficherQCM(q, idx);
-            case "oral"        -> afficherOral(q, idx);
+            case "qcm" -> afficherQCM(q, idx);
+            case "oral" -> afficherOral(q, idx);
             case "texte_libre" -> afficherTexteLibre(q, idx);
-            default            -> afficherQCM(q, idx);
+            default -> afficherQCM(q, idx);
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    //  QCM
+    // ═══════════════════════════════════════════════════════════════
     private void afficherQCM(DuelMessage.QuestionDto q, int idx) {
         ToggleGroup group = new ToggleGroup();
         for (DuelMessage.ReponseDto r : q.reponses) {
@@ -164,13 +181,20 @@ public class DuelGameController {
                 if (!selected || aRepondu) return;
                 aRepondu = true;
                 boolean correct = r.isCorrect;
+                int pts = correct ? q.scoreMax : 0;
                 if (correct) scoreMoi += q.scoreMax;
+
+                // Stocker pour le détail
+                mesReponsesTextes.add(r.contenuRep);
+                mesScoresParQuestion.add(pts);
+                mesReponsesCorrectes.add(correct);
+
                 card.setStyle(
                         "-fx-background-color:" + (correct ? "#F0FDF4" : "#FFF1F2") + ";" +
                                 "-fx-background-radius:12;-fx-border-color:" +
                                 (correct ? "#16A34A" : "#DC2626") + ";" +
                                 "-fx-border-radius:12;-fx-border-width:2;");
-                group.getToggles().forEach(t -> ((RadioButton)t).setDisable(true));
+                group.getToggles().forEach(t -> ((RadioButton) t).setDisable(true));
                 stopTimer();
                 envoyerReponse(idx, r.id, correct);
                 mettreAJourScores();
@@ -180,55 +204,234 @@ public class DuelGameController {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    //  ORAL avec microphone + saisie manuelle
+    // ═══════════════════════════════════════════════════════════════
     private void afficherOral(DuelMessage.QuestionDto q, int idx) {
-        VBox box = new VBox(12);
-        box.setStyle("-fx-padding:16;-fx-background-color:#F8F7FF;" +
-                "-fx-background-radius:12;");
+        VBox box = new VBox(16);
+        box.setStyle(
+                "-fx-background-color:#F8F7FF;-fx-background-radius:14;" +
+                        "-fx-border-color:#DDD6FE;-fx-border-radius:14;" +
+                        "-fx-border-width:1;-fx-padding:20;");
 
-        Label inst = new Label("🎤 Lisez à voix haute, puis saisissez ce que vous avez dit");
-        inst.setStyle("-fx-font-size:13px;-fx-text-fill:#6C63FF;-fx-font-weight:bold;");
-        inst.setWrapText(true);
+        Label inst = new Label("🎤 Lisez la phrase à voix haute");
+        inst.setStyle("-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#6C63FF;");
 
-        TextField champOral = new TextField();
-        champOral.setPromptText("Tapez votre réponse orale ici...");
-        champOral.setStyle("-fx-font-size:14px;-fx-padding:10;-fx-background-radius:8;");
+        Label phraseALire = new Label("\"" + q.enonce + "\"");
+        phraseALire.setWrapText(true);
+        phraseALire.setStyle(
+                "-fx-font-size:16px;-fx-font-style:italic;-fx-text-fill:#1A1D2E;" +
+                        "-fx-font-weight:bold;-fx-background-color:white;-fx-background-radius:10;" +
+                        "-fx-border-color:#E8EAF0;-fx-border-radius:10;-fx-border-width:1;-fx-padding:14 18;");
+
+        // Zone de texte pour le résultat de la reconnaissance
+        TextArea textArea = new TextArea();
+        textArea.setPromptText("Le texte reconnu apparaîtra ici...");
+        textArea.setWrapText(true);
+        textArea.setPrefHeight(80);
+        textArea.setEditable(false);
+        textArea.setStyle("-fx-font-size: 14px; -fx-background-radius: 10; -fx-background-color: #FFFFFF;");
+
+        Label labelResultat = new Label();
+        labelResultat.setVisible(false);
+        labelResultat.setManaged(false);
+        labelResultat.setWrapText(true);
+        labelResultat.setStyle("-fx-font-size:13px;-fx-background-radius:10;-fx-padding:10 14;");
+
+        Button btnMicro = new Button("🎤 Enregistrer");
+        btnMicro.setStyle(
+                "-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:14px;" +
+                        "-fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 28;-fx-cursor:hand;");
+
+        Label statusLabel = new Label("Prêt à enregistrer");
+        statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #8A8FA8;");
+
+        // Champ de texte manuel
+        TextField champManuel = new TextField();
+        champManuel.setPromptText("Ou écrivez votre réponse manuellement...");
+        champManuel.setStyle(
+                "-fx-font-size:14px;-fx-padding:10 14;-fx-background-radius:10;" +
+                        "-fx-border-color:#E8EAF0;-fx-border-radius:10;-fx-border-width:1.5;");
 
         Button btnValider = new Button("✅ Valider");
         btnValider.setStyle(
-                "-fx-background-color:#6C63FF;-fx-text-fill:white;" +
-                        "-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20;");
+                "-fx-background-color:#059669;-fx-text-fill:white;-fx-font-weight:bold;" +
+                        "-fx-background-radius:10;-fx-padding:10 20;-fx-cursor:hand;");
 
-        btnValider.setOnAction(e -> {
+        boolean[] enregistrement = {false};
+        SpeechRecognitionService speechService = new SpeechRecognitionService("fr");
+
+        btnMicro.setOnAction(e -> {
             if (aRepondu) return;
-            String texte = champOral.getText().trim();
-            if (texte.isEmpty()) return;
-            aRepondu = true;
 
-            // Évaluation Levenshtein
-            SpeechEvaluationService eval = new SpeechEvaluationService();
-            String status = eval.evaluateAnswer(texte, q.enonce);
-            double pts    = eval.calculateScore(status, q.scoreMax);
-            scoreMoi     += (int) pts;
+            if (!enregistrement[0]) {
+                enregistrement[0] = true;
+                btnMicro.setText("⏹ Arrêter");
+                btnMicro.setStyle(
+                        "-fx-background-color:#EF4444;-fx-text-fill:white;-fx-font-size:14px;" +
+                                "-fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 28;-fx-cursor:hand;");
+                statusLabel.setText("🎙️ Enregistrement en cours... Parlez !");
+                statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #F59E0B; -fx-font-weight: bold;");
+                speechService.startRecording();
 
-            boolean correct = "correct".equals(status) || "partial".equals(status);
-            champOral.setDisable(true);
-            btnValider.setDisable(true);
-            stopTimer();
-            envoyerReponse(idx, -1, correct);
-            mettreAJourScores();
-            passerQuestionSuivante(idx);
+            } else {
+                enregistrement[0] = false;
+                btnMicro.setText("⏳ Analyse...");
+                btnMicro.setDisable(true);
+                statusLabel.setText("🔄 Analyse de votre enregistrement...");
+
+                speechService.stopRecordingAndRecognize().thenAccept(transcription -> {
+                    Platform.runLater(() -> {
+                        if (aRepondu) return;
+
+                        String finalText = transcription;
+                        if (finalText == null || finalText.isEmpty()) {
+                            statusLabel.setText("⚠️ Aucune parole détectée. Réessayez ou écrivez manuellement.");
+                            statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #EF4444;");
+                        } else {
+                            textArea.setText(finalText);
+                            champManuel.setText(finalText);
+                            statusLabel.setText("✅ Enregistrement terminé !");
+                            statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #059669; -fx-font-weight: bold;");
+                        }
+
+                        btnMicro.setText("🎤 Enregistrer");
+                        btnMicro.setStyle(
+                                "-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:14px;" +
+                                        "-fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 28;-fx-cursor:hand;");
+                        btnMicro.setDisable(false);
+                    });
+                });
+            }
         });
 
-        box.getChildren().addAll(inst, champOral, btnValider);
+        // Validation manuelle + envoi au serveur
+        btnValider.setOnAction(ev -> {
+            if (aRepondu) return;
+            String texte = champManuel.getText().trim();
+            if (texte.isEmpty()) {
+                statusLabel.setText("⚠️ Veuillez écrire une réponse !");
+                return;
+            }
+            traiterReponseOrale(texte, q, idx, labelResultat, btnMicro, champManuel, btnValider, textArea, statusLabel);
+        });
+
+        // Séparateur
+        HBox separateur = new HBox(10);
+        separateur.setAlignment(Pos.CENTER);
+        Separator sep1 = new Separator();
+        sep1.setPrefWidth(80);
+        HBox.setHgrow(sep1, Priority.ALWAYS);
+        Label ouLabel = new Label("OU");
+        ouLabel.setStyle("-fx-font-size:11px;-fx-text-fill:#C0C7D0;-fx-font-weight:bold;");
+        Separator sep2 = new Separator();
+        HBox.setHgrow(sep2, Priority.ALWAYS);
+        separateur.getChildren().addAll(sep1, ouLabel, sep2);
+
+        VBox manuelBox = new VBox(8);
+        Label manuelLbl = new Label("⌨️ Ou tapez votre réponse directement :");
+        manuelLbl.setStyle("-fx-font-size:12px;-fx-text-fill:#8A8FA8;");
+        manuelBox.getChildren().addAll(manuelLbl, champManuel, btnValider);
+
+        box.getChildren().addAll(inst, phraseALire, textArea, btnMicro, statusLabel, labelResultat, separateur, manuelBox);
         vboxReponses.getChildren().add(box);
     }
 
+    private void traiterReponseOrale(
+            String texte,
+            DuelMessage.QuestionDto q,
+            int idx,
+            Label labelResultat,
+            Button btnMicro,
+            TextField champManuel,
+            Button btnValider,
+            TextArea textArea,
+            Label statusLabel) {
+
+        if (aRepondu) return;
+        aRepondu = true;
+
+        // Désactiver les contrôles
+        btnMicro.setDisable(true);
+        champManuel.setDisable(true);
+        btnValider.setDisable(true);
+        if (textArea != null) textArea.setEditable(false);
+        stopTimer();
+
+        // Évaluation Levenshtein
+        SpeechEvaluationService eval = new SpeechEvaluationService();
+        String status = eval.evaluateAnswer(texte, q.enonce);
+        double pts = eval.calculateScore(status, q.scoreMax);
+        int scoreObtenu = (int) pts;
+        scoreMoi += scoreObtenu;
+
+        // Stocker pour le détail
+        mesReponsesTextes.add(texte);
+        mesScoresParQuestion.add(scoreObtenu);
+        mesReponsesCorrectes.add("correct".equals(status));
+
+        // Afficher le résultat avec la similarité
+        double similarity = eval.calculateSimilarity(texte, q.enonce);
+        boolean correct = "correct".equals(status);
+        boolean partial = "partial".equals(status);
+
+        labelResultat.setVisible(true);
+        labelResultat.setManaged(true);
+        statusLabel.setVisible(false);
+        statusLabel.setManaged(false);
+
+        String expectedText = q.enonce;
+
+        if (correct) {
+            labelResultat.setText("✅ Excellent !\n" +
+                    "▶ Votre réponse : \"" + texte + "\"\n" +
+                    "🎯 Attendu : \"" + expectedText + "\"\n" +
+                    "📊 Similarité : " + String.format("%.1f", similarity * 100) + "%\n" +
+                    "⭐ Score : " + scoreObtenu + "/" + q.scoreMax + " pts");
+            labelResultat.setStyle(
+                    "-fx-font-size:12px;-fx-text-fill:#059669;" +
+                            "-fx-background-color:#F0FDF4;-fx-background-radius:10;" +
+                            "-fx-border-color:#BBF7D0;-fx-border-radius:10;" +
+                            "-fx-border-width:1;-fx-padding:10 14;");
+        } else if (partial) {
+            labelResultat.setText("🟡 Partiellement correct\n" +
+                    "▶ Votre réponse : \"" + texte + "\"\n" +
+                    "🎯 Attendu : \"" + expectedText + "\"\n" +
+                    "📊 Similarité : " + String.format("%.1f", similarity * 100) + "%\n" +
+                    "⭐ Score : " + scoreObtenu + "/" + q.scoreMax + " pts");
+            labelResultat.setStyle(
+                    "-fx-font-size:12px;-fx-text-fill:#D97706;" +
+                            "-fx-background-color:#FFFBEB;-fx-background-radius:10;" +
+                            "-fx-border-color:#FDE68A;-fx-border-radius:10;" +
+                            "-fx-border-width:1;-fx-padding:10 14;");
+        } else {
+            labelResultat.setText("❌ Incorrect\n" +
+                    "▶ Votre réponse : \"" + texte + "\"\n" +
+                    "🎯 Attendu : \"" + expectedText + "\"\n" +
+                    "📊 Similarité : " + String.format("%.1f", similarity * 100) + "%\n" +
+                    "⭐ Score : 0/" + q.scoreMax + " pts");
+            labelResultat.setStyle(
+                    "-fx-font-size:12px;-fx-text-fill:#DC2626;" +
+                            "-fx-background-color:#FEF2F2;-fx-background-radius:10;" +
+                            "-fx-border-color:#FECACA;-fx-border-radius:10;" +
+                            "-fx-border-width:1;-fx-padding:10 14;");
+        }
+
+        // Envoyer au serveur et passer à la suite
+        envoyerReponse(idx, -1, correct || partial);
+        mettreAJourScores();
+        passerQuestionSuivante(idx);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  TEXTE LIBRE
+    // ═══════════════════════════════════════════════════════════════
     private void afficherTexteLibre(DuelMessage.QuestionDto q, int idx) {
         VBox box = new VBox(12);
         box.setStyle("-fx-padding:16;-fx-background-color:#F8F9FF;" +
                 "-fx-background-radius:12;");
 
-        Label inst = new Label("✍️ Rédigez votre réponse (sera corrigée par l'IA après le duel)");
+        Label inst = new Label("✍️ Rédigez votre réponse (sera corrigée par l'IA)");
         inst.setStyle("-fx-font-size:13px;-fx-text-fill:#374151;-fx-font-weight:bold;");
         inst.setWrapText(true);
 
@@ -243,39 +446,131 @@ public class DuelGameController {
         textArea.textProperty().addListener((obs, o, n) ->
                 compteur.setText(n.length() + " caractères"));
 
+        Label statusLabel = new Label();
+        statusLabel.setWrapText(true);
+        statusLabel.setStyle("-fx-font-size:12px;-fx-padding:8 0;");
+        statusLabel.setVisible(false);
+
+        ProgressIndicator progress = new ProgressIndicator();
+        progress.setPrefSize(30, 30);
+        progress.setVisible(false);
+
         Button btnValider = new Button("✅ Valider");
         btnValider.setStyle(
                 "-fx-background-color:#059669;-fx-text-fill:white;" +
                         "-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:10 20;");
 
+        HBox progressBox = new HBox(10, progress, statusLabel);
+        progressBox.setAlignment(Pos.CENTER_LEFT);
+        progressBox.setVisible(false);
+
         btnValider.setOnAction(e -> {
             if (aRepondu) return;
             String texte = textArea.getText().trim();
-            if (texte.isEmpty()) return;
+            if (texte.isEmpty()) {
+                statusLabel.setText("⚠️ Veuillez écrire une réponse");
+                statusLabel.setVisible(true);
+                return;
+            }
+
             aRepondu = true;
-
-            // Score basique longueur (correction IA différée, pas en duel)
-            int pts = texte.length() >= 30 ? q.scoreMax : q.scoreMax / 2;
-            scoreMoi += pts;
-
             textArea.setDisable(true);
             btnValider.setDisable(true);
+            progressBox.setVisible(true);
+            progress.setVisible(true);
+            statusLabel.setVisible(true);
+            statusLabel.setText("🤖 L'IA analyse votre réponse...");
+
             stopTimer();
-            envoyerReponse(idx, -1, pts > 0);
-            mettreAJourScores();
-            passerQuestionSuivante(idx);
+
+            // Appeler l'IA en arrière-plan
+            new Thread(() -> {
+                try {
+                    AITextCorrectionService aiService = new AITextCorrectionService();
+                    Map<String, Object> correction = aiService.correctFreeText(
+                            texte,
+                            q.enonce,
+                            "Français",
+                            "B1"
+                    );
+
+                    Object scoreObj = correction.get("score");
+                    int iaScore;
+                    if (scoreObj instanceof Integer) {
+                        iaScore = (Integer) scoreObj;
+                    } else if (scoreObj instanceof Double) {
+                        iaScore = ((Double) scoreObj).intValue();
+                    } else if (scoreObj instanceof Number) {
+                        iaScore = ((Number) scoreObj).intValue();
+                    } else {
+                        iaScore = 50;
+                    }
+
+                    double pointsGagnes = (iaScore / 100.0) * q.scoreMax;
+                    int pts = (int) Math.round(pointsGagnes);
+                    scoreMoi += pts;
+
+                    // Stocker pour le détail
+                    mesReponsesTextes.add(texte);
+                    mesScoresParQuestion.add(pts);
+                    mesReponsesCorrectes.add(pts > 0);
+
+                    String commentaire = (String) correction.get("commentaire");
+                    if (commentaire == null) commentaire = "Correction effectuée";
+
+                    final int finalPts = pts;
+                    final String finalCommentaire = commentaire;
+
+                    Platform.runLater(() -> {
+                        progressBox.setVisible(false);
+                        Label feedback = new Label("📝 Score IA: " + finalPts + "/" + q.scoreMax + " pts\n" +
+                                "💬 " + finalCommentaire);
+                        feedback.setStyle("-fx-font-size:12px;-fx-text-fill:#6C63FF;-fx-padding:8 0;-fx-wrap-text:true;");
+                        feedback.setWrapText(true);
+                        box.getChildren().add(feedback);
+
+                        envoyerReponse(idx, -1, finalPts > 0);
+                        mettreAJourScores();
+                        passerQuestionSuivante(idx);
+                    });
+
+                } catch (Exception ex) {
+                    LoggerUtil.error("Erreur correction IA", ex);
+                    // Fallback : score basé sur la longueur
+                    int pts = texte.length() >= 30 ? q.scoreMax : (texte.length() >= 15 ? q.scoreMax / 2 : 0);
+                    scoreMoi += pts;
+
+                    mesReponsesTextes.add(texte);
+                    mesScoresParQuestion.add(pts);
+                    mesReponsesCorrectes.add(pts > 0);
+
+                    Platform.runLater(() -> {
+                        progressBox.setVisible(false);
+                        Label feedback = new Label("⚠️ Correction IA indisponible. Score basé sur la longueur: " + pts + "/" + q.scoreMax + " pts");
+                        feedback.setStyle("-fx-font-size:12px;-fx-text-fill:#D97706;-fx-padding:8 0;-fx-wrap-text:true;");
+                        feedback.setWrapText(true);
+                        box.getChildren().add(feedback);
+
+                        envoyerReponse(idx, -1, pts > 0);
+                        mettreAJourScores();
+                        passerQuestionSuivante(idx);
+                    });
+                }
+            }).start();
         });
 
-        box.getChildren().addAll(inst, textArea, compteur, btnValider);
+        box.getChildren().addAll(inst, textArea, compteur, btnValider, progressBox);
         vboxReponses.getChildren().add(box);
     }
 
-    // Méthodes utilitaires extraites
+    // ═══════════════════════════════════════════════════════════════
+    //  MÉTHODES UTILITAIRES
+    // ═══════════════════════════════════════════════════════════════
     private void envoyerReponse(int idx, int reponseId, boolean correct) {
         DuelMessage msg = new DuelMessage(DuelMessage.Action.ANSWER);
         msg.questionIndex = idx;
-        msg.reponseId     = reponseId;
-        msg.isCorrect     = correct;
+        msg.reponseId = reponseId;
+        msg.isCorrect = correct;
         sendMessage(msg);
     }
 
@@ -324,6 +619,7 @@ public class DuelGameController {
             case QUESTIONS -> {
                 this.questions = msg.questions;
                 this.scoreMaxTotal = msg.scoreMaxTotal;
+                this.testIdClient = msg.testId;
                 labelTitre.setText("⚔️ Duel — " + msg.testTitre);
                 afficherQuestion(0);
                 demarrerTimer();
@@ -360,8 +656,14 @@ public class DuelGameController {
         }
 
         if (isHost) {
-            String gagnant = scoreMoi > scoreAdv ? currentUser.getPrenom() + " 🏆"
-                    : scoreAdv > scoreMoi ? "Adversaire 🏆" : "Égalité ! 🤝";
+            String gagnant;
+            if (scoreMoi > scoreAdv) {
+                gagnant = "🏆 " + currentUser.getPrenom() + " a gagné !";
+            } else if (scoreAdv > scoreMoi) {
+                gagnant = "🏆 L'adversaire a gagné !";
+            } else {
+                gagnant = "🤝 Égalité !";
+            }
 
             DuelMessage end = new DuelMessage(DuelMessage.Action.END);
             end.winnerName = gagnant;
@@ -374,19 +676,23 @@ public class DuelGameController {
         if (duelTermine) return;
         duelTermine = true;
         stopTimer();
-        new Thread(() -> {
-            try {
-                LeaderboardService lb = new LeaderboardService();
-                boolean jaGagne  = gagnant.contains(currentUser.getPrenom());
-                boolean egalite  = gagnant.contains("Égalité");
-                int     testId   = (test != null) ? test.getId() : 0;
-                lb.sauvegarderResultatDuel(
-                        currentUser.getId(), testId,
-                        scoreMoi, scoreMaxTotal, jaGagne, egalite);
-            } catch (Exception e) {
-                LoggerUtil.error("Erreur sauvegarde leaderboard", e);
-            }
-        }).start();
+
+        // Sauvegarder dans leaderboard
+        int finalTestId = (test != null) ? test.getId() : testIdClient;
+        if (finalTestId > 0) {
+            new Thread(() -> {
+                try {
+                    LeaderboardService lb = new LeaderboardService();
+                    boolean jaGagne = gagnant.contains(currentUser.getPrenom());
+                    boolean egalite = gagnant.contains("Égalité");
+                    lb.sauvegarderResultatDuel(
+                            currentUser.getId(), finalTestId,
+                            scoreMoi, scoreMaxTotal, jaGagne, egalite);
+                } catch (Exception e) {
+                    LoggerUtil.error("Erreur sauvegarde leaderboard", e);
+                }
+            }).start();
+        }
 
         vboxReponses.setVisible(false);
         vboxReponses.setManaged(false);
@@ -395,12 +701,131 @@ public class DuelGameController {
 
         labelGagnant.setText(gagnant);
         boolean jaGagne = gagnant.contains(currentUser.getPrenom());
-        labelGagnant.setStyle("-fx-font-size:32px;-fx-font-weight:bold;-fx-text-fill:" +
+        labelGagnant.setStyle("-fx-font-size:28px;-fx-font-weight:bold;-fx-text-fill:" +
                 (gagnant.contains("Égalité") ? "#D97706" : jaGagne ? "#059669" : "#EF4444") + ";");
 
-        labelScoreFinMoi.setText(scoreMoi + " pts");
-        labelScoreFinAdv.setText(scoreAdv + " pts");
+        labelScoreFinMoi.setText(scoreMoi + " / " + scoreMaxTotal + " pts");
+        labelScoreFinAdv.setText(scoreAdv + " / " + scoreMaxTotal + " pts");
+
+        // Afficher le détail des réponses
+        afficherDetailReponses();
         mettreAJourScores();
+    }
+
+    /**
+     * Affiche le détail des réponses de l'utilisateur (questions, réponses données, scores)
+     */
+    private void afficherDetailReponses() {
+        if (questions == null || questions.isEmpty()) return;
+
+        VBox detailBox = new VBox(10);
+        detailBox.setStyle("-fx-padding: 20; -fx-background-color: #F8F9FD; -fx-background-radius: 12;");
+        detailBox.setMaxHeight(400);
+        detailBox.setPrefHeight(350);
+
+        ScrollPane scrollPane = new ScrollPane(detailBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPrefHeight(350);
+
+        Label titreDetail = new Label("📋 Détail de vos réponses");
+        titreDetail.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;");
+        detailBox.getChildren().add(titreDetail);
+
+        for (int i = 0; i < questions.size(); i++) {
+            DuelMessage.QuestionDto q = questions.get(i);
+
+            String maReponse = (i < mesReponsesTextes.size()) ? mesReponsesTextes.get(i) : "— Non répondu —";
+            int monScore = (i < mesScoresParQuestion.size()) ? mesScoresParQuestion.get(i) : 0;
+            boolean correct = (i < mesReponsesCorrectes.size()) && mesReponsesCorrectes.get(i);
+
+            // Badge type de question
+            String typeBadge = "";
+            String typeColor = "";
+            switch (q.type) {
+                case "qcm":
+                    typeBadge = "📝 QCM";
+                    typeColor = "#6C63FF";
+                    break;
+                case "oral":
+                    typeBadge = "🎤 Oral";
+                    typeColor = "#EC4899";
+                    break;
+                case "texte_libre":
+                    typeBadge = "✍️ Texte libre";
+                    typeColor = "#059669";
+                    break;
+            }
+
+            VBox card = new VBox(8);
+            card.setStyle("-fx-padding: 12; -fx-background-color: white; -fx-background-radius: 10;" +
+                    "-fx-border-color: #E8EAF0; -fx-border-radius: 10; -fx-border-width: 1;");
+
+            // En-tête
+            HBox header = new HBox(10);
+            header.setAlignment(Pos.CENTER_LEFT);
+
+            Label numLabel = new Label("Q" + (i + 1));
+            numLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #6C63FF; -fx-min-width: 35;");
+
+            Label typeLabel = new Label(typeBadge);
+            typeLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: white;" +
+                    "-fx-background-color:" + typeColor + "; -fx-background-radius: 10; -fx-padding: 3 8;");
+
+            String enonceText = q.enonce;
+            if (enonceText == null) enonceText = "";
+            String shortEnonce = enonceText.length() > 50 ? enonceText.substring(0, 47) + "..." : enonceText;
+            Label enonceLabel = new Label(shortEnonce);
+            enonceLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #374151;");
+            enonceLabel.setWrapText(true);
+            HBox.setHgrow(enonceLabel, Priority.ALWAYS);
+
+            Label scoreLabel = new Label(monScore + "/" + q.scoreMax + " pts");
+            scoreLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: " + (correct ? "#059669" : "#DC2626") + ";");
+
+            header.getChildren().addAll(numLabel, typeLabel, enonceLabel, scoreLabel);
+            card.getChildren().add(header);
+
+            // Votre réponse
+            Label reponseTitle = new Label("Votre réponse :");
+            reponseTitle.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #8A8FA8;");
+
+            Label reponseLabel = new Label(maReponse);
+            reponseLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: " + (correct ? "#059669" : "#DC2626") + ";");
+            reponseLabel.setWrapText(true);
+
+            card.getChildren().addAll(reponseTitle, reponseLabel);
+
+            // Si incorrect ou partiel, afficher la bonne réponse attendue
+            if (!correct && monScore < q.scoreMax) {
+                Label expectedTitle = new Label("✓ Réponse attendue :");
+                expectedTitle.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #059669;");
+
+                Label expectedLabel = new Label(q.enonce);
+                expectedLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #059669;");
+                expectedLabel.setWrapText(true);
+
+                card.getChildren().addAll(expectedTitle, expectedLabel);
+            }
+
+            detailBox.getChildren().add(card);
+        }
+
+        // Ajouter le détail avant le bouton retour
+        Node retourButton = null;
+        for (Node child : panelResultat.getChildren()) {
+            if (child instanceof Button && ((Button) child).getText().contains("Retour")) {
+                retourButton = child;
+                break;
+            }
+        }
+
+        if (retourButton != null) {
+            int index = panelResultat.getChildren().indexOf(retourButton);
+            panelResultat.getChildren().add(index, scrollPane);
+        } else {
+            panelResultat.getChildren().add(scrollPane);
+        }
     }
 
     @FXML
@@ -439,5 +864,13 @@ public class DuelGameController {
     private void sendMessage(DuelMessage msg) {
         if (isHost) server.send(msg);
         else client.send(msg);
+    }
+
+    private void showAlert(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
     }
 }
