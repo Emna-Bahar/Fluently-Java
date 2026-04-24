@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.example.pijava_fluently.services.UserSessionService;
 
 public class TacheController {
 
@@ -901,6 +902,7 @@ public class TacheController {
     private void handleSave() {
         clearErrors();
         if (!validateForm()) return;
+
         try {
             String titre = fieldTitre.getText().trim();
             String desc = fieldDescription.getText().trim();
@@ -910,21 +912,49 @@ public class TacheController {
             int idObj = currentObjectif.getId();
 
             if (selectedTache == null) {
-                service.ajouter(new Tache(titre, desc, dl, statut, priorite, idObj));
-                showSuccessToast("✅ Tâche ajoutée avec succès !");
+                // ════════════════════════════════════════════════════════════════
+                // CRÉATION D'UNE NOUVELLE TÂCHE
+                // ════════════════════════════════════════════════════════════════
+                Tache nouvelleTache = new Tache(titre, desc, dl, statut, priorite, idObj);
+                service.ajouter(nouvelleTache);
+
+                // +10 XP pour avoir commencé une nouvelle tâche
+                UserSessionService.getInstance().recordTaskStarted();
+
+                showSuccessToast("✅ Tâche ajoutée ! +10 XP");
+
             } else {
+                // ════════════════════════════════════════════════════════════════
+                // MODIFICATION D'UNE TÂCHE EXISTANTE
+                // ════════════════════════════════════════════════════════════════
+                boolean etaitTerminee = "Terminée".equals(selectedTache.getStatut());
+                boolean devientTerminee = "Terminée".equals(statut) && !etaitTerminee;
+
+                // Mettre à jour les propriétés
                 selectedTache.setTitre(titre);
                 selectedTache.setDescription(desc);
                 selectedTache.setDateLimite(dl);
                 selectedTache.setStatut(statut);
                 selectedTache.setPriorite(priorite);
+
                 service.modifier(selectedTache);
-                showSuccessToast("✅ Tâche modifiée avec succès !");
+
+                if (devientTerminee) {
+                    // La tâche vient d'être terminée → +50 XP
+                    UserSessionService.getInstance().recordTaskCompleted();
+                    showSuccessToast("✅ Tâche complétée ! +50 XP 🎉");
+                } else {
+                    // Simple modification sans changement de statut "Terminée"
+                    showSuccessToast("✅ Tâche modifiée !");
+                }
             }
+
             handleCancel();
             loadData();
+
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -942,22 +972,27 @@ public class TacheController {
             showAlert(Alert.AlertType.WARNING, "Accès refusé", "Vous ne pouvez supprimer que vos propres tâches.");
             return;
         }
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer la tâche \"" + t.getTitre() + "\" ?", ButtonType.YES, ButtonType.NO);
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Supprimer la tâche \"" + t.getTitre() + "\" ?\n-20 XP",
+                ButtonType.YES, ButtonType.NO);
         confirm.setTitle("Confirmation");
         confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.YES) {
                 try {
                     service.supprimer(t.getId());
+                    // ════════════════════════════════════════════════════════════════
+                    // TÂCHE SUPPRIMÉE → -20 XP (pénalité)
+                    // ════════════════════════════════════════════════════════════════
+                    UserSessionService.getInstance().recordTaskFailed();
                     loadData();
-                    showSuccessToast("🗑 Tâche supprimée !");
+                    showSuccessToast("🗑 Tâche supprimée ! -20 XP");
                 } catch (SQLException e) {
                     showAlert(Alert.AlertType.ERROR, "Erreur BD", e.getMessage());
                 }
             }
         });
     }
-
     // ════════════════════════════════════════════════════════════
     //  DÉTAILS
     // ════════════════════════════════════════════════════════════

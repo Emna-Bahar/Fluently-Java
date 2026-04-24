@@ -3,6 +3,8 @@ package com.example.pijava_fluently.controller;
 import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.NotificationService;
 import com.example.pijava_fluently.services.UserService;
+import com.example.pijava_fluently.services.UserSessionService;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -65,7 +67,21 @@ public class HomeController implements Initializable {
             navUsername.setText(user.getPrenom() + " " + user.getNom());
         }
 
+        // ════════════════════════════════════════════════════════════════
+        //  DÉMARRER LA SESSION UTILISATEUR (TRACKING STREAK)
+        // ════════════════════════════════════════════════════════════════
+        if (user != null) {
+            UserSessionService.getInstance().startSession(user.getId());
+            System.out.println("✅ Session démarrée pour " + user.getPrenom());
+        }
+    }
 
+    // ════════════════════════════════════════════════════════════════════
+    //  MÉTHODE À APPELER À LA FERMETURE DE L'APPLICATION
+    // ════════════════════════════════════════════════════════════════════
+    public void endSessionOnClose() {
+        System.out.println("🏁 Fermeture de l'application - Fin de session");
+        UserSessionService.getInstance().endSession();
     }
 
     // ============================================================
@@ -108,17 +124,50 @@ public class HomeController implements Initializable {
         MenuItem profile  = new MenuItem("Mon Profil");
         MenuItem settings = new MenuItem("Parametres");
         SeparatorMenuItem sep = new SeparatorMenuItem();
+        MenuItem streakBtn = new MenuItem("🔥 Mes Streaks & Progression");
         MenuItem logout   = new MenuItem("Deconnexion");
+
         profile.setOnAction(e  -> showProfile());
         settings.setOnAction(e -> showSettings());
+        streakBtn.setOnAction(e -> openStreakDashboard());
         logout.setOnAction(e   -> handleLogout());
-        userMenu.getItems().addAll(profile, settings, sep, logout);
+
+        userMenu.getItems().addAll(profile, settings, streakBtn, sep, logout);
     }
 
     @FXML
     private void showUserMenu(MouseEvent event) {
         if (userMenu != null && navUserPill != null)
             userMenu.show(navUserPill, event.getScreenX(), event.getScreenY() + 8);
+    }
+
+    // ============================================================
+    // STREAK DASHBOARD
+    // ============================================================
+
+    private void openStreakDashboard() {
+        if (currentUser == null) {
+            showError("Veuillez vous connecter pour voir vos statistiques.");
+            return;
+        }
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/StreakDashboard.fxml")
+            );
+            DialogPane dialogPane = loader.load();
+            StreakDashboardController ctrl = loader.getController();
+            ctrl.setCurrentUser(currentUser);
+
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("🔥 Mes Streaks & Progression");
+            dialog.initOwner(contentArea.getScene().getWindow());
+
+            dialog.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showError("Impossible d'ouvrir le dashboard : " + e.getMessage());
+        }
     }
 
     // ============================================================
@@ -313,6 +362,11 @@ public class HomeController implements Initializable {
     }
 
     private void handleLogout() {
+        // ════════════════════════════════════════════════════════════════
+        //  TERMINER LA SESSION AVANT DÉCONNEXION
+        // ════════════════════════════════════════════════════════════════
+        UserSessionService.getInstance().endSession();
+        System.out.println("👋 Session terminée - Déconnexion");
 
         if (currentUser != null) {
             try {

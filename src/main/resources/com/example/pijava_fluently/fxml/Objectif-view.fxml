@@ -32,43 +32,43 @@
         <fx:include fx:id="gamificationCard"
                     source="Gamificationcard.fxml"/>
 
-        <!-- ══ Barre recherche + Ajouter + Recommandation IA + Notifications ═══════ -->
+        <!-- ══ Barre recherche + Ajouter + Recommandation IA + Notifications + Streaks ═══════ -->
         <HBox spacing="14" alignment="CENTER_LEFT">
             <HBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" maxWidth="400"
                   style="-fx-background-color:#FFFFFF;-fx-background-radius:12;
-                         -fx-border-color:#E2E8F0;-fx-border-radius:12;-fx-border-width:1.5;
-                         -fx-padding:10 16 10 16;
-                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);">
+                 -fx-border-color:#E2E8F0;-fx-border-radius:12;-fx-border-width:1.5;
+                 -fx-padding:10 16 10 16;
+                 -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);">
                 <Label text="🔍" style="-fx-font-size:14px;-fx-text-fill:#9CA3AF;"/>
                 <TextField fx:id="searchField"
                            promptText="Rechercher par titre, description, statut…"
                            onKeyReleased="#handleSearch"
                            style="-fx-background-color:transparent;-fx-border-color:transparent;
-                                  -fx-font-size:13px;-fx-text-fill:#374151;"
+                          -fx-font-size:13px;-fx-text-fill:#374151;"
                            HBox.hgrow="ALWAYS"/>
             </HBox>
 
             <Button text="✚  Ajouter un objectif" onAction="#handleAjouter"
                     style="-fx-background-color:linear-gradient(to right,#6C63FF,#8B5CF6);
-                           -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
-                           -fx-background-radius:12;-fx-padding:12 22 12 22;-fx-cursor:hand;
-                           -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.4),12,0,0,4);"/>
+                   -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+                   -fx-background-radius:12;-fx-padding:12 22 12 22;-fx-cursor:hand;
+                   -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.4),12,0,0,4);"/>
 
             <Button text="🤖  Recommandation IA" onAction="#openRecommendationDialog"
                     style="-fx-background-color:#10B981;-fx-text-fill:white;-fx-font-size:13px;
-                           -fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 22 12 22;
-                           -fx-cursor:hand;-fx-effect:dropshadow(gaussian,rgba(16,185,129,0.4),12,0,0,4);"/>
+                   -fx-font-weight:bold;-fx-background-radius:12;-fx-padding:12 22 12 22;
+                   -fx-cursor:hand;-fx-effect:dropshadow(gaussian,rgba(16,185,129,0.4),12,0,0,4);"/>
 
             <Button fx:id="btnNotifications" text="🔔 Notifications"
                     style="-fx-background-color: #F59E0B; -fx-text-fill: white; -fx-font-size: 13px;
-                           -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 22 12 22;
-                           -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.4),12,0,0,4);">
+                   -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 12 22 12 22;
+                   -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.4),12,0,0,4);">
                 <graphic>
                     <StackPane>
                         <Label fx:id="badgeNotificationCount" text="0"
                                style="-fx-background-color: #EF4444; -fx-text-fill: white;
-                                      -fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 10;
-                                      -fx-padding: 2 5 2 5; -fx-min-width: 18; -fx-alignment: center;"
+                              -fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 10;
+                              -fx-padding: 2 5 2 5; -fx-min-width: 18; -fx-alignment: center;"
                                visible="false" managed="false"
                                StackPane.alignment="TOP_RIGHT">
                             <StackPane.margin>
@@ -78,6 +78,13 @@
                     </StackPane>
                 </graphic>
             </Button>
+
+            <!-- ✅ NOUVEAU : Bouton Streaks -->
+            <Button text="🔥 Mes Streaks" onAction="#openStreakDashboard"
+                    style="-fx-background-color:linear-gradient(to right,#FF6B35,#FF8C42);
+                   -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+                   -fx-background-radius:12;-fx-padding:12 22 12 22;-fx-cursor:hand;
+                   -fx-effect:dropshadow(gaussian,rgba(255,107,53,0.4),12,0,0,4);"/>
         </HBox>
 
         <!-- ══ Formulaire ════════════════════════════════════════════ -->

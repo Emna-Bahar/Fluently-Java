@@ -6,6 +6,7 @@ import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.NotificationService;
 import com.example.pijava_fluently.services.ObjectifService;
 import com.example.pijava_fluently.services.TacheService;
+import com.example.pijava_fluently.services.UserSessionService;
 import com.example.pijava_fluently.utils.MyDatabase;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -763,6 +764,8 @@ public class ObjectifController {
     // ══════════════════════════════════════════════════════════════════════════
 
     public void showDetails(Objectif o) {
+        UserSessionService.getInstance().recordObjectifConsulted();
+
         int colorIdx = (int)(o.getId() % CARD_COLORS.length);
         String c1 = CARD_COLORS[colorIdx][0], c2 = CARD_COLORS[colorIdx][1];
 
@@ -1021,6 +1024,27 @@ public class ObjectifController {
                 }
             }
         });
+    }
+    @FXML
+    private void openStreakDashboard() {
+        if (currentUser == null) {
+            showAlert(Alert.AlertType.WARNING, "Connexion requise", "Veuillez vous connecter pour voir vos statistiques.");
+            return;
+        }
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/fxml/StreakDashboard.fxml"));
+            DialogPane dialogPane = loader.load();
+            StreakDashboardController ctrl = loader.getController();
+            ctrl.setCurrentUser(currentUser);
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("🔥 Mes Streaks & Progression");
+            dialog.initOwner(cardsContainer.getScene().getWindow());
+            dialog.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible d'ouvrir le dashboard : " + e.getMessage());
+        }
     }
 
 }
