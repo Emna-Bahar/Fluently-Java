@@ -1116,4 +1116,24 @@ public class MesTestsController implements Initializable { //initializable
             showAlert("Erreur", "Impossible de charger le leaderboard : " + e.getMessage());
         }
     }
+    @FXML
+    private void handleDashboardIA() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/pijava_fluently/fxml/performance-dashboard.fxml"));
+            Node vue = loader.load();
+            PerformanceDashboardController ctrl = loader.getController();
+            ctrl.setCurrentUser(currentUser);
+
+            if (homeController != null) {
+                homeController.setContent(vue);
+            } else {
+                StackPane contentArea = (StackPane) vboxContenu.getScene().lookup("#contentArea");
+                if (contentArea != null) contentArea.getChildren().setAll(vue);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger le tableau de bord");
+        }
+    }
 }

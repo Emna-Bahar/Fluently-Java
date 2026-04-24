@@ -59,6 +59,12 @@
         <Button text="📊 Performances"
                 onAction="#handlePerformances"
                 style="-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;-fx-background-radius:10;-fx-padding:9 18;-fx-cursor:hand;-fx-border-color:transparent;"/>
+        <Button text="📊 Dashboard IA"
+                onAction="#handleDashboardIA"
+                style="-fx-background-color: #6C63FF; -fx-text-fill: white;
+               -fx-font-size: 13px; -fx-font-weight: bold;
+               -fx-background-radius: 10; -fx-padding: 9 18;
+               -fx-cursor: hand; -fx-border-color: transparent;"/>
     </HBox>
 
     <!-- CONTENU HIÉRARCHIQUE -->
