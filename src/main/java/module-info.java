@@ -10,7 +10,9 @@ module com.example.pijava_fluently {
     requires org.slf4j;
     requires javafx.media;
     requires jdk.jsobject;
-
+    requires com.google.zxing;
+    requires com.google.zxing.javase;
+    requires itextpdf;
 
 
     opens com.example.pijava_fluently to javafx.fxml;

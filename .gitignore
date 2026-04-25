@@ -44,4 +44,5 @@ src/main/resources/config.properties
 
 # Fichiers de log
 *.log
-fraude_logs
+fraude_logs/
+certificats/

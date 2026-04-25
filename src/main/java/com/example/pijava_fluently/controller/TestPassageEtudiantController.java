@@ -357,11 +357,10 @@ public class TestPassageEtudiantController {
         if (timer != null) timer.stop();
         testTermine = true;
 
-        double scoreTotal = 0.0;
+        double scoreTotal    = 0.0;
         double scoreMaxTotal = 0.0;
 
-        // Map pour stocker les scores réels par question (pour l'affichage)
-        double[] scoresObtenus = new double[questions.size()];
+        double[] scoresObtenus     = new double[questions.size()];
         String[] statusParQuestion = new String[questions.size()];
 
         for (int i = 0; i < questions.size(); i++) {
@@ -372,90 +371,63 @@ public class TestPassageEtudiantController {
                 case "qcm": {
                     Reponse choix = (Reponse) reponsesChoisies.get(i);
                     if (choix != null && choix.isCorrect()) {
-                        scoresObtenus[i] = q.getScoreMax();
+                        scoresObtenus[i]     = q.getScoreMax();
                         statusParQuestion[i] = "correct";
                     } else {
-                        scoresObtenus[i] = 0;
+                        scoresObtenus[i]     = 0;
                         statusParQuestion[i] = choix != null ? "incorrect" : "non_repondu";
                     }
                     scoreTotal += scoresObtenus[i];
                     break;
                 }
-
                 case "oral": {
                     String spokenText = (String) reponsesChoisies.get(i);
                     if (spokenText != null && !spokenText.trim().isEmpty()) {
                         SpeechEvaluationService speechEval = new SpeechEvaluationService();
-                        String status = speechEval.evaluateAnswer(spokenText, q.getEnonce());
+                        String status   = speechEval.evaluateAnswer(spokenText, q.getEnonce());
                         double oralScore = speechEval.calculateScore(status, q.getScoreMax());
-                        scoresObtenus[i] = oralScore;
+                        scoresObtenus[i]     = oralScore;
                         statusParQuestion[i] = status;
-                        scoreTotal += oralScore;
-                        LoggerUtil.info("Oral eval",
-                                "spoken", spokenText,
-                                "expected", q.getEnonce(),
-                                "status", status,
-                                "score", oralScore);
+                        scoreTotal          += oralScore;
                     } else {
-                        scoresObtenus[i] = 0;
+                        scoresObtenus[i]     = 0;
                         statusParQuestion[i] = "non_repondu";
                     }
                     break;
                 }
-
                 case "texte_libre": {
                     String texte = (String) reponsesChoisies.get(i);
                     if (texte != null && !texte.trim().isEmpty()) {
                         try {
                             AITextCorrectionService aiService = new AITextCorrectionService();
                             Map<String, Object> correction = aiService.correctFreeText(
-                                    texte,
-                                    q.getEnonce(),
-                                    "Français",
-                                    "B1"
-                            );
+                                    texte, q.getEnonce(), "Français", "B1");
 
-                            // ── Correction du bug de casting ──
                             Object scoreObj = correction.get("score");
                             int iaScore;
-                            if (scoreObj instanceof Integer) {
-                                iaScore = (Integer) scoreObj;
-                            } else if (scoreObj instanceof Double) {
-                                iaScore = ((Double) scoreObj).intValue();
-                            } else if (scoreObj instanceof Number) {
-                                iaScore = ((Number) scoreObj).intValue();
-                            } else {
-                                iaScore = 50; // fallback
-                            }
+                            if      (scoreObj instanceof Integer) iaScore = (Integer) scoreObj;
+                            else if (scoreObj instanceof Double)  iaScore = ((Double) scoreObj).intValue();
+                            else if (scoreObj instanceof Number)  iaScore = ((Number) scoreObj).intValue();
+                            else                                  iaScore = 50;
 
-                            double pointsGagnes = (iaScore / 100.0) * q.getScoreMax();
-                            scoresObtenus[i] = pointsGagnes;
-                            statusParQuestion[i] = "ia_" + iaScore; // ex: "ia_75"
-                            scoreTotal += pointsGagnes;
-
-                            LoggerUtil.info("IA Correction",
-                                    "iaScore", iaScore,
-                                    "pointsGagnes", pointsGagnes,
-                                    "scoreMax", q.getScoreMax(),
-                                    "commentaire", correction.get("commentaire"));
-
+                            double pointsGagnes  = (iaScore / 100.0) * q.getScoreMax();
+                            scoresObtenus[i]     = pointsGagnes;
+                            statusParQuestion[i] = "ia_" + iaScore;
+                            scoreTotal          += pointsGagnes;
                         } catch (Exception e) {
-                            LoggerUtil.error("Error correcting text", e);
-                            // Fallback : 20% pour avoir écrit quelque chose
-                            double fallback = q.getScoreMax() * 0.2;
-                            scoresObtenus[i] = fallback;
+                            double fallback      = q.getScoreMax() * 0.2;
+                            scoresObtenus[i]     = fallback;
                             statusParQuestion[i] = "fallback";
-                            scoreTotal += fallback;
+                            scoreTotal          += fallback;
                         }
                     } else {
-                        scoresObtenus[i] = 0;
+                        scoresObtenus[i]     = 0;
                         statusParQuestion[i] = "non_repondu";
                     }
                     break;
                 }
-
                 default: {
-                    scoresObtenus[i] = 0;
+                    scoresObtenus[i]     = 0;
                     statusParQuestion[i] = "non_repondu";
                 }
             }
@@ -464,16 +436,13 @@ public class TestPassageEtudiantController {
         double pourcentage = scoreMaxTotal > 0
                 ? (scoreTotal / scoreMaxTotal) * 100.0 : 0.0;
 
-        LoggerUtil.info("Final score",
-                "scoreTotal", scoreTotal,
-                "scoreMax", scoreMaxTotal,
-                "pourcentage", pourcentage);
-
         // Sauvegarder en BD
-        LocalDateTime dateFin = LocalDateTime.now();
+        TestPassage passageSauvegarde = null;
         try {
-            TestPassage passage = new TestPassage(
-                    dateDebut, dateFin, pourcentage,
+            passageSauvegarde = new TestPassage(
+                    dateDebut,
+                    LocalDateTime.now(),
+                    pourcentage,
                     (int) Math.round(scoreTotal),
                     (int) Math.round(scoreMaxTotal),
                     "termine",
@@ -481,7 +450,7 @@ public class TestPassageEtudiantController {
                     test.getId(),
                     userId
             );
-            testPassageService.ajouter(passage);
+            testPassageService.ajouter(passageSauvegarde);
         } catch (SQLException e) {
             LoggerUtil.error("Error saving test passage", e);
         }
@@ -490,6 +459,96 @@ public class TestPassageEtudiantController {
                 (int) Math.round(scoreTotal),
                 (int) Math.round(scoreMaxTotal),
                 pourcentage, parTimer);
+
+        // ── Certificat ────────────────────────────────────────────────────
+        boolean estFinDeNiveau = "Test de fin de niveau".equals(test.getType());
+        boolean estReussi      = pourcentage >= 50.0;
+
+        if (estFinDeNiveau && estReussi && passageSauvegarde != null) {
+
+            // Trouver le niveau CECRL depuis le titre du test
+            // (pas besoin d'entité Niveau — on parse directement)
+            String niveauCecrl = extraireNiveauDuTitre(test.getTitre());
+
+            // Trouver la langue depuis les services existants
+            String nomLangue = extraireLangueDuTitre(test.getTitre());
+
+            // Récupérer le prénom/nom de l'utilisateur connecté
+            // userId est déjà disponible dans le controller
+            String prenomNom = recupererPrenomNom();
+
+            // Construire un objet User minimal pour CertificatController
+            User userPourCertificat    = new User();
+            userPourCertificat.setId(userId);
+
+            // Séparer prénom et nom (convention : premier mot = prénom)
+            String[] parts = prenomNom.split(" ", 2);
+            userPourCertificat.setPrenom(parts.length > 0 ? parts[0] : "Étudiant");
+            userPourCertificat.setNom(parts.length > 1 ? parts[1] : "");
+
+            final TestPassage passageFinal = passageSauvegarde;
+            CertificatController certCtrl  = new CertificatController();
+            certCtrl.afficherPopupCertificat(
+                    passageFinal,
+                    test,
+                    userPourCertificat,
+                    niveauCecrl,
+                    nomLangue
+            );
+        }
+    }
+
+// ── Helpers pour extraire niveau et langue sans nouvelles entités ──
+
+    /**
+     * Extrait le code CECRL depuis le titre du test.
+     * Ex : "Test de Fin de niveau Fr A1" → "A1"
+     *      "Tes de fin de niveau A2 Français" → "A2"
+     */
+    private String extraireNiveauDuTitre(String titre) {
+        if (titre == null) return "A1";
+        String t = titre.toUpperCase();
+        if (t.contains("C2")) return "C2";
+        if (t.contains("C1")) return "C1";
+        if (t.contains("B2")) return "B2";
+        if (t.contains("B1")) return "B1";
+        if (t.contains("A2")) return "A2";
+        if (t.contains("A1")) return "A1";
+        return "A1"; // fallback
+    }
+
+    /**
+     * Extrait la langue depuis le titre du test.
+     * Ex : "Test de Fin de niveau Fr A1" → "Français"
+     *      "Test de fin de niveau English A2" → "English"
+     */
+    private String extraireLangueDuTitre(String titre) {
+        if (titre == null) return "Langue";
+        String t = titre.toLowerCase();
+        if (t.contains("english") || t.contains("anglais")) return "English";
+        if (t.contains("espagnol") || t.contains("spanish")) return "Espagnol";
+        if (t.contains("allemand") || t.contains("german"))  return "Allemand";
+        // Français par défaut (fr, français, francais)
+        return "Français";
+    }
+
+    /**
+     * Récupère le prénom + nom depuis la BD via UserService.
+     * Si indisponible, retourne une valeur par défaut.
+     */
+    private String recupererPrenomNom() {
+        try {
+            UserService userService = new UserService();
+            User u = userService.findById(userId);
+            if (u != null) {
+                String prenom = u.getPrenom() != null ? u.getPrenom() : "";
+                String nom    = u.getNom()    != null ? u.getNom()    : "";
+                return (prenom + " " + nom).trim();
+            }
+        } catch (Exception e) {
+            LoggerUtil.error("Impossible de récupérer l'utilisateur", e);
+        }
+        return "Étudiant";
     }
     private void showLoading(String message) {
         javafx.application.Platform.runLater(() -> {
