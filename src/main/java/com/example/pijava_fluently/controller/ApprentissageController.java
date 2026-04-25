@@ -908,49 +908,6 @@ public class ApprentissageController {
         dernierCoursGenere = null;
     }
 
-    @FXML private void genererCours() {
-        if (fieldTheme.getText().trim().isEmpty()) {
-            showAlert("Information", "Veuillez entrer un thème.");
-            return;
-        }
-        if (fieldGrammaire.getText().trim().isEmpty()) {
-            showAlert("Information", "Veuillez entrer un point de grammaire.");
-            return;
-        }
-        if (niveauSelectionne == null) {
-            showAlert("Information", "Veuillez sélectionner un niveau (A1 à C2).");
-            return;
-        }
-        String theme = fieldTheme.getText().trim();
-        String grammaire = fieldGrammaire.getText().trim();
-        String vocabulaire = fieldVocabulaire.getText().trim();
-        int difficulte = convertirNiveauEnDifficulte(niveauSelectionne);
-        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
-        btnExporterPDF.setDisable(true);
-        btnGenererCours.setDisable(true);
-        showLoading(true);
-        apercuCours.clear();
-        new Thread(() -> {
-            try {
-                String coursGenere = iaService.genererCours(langueNom, theme, grammaire,
-                        vocabulaire.isEmpty() ? "vocabulaire général du thème" : vocabulaire, difficulte);
-                Platform.runLater(() -> {
-                    apercuCours.setText(coursGenere);
-                    dernierCoursGenere = coursGenere;
-                    btnExporterPDF.setDisable(false);
-                    btnGenererCours.setDisable(false);
-                    showLoading(false);
-                    showAlert("Succès", "✅ Votre cours personnalisé a été généré par l'IA !");
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    showLoading(false);
-                    btnGenererCours.setDisable(false);
-                    genererCoursLocal(theme, grammaire, vocabulaire, difficulte, langueNom);
-                });
-            }
-        }).start();
-    }
 
     private int convertirNiveauEnDifficulte(String niveau) {
         switch (niveau) {
@@ -964,6 +921,205 @@ public class ApprentissageController {
         }
     }
 
+    // Ajoutez cette variable de classe
+    private HBox loadingOverlay = null;
+
+    // Méthode améliorée pour afficher le chargement avec animation
+    private void showEnhancedLoading(boolean show, String message) {
+        Platform.runLater(() -> {
+            if (show) {
+                // Désactiver les boutons
+                btnGenererCours.setDisable(true);
+                btnExporterPDF.setDisable(true);
+
+                // Créer l'overlay de chargement s'il n'existe pas
+                if (loadingOverlay == null) {
+                    loadingOverlay = new HBox();
+                    loadingOverlay.setAlignment(Pos.CENTER);
+                    loadingOverlay.setSpacing(20);
+                    loadingOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.7); " +
+                            "-fx-background-radius: 20; " +
+                            "-fx-padding: 25 35 25 35; " +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 20, 0, 0, 5);");
+
+                    // ProgressIndicator avec animation
+                    ProgressIndicator progressIndicator = new ProgressIndicator();
+                    progressIndicator.setPrefSize(50, 50);
+                    progressIndicator.setStyle("-fx-progress-color: white;");
+
+                    // Icône animée
+                    Label iconLabel = new Label("🤖");
+                    iconLabel.setStyle("-fx-font-size: 40px;");
+
+                    // Texte de chargement
+                    Label loadingMsg = new Label(message);
+                    loadingMsg.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+                    VBox loadingContent = new VBox(15);
+                    loadingContent.setAlignment(Pos.CENTER);
+                    loadingContent.getChildren().addAll(progressIndicator, iconLabel, loadingMsg);
+
+                    loadingOverlay.getChildren().add(loadingContent);
+
+                    // Ajouter au formulaire
+                    if (formCoursContainer != null && !formCoursContainer.getChildren().contains(loadingOverlay)) {
+                        formCoursContainer.getChildren().add(loadingOverlay);
+                        StackPane.setMargin(loadingOverlay, new Insets(0));
+                    }
+                } else {
+                    // Mettre à jour le message
+                    VBox content = (VBox) loadingOverlay.getChildren().get(0);
+                    Label msgLabel = (Label) content.getChildren().get(2);
+                    msgLabel.setText(message);
+                }
+
+                loadingOverlay.setVisible(true);
+                loadingOverlay.setManaged(true);
+
+                // Animation de pulsation sur l'icône
+                javafx.animation.Timeline timeline = new javafx.animation.Timeline(
+                        new javafx.animation.KeyFrame(javafx.util.Duration.ZERO,
+                                new javafx.animation.KeyValue(loadingOverlay.opacityProperty(), 0)),
+                        new javafx.animation.KeyFrame(javafx.util.Duration.millis(300),
+                                new javafx.animation.KeyValue(loadingOverlay.opacityProperty(), 1))
+                );
+                timeline.play();
+
+            } else {
+                if (loadingOverlay != null) {
+                    // Animation de disparition
+                    javafx.animation.Timeline timeline = new javafx.animation.Timeline(
+                            new javafx.animation.KeyFrame(javafx.util.Duration.ZERO,
+                                    new javafx.animation.KeyValue(loadingOverlay.opacityProperty(), 1)),
+                            new javafx.animation.KeyFrame(javafx.util.Duration.millis(200),
+                                    new javafx.animation.KeyValue(loadingOverlay.opacityProperty(), 0))
+                    );
+                    timeline.setOnFinished(e -> {
+                        loadingOverlay.setVisible(false);
+                        loadingOverlay.setManaged(false);
+                    });
+                    timeline.play();
+                }
+
+                // Réactiver les boutons
+                btnGenererCours.setDisable(false);
+                if (dernierCoursGenere != null && !dernierCoursGenere.isEmpty()) {
+                    btnExporterPDF.setDisable(false);
+                }
+            }
+        });
+    }
+
+    // Méthode pour afficher une alerte stylisée
+    private void showStyledAlert(String title, String message, String type) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+
+            DialogPane dialogPane = alert.getDialogPane();
+
+            // Style selon le type
+            String icon = "✅";
+            String bgColor = "#E8F5E9";
+            String borderColor = "#4CAF50";
+
+            if ("error".equals(type)) {
+                icon = "❌";
+                bgColor = "#FFEBEE";
+                borderColor = "#F44336";
+            } else if ("warning".equals(type)) {
+                icon = "⚠️";
+                bgColor = "#FFF8E1";
+                borderColor = "#FFC107";
+            }
+
+            // Créer un contenu stylisé
+            VBox content = new VBox(15);
+            content.setAlignment(Pos.CENTER);
+            content.setStyle("-fx-background-color: " + bgColor + "; " +
+                    "-fx-background-radius: 15; " +
+                    "-fx-border-color: " + borderColor + "; " +
+                    "-fx-border-radius: 15; " +
+                    "-fx-border-width: 2; " +
+                    "-fx-padding: 20;");
+
+            Label iconLabel = new Label(icon);
+            iconLabel.setStyle("-fx-font-size: 48px;");
+
+            Label titleLabel = new Label(title);
+            titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1E293B;");
+
+            Label msgLabel = new Label(message);
+            msgLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #475569; -fx-wrap-text: true;");
+            msgLabel.setMaxWidth(400);
+            msgLabel.setWrapText(true);
+
+            content.getChildren().addAll(iconLabel, titleLabel, msgLabel);
+
+            dialogPane.setContent(content);
+            dialogPane.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+
+            alert.showAndWait();
+        });
+    }
+
+    // Remplacer la méthode showLoading existante
+    private void showLoading(boolean show) {
+        showEnhancedLoading(show, "🤖 Génération du cours en cours...\n\nVeuillez patienter quelques instants...");
+    }
+
+    // Améliorer la méthode genererCours existante
+    @FXML private void genererCours() {
+        if (fieldTheme.getText().trim().isEmpty()) {
+            showStyledAlert("Champ requis", "Veuillez entrer un thème.", "warning");
+            return;
+        }
+        if (fieldGrammaire.getText().trim().isEmpty()) {
+            showStyledAlert("Champ requis", "Veuillez entrer un point de grammaire.", "warning");
+            return;
+        }
+        if (niveauSelectionne == null) {
+            showStyledAlert("Niveau requis", "Veuillez sélectionner un niveau (A1 à C2).", "warning");
+            return;
+        }
+
+        String theme = fieldTheme.getText().trim();
+        String grammaire = fieldGrammaire.getText().trim();
+        String vocabulaire = fieldVocabulaire.getText().trim();
+        int difficulte = convertirNiveauEnDifficulte(niveauSelectionne);
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+
+        btnExporterPDF.setDisable(true);
+        btnGenererCours.setDisable(true);
+
+        // Afficher le loading amélioré
+        showEnhancedLoading(true, "🤖 Génération du cours en cours...\n\nThème: " + theme + "\nNiveau: " + niveauSelectionne);
+        apercuCours.clear();
+
+        new Thread(() -> {
+            try {
+                String coursGenere = iaService.genererCours(langueNom, theme, grammaire,
+                        vocabulaire.isEmpty() ? "vocabulaire général du thème" : vocabulaire, difficulte);
+                Platform.runLater(() -> {
+                    apercuCours.setText(coursGenere);
+                    dernierCoursGenere = coursGenere;
+                    btnExporterPDF.setDisable(false);
+                    btnGenererCours.setDisable(false);
+                    showEnhancedLoading(false, "");
+                    showStyledAlert("Succès", "✅ Votre cours personnalisé a été généré par l'IA !\n\nVous pouvez maintenant l'exporter en PDF.", "success");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    showEnhancedLoading(false, "");
+                    btnGenererCours.setDisable(false);
+                    genererCoursLocal(theme, grammaire, vocabulaire, difficulte, langueNom);
+                });
+            }
+        }).start();
+    }
+
+    // Améliorer la méthode genererCoursLocal
     private void genererCoursLocal(String theme, String grammaire, String vocabulaire, int difficulte, String langueNom) {
         StringBuilder cours = new StringBuilder();
         cours.append("⚠️ MODE DÉGRADÉ - GÉNÉRATION LOCALE ⚠️\n\n");
@@ -985,22 +1141,13 @@ public class ApprentissageController {
         cours.append("✏️ 4. EXERCICES\n");
         cours.append("1. Créez 5 phrases avec le vocabulaire appris\n");
         cours.append("2. Conjuguez 3 verbes au ").append(grammaire).append("\n");
-        apercuCours.setText(cours.toString());
-        dernierCoursGenere = cours.toString();
-        btnExporterPDF.setDisable(false);
-        showAlert("Information", "Cours local généré (IA non disponible)");
-    }
 
-    private void showLoading(boolean show) {
-        if (loadingIA != null) {
-            loadingIA.setVisible(show);
-            loadingIA.setManaged(show);
-        }
-        if (loadingText != null) {
-            loadingText.setVisible(show);
-            loadingText.setManaged(show);
-            if (show) loadingText.setText("🤖 Génération du cours en cours...");
-        }
+        Platform.runLater(() -> {
+            apercuCours.setText(cours.toString());
+            dernierCoursGenere = cours.toString();
+            btnExporterPDF.setDisable(false);
+            showStyledAlert("Information", "Cours local généré (IA non disponible).\n\nVous pouvez quand même exporter ce cours en PDF.", "warning");
+        });
     }
 
     @FXML private void exporterPDF() {
@@ -1305,6 +1452,7 @@ public class ApprentissageController {
     private void afficherCoursPdfGeneres() {
         if (coursPdfContainer == null) return;
         coursPdfContainer.getChildren().clear();
+
         String langueActuelle = this.langue != null ? this.langue.getNom() : null;
         if (langueActuelle == null) {
             emptyCoursMessage.setVisible(true);
@@ -1314,10 +1462,11 @@ public class ApprentissageController {
             totalCoursCount.setText("0 cours");
             return;
         }
-        // NOUVEAU CHEMIN VERS LE DOSSIER PARTAGÉ
+
         String langueDir = "C:/xampp/htdocs/fluently/public/uploads/cours_pdf/" + langueActuelle + "/";
         File dossierLangue = new File(langueDir);
         List<File> fichiersPdf = new ArrayList<>();
+
         if (dossierLangue.exists() && dossierLangue.isDirectory()) {
             File[] fichiers = dossierLangue.listFiles((dir, name) -> name.toLowerCase().endsWith(".pdf"));
             if (fichiers != null) {
@@ -1325,69 +1474,253 @@ public class ApprentissageController {
                 fichiersPdf.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
             }
         }
+
         int total = fichiersPdf.size();
-        totalCoursCount.setText(total + " cours");
+
+        // Style amélioré pour le compteur
+        totalCoursCount.setStyle("-fx-background-color: linear-gradient(to right, #6C63FF, #8B5CF6); " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-background-radius: 20; " +
+                "-fx-padding: 6 16 6 16; " +
+                "-fx-effect: dropshadow(gaussian, rgba(108,99,255,0.3), 8, 0, 0, 2);");
+        totalCoursCount.setText("📚 " + total + " cours disponibles");
+
         if (total == 0) {
+            // Style amélioré pour le message vide
+            emptyCoursMessage.setStyle("-fx-background-color: #F8FAFC; " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-padding: 40; " +
+                    "-fx-border-color: #E2E8F0; " +
+                    "-fx-border-radius: 20; " +
+                    "-fx-border-width: 1;");
+
+            Label emptyIcon = new Label("📭");
+            emptyIcon.setStyle("-fx-font-size: 48px;");
+            Label emptyTitle = new Label("Aucun cours PDF disponible");
+            emptyTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #475569;");
+            Label emptySubtitle = new Label("Générez votre premier cours personnalisé en remplissant le formulaire ci-dessus.");
+            emptySubtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #94A3B8;");
+
+            emptyCoursMessage.getChildren().clear();
+            emptyCoursMessage.getChildren().addAll(emptyIcon, emptyTitle, emptySubtitle);
+
             emptyCoursMessage.setVisible(true);
             emptyCoursMessage.setManaged(true);
             coursPdfScroll.setVisible(false);
             coursPdfScroll.setManaged(false);
             return;
         }
+
         emptyCoursMessage.setVisible(false);
         emptyCoursMessage.setManaged(false);
         coursPdfScroll.setVisible(true);
         coursPdfScroll.setManaged(true);
+
+        // Améliorer l'affichage en grille
+        coursPdfContainer.setSpacing(20);
+        coursPdfContainer.setPadding(new Insets(10, 0, 20, 0));
+
         for (File pdfFile : fichiersPdf) {
             VBox card = createPdfCardFromFile(pdfFile);
             coursPdfContainer.getChildren().add(card);
         }
     }
+    @FXML private void rafraichirCoursPdf() {
+        afficherCoursPdfGeneres();
+    }
+
 
     private VBox createPdfCardFromFile(File pdfFile) {
         String fileName = pdfFile.getName();
         String niveau = extraireNiveauFromFileName(fileName);
         String dateStr = extraireDateFromFileName(fileName);
+
+        // Nouveau design moderne
         VBox card = new VBox();
-        card.setAlignment(Pos.CENTER);
-        card.setSpacing(10);
-        card.setPrefWidth(180);
-        card.setPrefHeight(160);
-        card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 16; -fx-border-color: #E0E3F0; -fx-border-radius: 16; -fx-border-width: 1; -fx-cursor: hand;");
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setSpacing(12);
+        card.setPrefWidth(200);
+        card.setPrefHeight(220);
+
+        // Style moderne avec dégradé et ombre
+        card.setStyle("-fx-background-color: white; " +
+                "-fx-background-radius: 20; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 4); " +
+                "-fx-cursor: hand;");
+
+        // Effet hover amélioré
         card.setOnMouseEntered(e -> {
-            card.setStyle("-fx-background-color: #F0F2FF; -fx-background-radius: 16; -fx-border-color: #6C63FF; -fx-border-radius: 16; -fx-border-width: 2;");
-            card.setTranslateY(-4);
+            card.setStyle("-fx-background-color: white; " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(108, 99, 255, 0.25), 20, 0, 0, 8); " +
+                    "-fx-cursor: hand;");
+            card.setTranslateY(-6);
         });
+
         card.setOnMouseExited(e -> {
-            card.setStyle("-fx-background-color: #F8F9FD; -fx-background-radius: 16; -fx-border-color: #E0E3F0; -fx-border-radius: 16; -fx-border-width: 1;");
+            card.setStyle("-fx-background-color: white; " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 4); " +
+                    "-fx-cursor: hand;");
             card.setTranslateY(0);
         });
+
+        // Bandeau de couleur selon le niveau (en haut)
+        HBox levelBar = new HBox();
+        levelBar.setPrefHeight(8);
+        levelBar.setMaxWidth(Double.MAX_VALUE);
+        levelBar.setStyle("-fx-background-color: " + getCouleurNiveau(niveau) + "; " +
+                "-fx-background-radius: 20 20 0 0;");
+        HBox.setHgrow(levelBar, Priority.ALWAYS);
+
+        // Icône avec cercle de fond
         StackPane iconContainer = new StackPane();
-        iconContainer.setPrefSize(60, 60);
-        iconContainer.setStyle("-fx-background-color: #FFE4E6; -fx-background-radius: 30;");
-        Label pdfIcon = new Label("📄");
-        pdfIcon.setStyle("-fx-font-size: 32px;");
+        iconContainer.setPrefSize(70, 70);
+        iconContainer.setStyle("-fx-background-color: " + getCouleurNiveauFond(niveau) + "; " +
+                "-fx-background-radius: 35; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+
+        Label pdfIcon = new Label(getIconeNiveau(niveau));
+        pdfIcon.setStyle("-fx-font-size: 36px;");
         iconContainer.getChildren().add(pdfIcon);
-        Label niveauBadge = new Label(niveau != null ? niveau : "Cours");
-        niveauBadge.setStyle("-fx-background-color: " + getCouleurNiveau(niveau) + "; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 3 10 3 10;");
-        String displayName = fileName.length() > 25 ? fileName.substring(0, 22) + "..." : fileName;
+
+        // Badge niveau stylisé
+        Label niveauBadge = new Label(niveau != null ? "Niveau " + niveau : "Cours");
+        niveauBadge.setStyle("-fx-background-color: " + getCouleurNiveau(niveau) + "; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 11px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-background-radius: 20; " +
+                "-fx-padding: 5 14 5 14; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 3, 0, 0, 1);");
+
+        // Nom du fichier (thème)
+        String displayName = fileName.replace("cours_" + niveau + "_", "").replace(".pdf", "");
+        if (displayName.length() > 30) {
+            displayName = displayName.substring(0, 27) + "...";
+        }
         Label nameLabel = new Label(displayName);
-        nameLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;");
-        nameLabel.setWrapText(true);
-        nameLabel.setMaxWidth(160);
-        Label dateLabel = new Label(dateStr);
-        dateLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #8A8FA8;");
-        Button openBtn = new Button("📖 Ouvrir");
-        openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;");
-        openBtn.setOnMouseEntered(e -> openBtn.setStyle("-fx-background-color: #5849C4; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;"));
-        openBtn.setOnMouseExited(e -> openBtn.setStyle("-fx-background-color: #6C63FF; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 5 15 5 15; -fx-cursor: hand;"));
-        openBtn.setOnAction(e -> {
-            try { Desktop.getDesktop().open(pdfFile); }
-            catch (IOException ex) { showAlert("Erreur", "Impossible d'ouvrir le PDF : " + ex.getMessage()); }
+        nameLabel.setStyle("-fx-font-size: 13px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-text-fill: #1E293B; " +
+                "-fx-wrap-text: true;");
+        nameLabel.setMaxWidth(170);
+        nameLabel.setAlignment(Pos.CENTER);
+
+        // Date formatée
+        Label dateLabel = new Label(formatDate(dateStr));
+        dateLabel.setStyle("-fx-font-size: 10px; " +
+                "-fx-text-fill: #94A3B8;");
+
+        // Bouton d'action
+        Button openBtn = new Button("📖 Lire le cours");
+        openBtn.setStyle("-fx-background-color: " + getCouleurNiveau(niveau) + "; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 11px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-background-radius: 25; " +
+                "-fx-padding: 8 18 8 18; " +
+                "-fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);");
+
+        openBtn.setOnMouseEntered(e -> {
+            openBtn.setStyle("-fx-background-color: derive(" + getCouleurNiveau(niveau) + ", -15%); " +
+                    "-fx-text-fill: white; " +
+                    "-fx-font-size: 11px; " +
+                    "-fx-font-weight: bold; " +
+                    "-fx-background-radius: 25; " +
+                    "-fx-padding: 8 18 8 18; " +
+                    "-fx-cursor: hand;");
         });
-        card.getChildren().addAll(iconContainer, niveauBadge, nameLabel, dateLabel, openBtn);
-        VBox.setMargin(iconContainer, new Insets(10, 0, 0, 0));
+
+        openBtn.setOnMouseExited(e -> {
+            openBtn.setStyle("-fx-background-color: " + getCouleurNiveau(niveau) + "; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-font-size: 11px; " +
+                    "-fx-font-weight: bold; " +
+                    "-fx-background-radius: 25; " +
+                    "-fx-padding: 8 18 8 18; " +
+                    "-fx-cursor: hand;");
+        });
+
+        openBtn.setOnAction(e -> {
+            try {
+                Desktop.getDesktop().open(pdfFile);
+            } catch (IOException ex) {
+                showAlert("Erreur", "Impossible d'ouvrir le PDF : " + ex.getMessage());
+            }
+        });
+
+        // Ajouter un menu contextuel (supprimer)
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem deleteItem = new MenuItem("🗑️ Supprimer ce cours");
+        deleteItem.setStyle("-fx-text-fill: #EF4444; -fx-font-weight: bold;");
+        deleteItem.setOnAction(e -> supprimerCoursPdf(pdfFile, niveau));
+        contextMenu.getItems().add(deleteItem);
+        card.setOnContextMenuRequested(e -> contextMenu.show(card, e.getScreenX(), e.getScreenY()));
+
+        card.getChildren().addAll(levelBar, iconContainer, niveauBadge, nameLabel, dateLabel, openBtn);
+        VBox.setMargin(iconContainer, new Insets(15, 0, 0, 0));
+        VBox.setMargin(niveauBadge, new Insets(5, 0, 0, 0));
+        VBox.setMargin(nameLabel, new Insets(5, 10, 0, 10));
+        VBox.setMargin(openBtn, new Insets(5, 0, 15, 0));
+
         return card;
+    }
+    private String getCouleurNiveauFond(String niveau) {
+        if (niveau == null) return "#E0E7FF";
+        switch (niveau) {
+            case "A1": return "#E0E7FF";  // violet clair
+            case "A2": return "#EDE9FE";  // violet clair
+            case "B1": return "#FEF3C7";  // jaune clair
+            case "B2": return "#FEE2E2";  // rouge clair
+            case "C1": return "#FCE7F3";  // rose clair
+            case "C2": return "#D1FAE5";  // vert clair
+            default: return "#E0E7FF";
+        }
+    }
+
+    private String getIconeNiveau(String niveau) {
+        if (niveau == null) return "📚";
+        switch (niveau) {
+            case "A1": return "🌱";
+            case "A2": return "🌿";
+            case "B1": return "🌟";
+            case "B2": return "⭐";
+            case "C1": return "🎯";
+            case "C2": return "🏆";
+            default: return "📚";
+        }
+    }
+
+    private String formatDate(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty()) return "Date inconnue";
+        try {
+            String[] parts = dateStr.split("-");
+            if (parts.length == 3) {
+                return parts[2] + "/" + parts[1] + "/" + parts[0];
+            }
+        } catch (Exception e) {}
+        return dateStr;
+    }
+
+    private void supprimerCoursPdf(File pdfFile, String niveau) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirmation de suppression");
+        confirm.setHeaderText("Supprimer ce cours ?");
+        confirm.setContentText("Voulez-vous vraiment supprimer définitivement :\n" + pdfFile.getName());
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            if (pdfFile.delete()) {
+                showAlert("Succès", "Cours supprimé avec succès !");
+                afficherCoursPdfGeneres(); // Rafraîchir l'affichage
+            } else {
+                showAlert("Erreur", "Impossible de supprimer le fichier.");
+            }
+        }
     }
 
     private String extraireNiveauFromFileName(String fileName) {
