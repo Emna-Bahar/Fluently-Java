@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.ModeHistoireController"
+            fitToWidth="true"
+            fitToHeight="true"
+            style="-fx-background: transparent; -fx-background-color: #F5F7FF; -fx-border-color: transparent;">
+
+    <VBox spacing="0" style="-fx-background-color: #F5F7FF;">
+
+        <!-- ==================== HEADER ==================== -->
+        <VBox spacing="0">
+            <HBox alignment="CENTER_LEFT" spacing="16"
+                  style="-fx-background-color: #6366F1; -fx-padding: 14 28;">
+                <Label fx:id="labelTitreTest"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <HBox spacing="8" alignment="CENTER"
+                      style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 30; -fx-padding: 6 16;">
+                    <Label text="⏱️" style="-fx-font-size: 14px; -fx-text-fill: white;"/>
+                    <Label fx:id="labelTimer"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                </HBox>
+                <Label fx:id="labelProgression"
+                       style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);"/>
+            </HBox>
+            <ProgressBar fx:id="progressBar" maxWidth="Infinity" prefHeight="6"
+                         style="-fx-accent: #FFD700; -fx-background-color: #DDD6FE;"/>
+        </VBox>
+
+        <!-- ==================== ZONE CENTRALE ==================== -->
+        <HBox spacing="20" style="-fx-padding: 24 28;">
+
+            <!-- COLONNE GAUCHE : Personnage -->
+            <VBox alignment="CENTER" spacing="16"
+                  style="-fx-background-color: #F5F3FF; -fx-background-radius: 24; -fx-padding: 24 12;"
+                  prefWidth="240" minWidth="220">
+
+                <Label fx:id="labelLanguePersonnage"
+                       style="-fx-font-size: 13px; -fx-text-fill: #6366F1; -fx-font-weight: bold;"/>
+
+                <!-- Remplace la ligne panelPersonnage dans le fxml -->
+                <Pane fx:id="panelPersonnage" prefWidth="220" prefHeight="320"
+                      minWidth="220" minHeight="320"/>
+
+                <VBox fx:id="panelBulle"
+                      style="-fx-background-color: white; -fx-background-radius: 20;
+                             -fx-border-color: #DDD6FE; -fx-border-radius: 20;
+                             -fx-border-width: 2; -fx-padding: 10 14;">
+                    <Label fx:id="labelDialogue" wrapText="true"
+                           style="-fx-font-size: 13px; -fx-text-fill: #4C4F7A; -fx-font-style: italic;"
+                           maxWidth="180"/>
+                </VBox>
+            </VBox>
+
+            <!-- COLONNE DROITE : Question + Réponses -->
+            <VBox spacing="16" HBox.hgrow="ALWAYS">
+
+                <Label fx:id="labelNumeroQuestion"
+                       style="-fx-font-size: 12px; -fx-text-fill: #8A8FA8; -fx-font-weight: bold;"/>
+
+                <!-- Carte question -->
+                <VBox style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 20;
+                             -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.08), 10, 0, 0, 4);">
+                    <Label fx:id="labelEnonce" wrapText="true"
+                           style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+                </VBox>
+
+                <!-- Réponses -->
+                <VBox fx:id="vboxReponses" spacing="10" VBox.vgrow="ALWAYS"/>
+
+                <!-- Feedback après réponse -->
+                <VBox fx:id="panelFeedback" visible="false" managed="false" spacing="6"
+                      style="-fx-background-radius: 14; -fx-padding: 12 18;">
+                    <Label fx:id="labelFeedback" wrapText="true"
+                           style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                    <Label fx:id="labelExplication" wrapText="true"
+                           style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+                </VBox>
+
+                <!-- Navigation -->
+                <HBox spacing="16" alignment="CENTER_RIGHT">
+                    <Button fx:id="btnSuivant" onAction="#handleSuivant" visible="false" managed="false"
+                            style="-fx-background-color: #6366F1; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 40; -fx-padding: 10 28; -fx-cursor: hand;"
+                            text="Continuer →"/>
+                    <Button fx:id="btnTerminer" onAction="#handleTerminer" visible="false" managed="false"
+                            style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 40; -fx-padding: 10 28; -fx-cursor: hand;"
+                            text="🏆 Terminer le test"/>
+                </HBox>
+            </VBox>
+        </HBox>
+
+        <!-- ==================== PANEL RÉSULTATS ==================== -->
+        <VBox fx:id="panelResultat" visible="false" managed="false" alignment="CENTER" spacing="12"
+              style="-fx-background-color: white; -fx-padding: 24 20; -fx-border-color: #E0E7FF; -fx-border-width: 1 0 0 0;">
+
+            <Label fx:id="labelResultatTitre"
+                   style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+
+            <HBox alignment="CENTER" spacing="20">
+                <Pane fx:id="panelPersonnageResultat" prefWidth="220" prefHeight="320"
+                      minWidth="220" minHeight="320"/>
+
+                <VBox alignment="CENTER" spacing="5">
+                    <Label fx:id="labelScoreFinal"
+                           style="-fx-font-size: 40px; -fx-font-weight: bold; -fx-text-fill: #6366F1;"/>
+                    <Label fx:id="labelNiveauEstime"
+                           style="-fx-font-size: 14px; -fx-text-fill: #8A8FA8;"/>
+                    <Label fx:id="labelTempsTotal"
+                           style="-fx-font-size: 12px; -fx-text-fill: #AAA;"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="16" alignment="CENTER" style="-fx-padding: 12 0 0 0;">
+                <Button onAction="#handleRecommencer"
+                        style="-fx-background-color: white; -fx-text-fill: #6366F1; -fx-border-color: #6366F1; -fx-border-radius: 30; -fx-background-radius: 30; -fx-padding: 8 24; -fx-font-weight: bold; -fx-cursor: hand;"
+                        text="🔄 Rejouer"/>
+                <Button onAction="#handleRetourAccueil"
+                        style="-fx-background-color: #6366F1; -fx-text-fill: white; -fx-background-radius: 30; -fx-padding: 8 24; -fx-font-weight: bold; -fx-cursor: hand;"
+                        text="🏠 Retour"/>
+            </HBox>
+        </VBox>
+    </VBox>
+</ScrollPane>

@@ -1,11 +1,7 @@
 package com.example.pijava_fluently.controller;
 
-import com.example.pijava_fluently.entites.Langue;
-import com.example.pijava_fluently.entites.Niveau;
-import com.example.pijava_fluently.entites.Test;
-import com.example.pijava_fluently.entites.TestPassage;
+import com.example.pijava_fluently.entites.*;
 import com.example.pijava_fluently.services.*;
-import com.example.pijava_fluently.entites.User;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -682,21 +678,60 @@ public class MesTestsController implements Initializable { //initializable
     }
 
     // ── Lancer le test ────────────────────────────────────────────
+    /**
+     * Lance le test en Mode Histoire si le test est entièrement composé de QCM,
+     * sinon lance le mode classique.
+     */
     private void lancerTest(Test test) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                    "/com/example/pijava_fluently/fxml/test-passage.fxml"));
-            if (loader.getLocation() == null) {
-                System.err.println("❌ test-passage.fxml introuvable");
-                return;
-            }
+            // Vérifier si toutes les questions sont des QCM
+            boolean tousQCM = verifierTousQCM(test);
+
+            String fxmlPath = tousQCM
+                    ? "/com/example/pijava_fluently/fxml/mode-histoire.fxml"
+                    : "/com/example/pijava_fluently/fxml/test-passage.fxml";
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Node vue = loader.load();
-            TestPassageEtudiantController ctrl = loader.getController();
-            int uid = (currentUser != null) ? currentUser.getId() : -1;
-            ctrl.initTest(test, uid, this);
-            if (homeController != null) homeController.setContent(vue);
+
+            if (tousQCM) {
+                ModeHistoireController ctrl = loader.getController();
+                ctrl.initTest(test, currentUser.getId(), this);
+            } else {
+                TestPassageEtudiantController ctrl = loader.getController();
+                ctrl.initTest(test, currentUser.getId(), this);
+            }
+
+            // Utiliser contentArea directement (déjà déclaré dans la classe)
+            if (contentArea != null) {
+                contentArea.getChildren().setAll(vue);
+            } else {
+                // Fallback si contentArea est null
+                if (homeController != null) {
+                    homeController.setContent(vue);
+                } else {
+                    vboxContenu.getChildren().clear();
+                    vboxContenu.getChildren().add(vue);
+                }
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
+            showAlert("Erreur", "Impossible de lancer le test : " + e.getMessage());
+        }
+    }
+
+    /**
+     * Vérifie si toutes les questions du test sont de type QCM.
+     */
+    private boolean verifierTousQCM(Test test) {
+        try {
+            QuestionService qs = new QuestionService();
+            List<Question> questions = qs.recupererParTest(test.getId());
+            return !questions.isEmpty()
+                    && questions.stream().allMatch(q -> "qcm".equals(q.getType()));
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -1135,5 +1170,46 @@ public class MesTestsController implements Initializable { //initializable
             e.printStackTrace();
             showAlert("Erreur", "Impossible de charger le tableau de bord");
         }
+    }
+    // Ajoutez ces méthodes pour les effets hover des boutons
+
+    @FXML
+    private void onButtonHover(javafx.scene.input.MouseEvent event) {
+        Button btn = (Button) event.getSource();
+        if (btn.getText().equals("⚔️ Duel")) {
+            btn.setStyle("-fx-background-color: #4F46E5; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand;");
+        } else if (btn.getText().equals("📊 Performances")) {
+            btn.setStyle("-fx-background-color: #059669; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand;");
+        } else if (btn.getText().equals("🔍 Mon comportement")) {
+            btn.setStyle("-fx-background-color: #FEE2E2; -fx-text-fill: #B91C1C; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand; -fx-border-color: #FECACA; -fx-border-radius: 32; -fx-border-width: 1;");
+        } else if (btn.getText().equals("🏆 Leaderboard")) {
+            btn.setStyle("-fx-background-color: #FEF3C7; -fx-text-fill: #B45309; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand; -fx-border-color: #FDE68A; -fx-border-radius: 32; -fx-border-width: 1;");
+        }
+    }
+
+    @FXML
+    private void onButtonExit(javafx.scene.input.MouseEvent event) {
+        Button btn = (Button) event.getSource();
+        if (btn.getText().equals("⚔️ Duel")) {
+            btn.setStyle("-fx-background-color: #6366F1; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand;");
+        } else if (btn.getText().equals("📊 Performances")) {
+            btn.setStyle("-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand;");
+        } else if (btn.getText().equals("🔍 Mon comportement")) {
+            btn.setStyle("-fx-background-color: #FEF2F2; -fx-text-fill: #DC2626; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand; -fx-border-color: #FEE2E2; -fx-border-radius: 32; -fx-border-width: 1;");
+        } else if (btn.getText().equals("🏆 Leaderboard")) {
+            btn.setStyle("-fx-background-color: #FFFBEB; -fx-text-fill: #D97706; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand; -fx-border-color: #FDE68A; -fx-border-radius: 32; -fx-border-width: 1;");
+        }
+    }
+
+    @FXML
+    private void onButtonHoverGradient(javafx.scene.input.MouseEvent event) {
+        Button btn = (Button) event.getSource();
+        btn.setStyle("-fx-background-color: linear-gradient(to right, #7C3AED, #4F46E5); -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand;");
+    }
+
+    @FXML
+    private void onButtonExitGradient(javafx.scene.input.MouseEvent event) {
+        Button btn = (Button) event.getSource();
+        btn.setStyle("-fx-background-color: linear-gradient(to right, #8B5CF6, #6366F1); -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand;");
     }
 }
