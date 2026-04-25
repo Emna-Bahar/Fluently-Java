@@ -28,4 +28,11 @@ public class IAService {
     public String genererFlashcards(String langue, String promptUtilisateur, String niveau) {
         return mistralService.genererFlashcards(langue, promptUtilisateur, niveau);
     }
+    // Ajoutez cette méthode
+    public String explorerCulture(String pays, String categorie, String langue) {
+        return mistralService.explorerCulture(pays, categorie, langue);
+    }
+    public String genererPuzzleEtymologique(String langue, String niveau) {
+        return mistralService.genererPuzzleEtymologique(langue, niveau);
+    }
 }

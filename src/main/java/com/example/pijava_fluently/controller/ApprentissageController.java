@@ -20,6 +20,8 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import java.awt.Desktop;
 import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,6 +38,8 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.properties.TextAlignment;
 
 import java.time.format.DateTimeFormatter;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 
 public class ApprentissageController {
 
@@ -2219,7 +2223,21 @@ public class ApprentissageController {
         String langueNom = this.langue != null ? this.langue.getNom() : "Français";
         quizContainer.setVisible(false); quizContainer.setManaged(false);
         fillGameContainer.setVisible(false); fillGameContainer.setManaged(false);
+
+        // Ajout pour cacher le puzzle
+        puzzleGameContainer.setVisible(false); puzzleGameContainer.setManaged(false);
+
         gameLoading.setVisible(true); gameLoading.setManaged(true);
+
+        // Si c'est le puzzle, on ne passe pas par l'API (génération locale)
+        if (gameType.contains("Puzzle")) {
+            gameLoading.setVisible(false);
+            gameLoading.setManaged(false);
+            puzzleLevelCombo.setValue(niveau);
+            demarrerPuzzle();
+            return;
+        }
+
         new Thread(() -> {
             try {
                 String prompt = genererPromptJeu(gameType, langueNom, niveau);
@@ -3588,6 +3606,1178 @@ public class ApprentissageController {
         }
 
         return relativePath;
+    }
+    // Ajoutez ces variables dans la déclaration des variables
+    @FXML private TextField culturalSearchField;
+    @FXML private HBox culturalLoading;
+    @FXML private ScrollPane culturalScrollPane;
+    @FXML private FlowPane culturalResultsContainer;
+    @FXML private VBox culturalEmptyMessage;
+    @FXML private HBox culturalFilterBar;
+    @FXML private ToggleButton filterAll, filterLieux, filterCuisine, filterTraditions;
+
+    // Classe interne pour les éléments culturels
+    private static class CulturalItem {
+        String nom;
+        String description;
+        String type;
+        String imagePath; // Chemin local de l'image téléchargée
+        String imageUrl;  // URL de l'image en ligne
+        String adresse;
+        String horaires;
+
+        CulturalItem(String nom, String description, String type) {
+            this.nom = nom;
+            this.description = description;
+            this.type = type;
+            this.imagePath = null;
+            this.imageUrl = null;
+        }
+
+    }
+    // Ajoutez avec les autres variables
+    private ImageSearchService imageSearchService = new ImageSearchService();
+    private String dossierImages = "C:/xampp/htdocs/fluently/public/uploads/culture_images/";
+
+    private List<CulturalItem> currentCulturalItems = new ArrayList<>();
+    private String currentFilter = "all";
+
+    // Méthodes d'exploration
+    @FXML private void explorerLieuxEmblematiques() {
+        rechercherCultureParCategorie("lieux emblématiques, monuments, sites touristiques");
+    }
+
+    @FXML private void explorerCuisine() {
+        rechercherCultureParCategorie("spécialités culinaires, plats typiques, gastronomie");
+    }
+
+    @FXML private void explorerTraditions() {
+        rechercherCultureParCategorie("traditions, fêtes, festivals, coutumes");
+    }
+
+    @FXML private void explorerArt() {
+        rechercherCultureParCategorie("art, musées, artistes, patrimoine culturel");
+    }
+
+    @FXML private void rechercherCulture() {
+        String query = culturalSearchField.getText().trim();
+        if (query.isEmpty()) {
+            showStyledAlert("Recherche", "Entrez un lieu, un plat ou une tradition à découvrir !", "warning");
+            return;
+        }
+        rechercherCultureParCategorie(query);
+    }
+
+    private void rechercherCultureParCategorie(String categorie) {
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+        String pays = getPaysParLangue(langueNom);
+
+        culturalLoading.setVisible(true);
+        culturalLoading.setManaged(true);
+        culturalScrollPane.setVisible(false);
+        culturalScrollPane.setManaged(false);
+        culturalEmptyMessage.setVisible(false);
+        culturalEmptyMessage.setManaged(false);
+        culturalResultsContainer.getChildren().clear();
+
+        new Thread(() -> {
+            try {
+                String resultat = iaService.explorerCulture(pays, categorie, langueNom);
+                List<CulturalItem> items = parserCultureItems(resultat, categorie);
+
+                // Au lieu de télécharger des images, on génère des couleurs uniques par nom
+                for (CulturalItem item : items) {
+                    // On utilise un hash du nom pour générer une couleur cohérente
+                    int hash = Math.abs(item.nom.hashCode());
+                    String color = String.format("#%06X", (0xFFFFFF & hash));
+                    item.imagePath = color; // On stocke la couleur au lieu du chemin
+                }
+
+                Platform.runLater(() -> {
+                    culturalLoading.setVisible(false);
+                    culturalLoading.setManaged(false);
+
+                    if (items.isEmpty()) {
+                        culturalEmptyMessage.setVisible(true);
+                        culturalEmptyMessage.setManaged(true);
+                    } else {
+                        currentCulturalItems = items;
+                        afficherCartesCulture(items);
+                        culturalFilterBar.setVisible(true);
+                        culturalFilterBar.setManaged(true);
+                        culturalScrollPane.setVisible(true);
+                        culturalScrollPane.setManaged(true);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    culturalLoading.setVisible(false);
+                    culturalLoading.setManaged(false);
+                    showStyledAlert("Erreur", "Impossible d'explorer : " + e.getMessage(), "error");
+                });
+            }
+        }).start();
+    }
+
+    private String getPaysParLangue(String langue) {
+        Map<String, String> paysParLangue = new HashMap<>();
+        paysParLangue.put("Français", "France");
+        paysParLangue.put("Francais", "France");
+        paysParLangue.put("Anglais", "Royaume-Uni");
+        paysParLangue.put("English", "United Kingdom");
+        paysParLangue.put("Espagnol", "Espagne");
+        paysParLangue.put("Español", "España");
+        paysParLangue.put("Allemand", "Allemagne");
+        paysParLangue.put("Deutsch", "Deutschland");
+        paysParLangue.put("Italien", "Italie");
+        paysParLangue.put("Italiano", "Italia");
+        paysParLangue.put("Arabe", "Maroc");
+        paysParLangue.put("العربية", "المغرب");
+
+        return paysParLangue.getOrDefault(langue, "France");
+    }
+
+    private List<CulturalItem> parserCultureItems(String data, String categorieDefaut) {
+        List<CulturalItem> items = new ArrayList<>();
+
+        // Pattern pour extraire les éléments
+        String[] sections = data.split("===");
+
+        for (String section : sections) {
+            if (section.trim().isEmpty()) continue;
+
+            String nom = extractField(section, "NOM:");
+            String description = extractField(section, "DESCRIPTION:");
+            String type = extractField(section, "TYPE:");
+
+            if (type == null || type.isEmpty()) {
+                type = categorieDefaut.contains("lieux") ? "lieu" :
+                        categorieDefaut.contains("cuisine") ? "cuisine" :
+                                categorieDefaut.contains("traditions") ? "tradition" : "art";
+            }
+
+            if (nom != null && !nom.isEmpty() && description != null && !description.isEmpty()) {
+                CulturalItem item = new CulturalItem(nom, description, type);
+
+                // Extraire les infos supplémentaires si présentes
+                String adresse = extractField(section, "ADRESSE:");
+                String horaires = extractField(section, "HORAIRES:");
+                if (adresse != null) item.adresse = adresse;
+                if (horaires != null) item.horaires = horaires;
+
+                items.add(item);
+            }
+        }
+
+        // Si pas d'éléments trouvés, créer des exemples basés sur la langue
+        if (items.isEmpty()) {
+            items = getFallbackCulturalItems(getPaysParLangue(this.langue != null ? this.langue.getNom() : "Français"));
+        }
+
+        return items;
+    }
+
+    private String extractField(String text, String fieldName) {
+        int start = text.indexOf(fieldName);
+        if (start == -1) return null;
+        start += fieldName.length();
+        int end = text.indexOf("\n", start);
+        if (end == -1) end = text.length();
+        String value = text.substring(start, end).trim();
+        // Nettoyer les caractères indésirables
+        value = value.replaceAll("[*_#]", "").trim();
+        return value.isEmpty() ? null : value;
+    }
+
+    private List<CulturalItem> getFallbackCulturalItems(String pays) {
+        List<CulturalItem> items = new ArrayList<>();
+
+        if (pays.equalsIgnoreCase("France")) {
+            items.add(new CulturalItem("Tour Eiffel", "Symbole emblématique de Paris construite par Gustave Eiffel en 1889 pour l'Exposition Universelle.", "lieu"));
+            items.add(new CulturalItem("Croissant", "Viennoiserie feuilletée emblématique de la pâtisserie française, parfaite au petit-déjeuner.", "cuisine"));
+            items.add(new CulturalItem("Fête de la Musique", "Fête populaire célébrée le 21 juin où les musiciens amateurs et professionnels envahissent les rues.", "tradition"));
+            items.add(new CulturalItem("Mont Saint-Michel", "Merveille architecturale normande, îlot rocheux surmonté d'une abbaye gothique.", "lieu"));
+            items.add(new CulturalItem("Ratatouille", "Plat traditionnel niçois de légumes mijotés : courgettes, aubergines, poivrons et tomates.", "cuisine"));
+        } else if (pays.equalsIgnoreCase("Royaume-Uni") || pays.equalsIgnoreCase("United Kingdom")) {
+            items.add(new CulturalItem("Big Ben", "La célèbre tour de l'horloge du Parlement britannique à Londres.", "lieu"));
+            items.add(new CulturalItem("Fish and Chips", "Plat traditionnel britannique : poisson frit accompagné de frites.", "cuisine"));
+            items.add(new CulturalItem("Guy Fawkes Night", "Célébration du 5 novembre avec feux d'artifice et effigies brûlées.", "tradition"));
+        } else if (pays.equalsIgnoreCase("Espagne") || pays.equalsIgnoreCase("España")) {
+            items.add(new CulturalItem("Sagrada Familia", "Basilique emblématique de Barcelone conçue par Antoni Gaudí.", "lieu"));
+            items.add(new CulturalItem("Paella", "Plat valencien de riz safrané aux fruits de mer ou viande.", "cuisine"));
+            items.add(new CulturalItem("La Tomatina", "Fête où des milliers de personnes se lancent des tomates à Buñol.", "tradition"));
+        }
+
+        return items;
+    }
+
+    private void afficherCartesCulture(List<CulturalItem> items) {
+        culturalResultsContainer.getChildren().clear();
+
+        for (CulturalItem item : items) {
+            VBox card = createCulturalCard(item);
+            culturalResultsContainer.getChildren().add(card);
+        }
+    }
+
+    private VBox createCulturalCard(CulturalItem item) {
+        VBox card = new VBox();
+        card.setSpacing(12);
+        card.setPrefWidth(280);
+        card.setPrefHeight(390);
+        card.setStyle("-fx-background-color: white; " +
+                "-fx-background-radius: 20; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0, 0, 4); " +
+                "-fx-cursor: hand;");
+
+        String typeColor = getTypeColor(item.type);
+
+        // Bandeau couleur
+        HBox typeBar = new HBox();
+        typeBar.setPrefHeight(8);
+        typeBar.setMaxWidth(Double.MAX_VALUE);
+        typeBar.setStyle("-fx-background-color: " + typeColor + "; -fx-background-radius: 20 20 0 0;");
+        HBox.setHgrow(typeBar, Priority.ALWAYS);
+
+        // Grand cercle coloré avec icône
+        StackPane iconContainer = new StackPane();
+        iconContainer.setPrefSize(100, 100);
+        iconContainer.setStyle("-fx-background-color: " + typeColor + "20; " +
+                "-fx-background-radius: 50; " +
+                "-fx-border-color: " + typeColor + "; " +
+                "-fx-border-radius: 50; " +
+                "-fx-border-width: 3;");
+
+        Label iconLabel = new Label(getTypeIcon(item.type));
+        iconLabel.setStyle("-fx-font-size: 50px;");
+        iconContainer.getChildren().add(iconLabel);
+
+        // Titre
+        Label titleLabel = new Label(item.nom);
+        titleLabel.setStyle("-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #1E293B; -fx-wrap-text: true;");
+        titleLabel.setMaxWidth(250);
+        titleLabel.setWrapText(true);
+
+        // Description courte
+        String shortDesc = item.description.length() > 100 ?
+                item.description.substring(0, 97) + "..." : item.description;
+        Label descLabel = new Label(shortDesc);
+        descLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #475569; -fx-wrap-text: true;");
+        descLabel.setMaxWidth(250);
+        descLabel.setWrapText(true);
+
+        // Badge
+        Label typeBadge = new Label(getTypeLabel(item.type));
+        typeBadge.setStyle("-fx-background-color: " + typeColor + "; -fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-padding: 5 15;");
+
+        // ============ BOUTONS D'ACTION ============
+        HBox actionButtons = new HBox(10);
+        actionButtons.setAlignment(Pos.CENTER);
+
+        // Bouton Découvrir
+        Button discoverBtn = new Button("🔍 Découvrir");
+        discoverBtn.setStyle("-fx-background-color: " + typeColor + "; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 6 15; -fx-cursor: hand;");
+        discoverBtn.setOnAction(e -> afficherDetailsCulture(item));
+
+        // Bouton Écouter le NOM (rapide)
+        Button quickListenBtn = new Button("🔊");
+        quickListenBtn.setStyle("-fx-background-color: " + typeColor + "20; -fx-text-fill: " + typeColor + "; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 6 12; -fx-cursor: hand;");
+        quickListenBtn.setTooltip(new Tooltip("Écouter le nom"));
+        quickListenBtn.setOnAction(e -> {
+            String langueCode = prononciationService.getLangueCode(this.langue != null ? this.langue.getNom() : "Français");
+            String textToSpeak = item.nom.replaceAll("[*_#]", "").replaceAll("\\s+", " ").trim();
+
+            // Désactiver temporairement le bouton
+            quickListenBtn.setDisable(true);
+            quickListenBtn.setStyle("-fx-background-color: " + typeColor + "20; -fx-text-fill: " + typeColor + "; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 6 12; -fx-cursor: wait;");
+
+            new Thread(() -> {
+                try {
+                    prononciationService.prononcer(textToSpeak, langueCode);
+                    Platform.runLater(() -> {
+                        quickListenBtn.setDisable(false);
+                        quickListenBtn.setStyle("-fx-background-color: " + typeColor + "20; -fx-text-fill: " + typeColor + "; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 6 12; -fx-cursor: hand;");
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        quickListenBtn.setDisable(false);
+                        quickListenBtn.setStyle("-fx-background-color: " + typeColor + "20; -fx-text-fill: " + typeColor + "; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 6 12; -fx-cursor: hand;");
+                        showAlert("Erreur", "Impossible de lire le nom : " + ex.getMessage());
+                    });
+                }
+            }).start();
+        });
+
+        actionButtons.getChildren().addAll(discoverBtn, quickListenBtn);
+        // ==========================================
+
+        card.getChildren().addAll(typeBar, iconContainer, titleLabel, descLabel, typeBadge, actionButtons);
+        VBox.setMargin(iconContainer, new Insets(20, 0, 0, 0));
+        VBox.setMargin(titleLabel, new Insets(10, 15, 0, 15));
+        VBox.setMargin(descLabel, new Insets(5, 15, 0, 15));
+        VBox.setMargin(typeBadge, new Insets(10, 0, 5, 0));
+        VBox.setMargin(actionButtons, new Insets(0, 15, 15, 15));
+
+        card.setAlignment(Pos.TOP_CENTER);
+
+        // Effet hover
+        card.setOnMouseEntered(e -> {
+            card.setStyle("-fx-background-color: white; " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0, 0, 6);");
+            card.setTranslateY(-5);
+        });
+        card.setOnMouseExited(e -> {
+            card.setStyle("-fx-background-color: white; " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0, 0, 4);");
+            card.setTranslateY(0);
+        });
+
+        return card;
+    }
+
+    private void addDefaultIcon(StackPane container, String type, String color) {
+        VBox iconBox = new VBox(10);
+        iconBox.setAlignment(Pos.CENTER);
+
+        Label iconLabel = new Label(getTypeIcon(type));
+        iconLabel.setStyle("-fx-font-size: 48px;");
+
+        Label loadingLabel = new Label("Chargement...");
+        loadingLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #64748B;");
+
+        iconBox.getChildren().addAll(iconLabel, loadingLabel);
+        container.getChildren().add(iconBox);
+    }
+
+    private String getTypeColor(String type) {
+        switch (type.toLowerCase()) {
+            case "lieu": return "#EC4899";
+            case "cuisine": return "#F43F5E";
+            case "tradition": return "#FB7185";
+            case "art": return "#FDA4AF";
+            default: return "#EC4899";
+        }
+    }
+
+    private String getTypeIcon(String type) {
+        switch (type.toLowerCase()) {
+            case "lieu": return "🏛️";
+            case "cuisine": return "🍽️";
+            case "tradition": return "🎭";
+            case "art": return "🎨";
+            default: return "🌍";
+        }
+    }
+
+    private String getTypeLabel(String type) {
+        switch (type.toLowerCase()) {
+            case "lieu": return "🏛️ Lieu emblématique";
+            case "cuisine": return "🍽️ Spécialité culinaire";
+            case "tradition": return "🎭 Tradition";
+            case "art": return "🎨 Art & Culture";
+            default: return "🌍 Découverte";
+        }
+    }
+
+    private void afficherDetailsCulture(CulturalItem item) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("🔍 " + item.nom);
+        dialog.setHeaderText(null);
+        dialog.setResizable(true);
+
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(25));
+        content.setPrefWidth(550);
+        content.setStyle("-fx-background-color: linear-gradient(to bottom right, #FFF1F2, #FFE4E6); -fx-background-radius: 20;");
+
+        // Image en grand format (si disponible)
+        if (item.imagePath != null && new File(item.imagePath).exists()) {
+            try {
+                javafx.scene.image.Image img = new javafx.scene.image.Image("file:" + item.imagePath, 500, 300, true, true);
+                javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(img);
+                imageView.setFitWidth(500);
+                imageView.setFitHeight(300);
+                imageView.setPreserveRatio(true);
+                imageView.setStyle("-fx-background-radius: 15;");
+                content.getChildren().add(imageView);
+            } catch (Exception e) {}
+        }
+
+        // En-tête avec le nom et le type
+        HBox headerBox = new HBox(15);
+        headerBox.setAlignment(Pos.CENTER_LEFT);
+        headerBox.setStyle("-fx-background-color: " + getTypeColor(item.type) + "; -fx-background-radius: 15; -fx-padding: 15 20;");
+
+        Label headerIcon = new Label(getTypeIcon(item.type));
+        headerIcon.setStyle("-fx-font-size: 32px;");
+
+        VBox headerText = new VBox(5);
+        Label titleLabel = new Label(item.nom);
+        titleLabel.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;");
+        Label typeLabel = new Label(getTypeLabel(item.type));
+        typeLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.8);");
+        headerText.getChildren().addAll(titleLabel, typeLabel);
+
+        headerBox.getChildren().addAll(headerIcon, headerText);
+        HBox.setHgrow(headerText, Priority.ALWAYS);
+
+        // Titre de la description
+        Label descTitle = new Label("📝 Description");
+        descTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #9D174D;");
+
+        // Contenu de la description
+        Label descContent = new Label(item.description);
+        descContent.setStyle("-fx-font-size: 13px; -fx-text-fill: #475569; -fx-wrap-text: true;");
+        descContent.setWrapText(true);
+
+        // ============ BOUTON POUR ÉCOUTER LA DESCRIPTION ============
+        HBox audioButtonBox = new HBox(10);
+        audioButtonBox.setAlignment(Pos.CENTER_LEFT);
+
+        Button listenDescBtn = new Button("🔊 Écouter la description");
+        listenDescBtn.setStyle("-fx-background-color: " + getTypeColor(item.type) + "; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 8 20; -fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian, rgba(236,72,153,0.3), 5, 0, 0, 2);");
+
+        // Indicateur de chargement
+        ProgressIndicator audioLoading = new ProgressIndicator();
+        audioLoading.setPrefSize(20, 20);
+        audioLoading.setVisible(false);
+        audioLoading.setManaged(false);
+
+        listenDescBtn.setOnAction(e -> {
+            listenDescBtn.setDisable(true);
+            audioLoading.setVisible(true);
+            audioLoading.setManaged(true);
+            listenDescBtn.setText("⏳ Lecture...");
+
+            String langueCode = prononciationService.getLangueCode(this.langue != null ? this.langue.getNom() : "Français");
+            String textToSpeak = item.description
+                    .replaceAll("[*_#]", "")
+                    .replaceAll("\\s+", " ")
+                    .trim();
+
+            new Thread(() -> {
+                try {
+                    prononciationService.prononcer(textToSpeak, langueCode);
+                    Platform.runLater(() -> {
+                        listenDescBtn.setDisable(false);
+                        audioLoading.setVisible(false);
+                        audioLoading.setManaged(false);
+                        listenDescBtn.setText("🔊 Écouter la description");
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        listenDescBtn.setDisable(false);
+                        audioLoading.setVisible(false);
+                        audioLoading.setManaged(false);
+                        listenDescBtn.setText("🔊 Écouter la description");
+                        showAlert("Erreur", "Impossible de lire la description : " + ex.getMessage());
+                    });
+                }
+            }).start();
+        });
+
+        audioButtonBox.getChildren().addAll(listenDescBtn, audioLoading);
+        // =============================================================
+
+        // Infos supplémentaires (adresse, horaires)
+        VBox extraInfoBox = new VBox(10);
+        extraInfoBox.setStyle("-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 15;");
+
+        if (item.adresse != null && !item.adresse.isEmpty()) {
+            HBox adresseBox = new HBox(10);
+            adresseBox.setAlignment(Pos.CENTER_LEFT);
+            Label adresseIcon = new Label("📍");
+            adresseIcon.setStyle("-fx-font-size: 14px;");
+            Label adresseLabel = new Label(item.adresse);
+            adresseLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #475569; -fx-wrap-text: true;");
+            adresseBox.getChildren().addAll(adresseIcon, adresseLabel);
+            extraInfoBox.getChildren().add(adresseBox);
+        }
+
+        if (item.horaires != null && !item.horaires.isEmpty()) {
+            HBox horairesBox = new HBox(10);
+            horairesBox.setAlignment(Pos.CENTER_LEFT);
+            Label horairesIcon = new Label("⏰");
+            horairesIcon.setStyle("-fx-font-size: 14px;");
+            Label horairesLabel = new Label(item.horaires);
+            horairesLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #475569;");
+            horairesBox.getChildren().addAll(horairesIcon, horairesLabel);
+            extraInfoBox.getChildren().add(horairesBox);
+        }
+
+        // Boutons d'action
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        // Dans afficherDetailsCulture, remplacez le bouton openMapBtn par :
+        Button openMapBtn = new Button("🗺️ Voir la carte");
+        openMapBtn.setStyle("-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;");
+        if (item.adresse != null && !item.adresse.isEmpty()) {
+            String finalAdresse = item.adresse;
+            String finalNom = item.nom;
+            openMapBtn.setOnAction(e -> ouvrirCarteDansApp(finalNom, finalAdresse));
+        } else {
+            openMapBtn.setDisable(true);
+            openMapBtn.setStyle("-fx-background-color: #CBD5E1; -fx-text-fill: #94A3B8; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: default;");
+        }
+
+        Button closeBtn = new Button("Fermer");
+        closeBtn.setStyle("-fx-background-color: #E2E8F0; -fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 25; -fx-cursor: hand;");
+        closeBtn.setOnAction(e -> dialog.close());
+
+        buttonBox.getChildren().addAll(openMapBtn, closeBtn);
+
+        // Assembler tout
+        content.getChildren().addAll(headerBox, descTitle, descContent, audioButtonBox, extraInfoBox, buttonBox);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.getDialogPane().lookupButton(ButtonType.CLOSE).setVisible(false);
+
+        dialog.showAndWait();
+    }
+
+    /**
+     * Ouvre une carte interactive directement dans l'application (pas dans le navigateur)
+     * Utilise Leaflet + OpenStreetMap (gratuit, sans clé API)
+     */
+    /**
+     * Ouvre une carte interactive directement dans l'application
+     * Utilise le NOM de l'élément pour la recherche (beaucoup plus précis)
+     */
+    private void ouvrirCarteDansApp(String nom, String adresse) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("🗺️ " + nom + " - Localisation");
+        dialog.setHeaderText(null);
+        dialog.setResizable(true);
+        dialog.setWidth(950);
+        dialog.setHeight(700);
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(15));
+        content.setStyle("-fx-background-color: #F8FAFC;");
+
+        // Label d'information
+        Label infoLabel = new Label("📍 Recherche de : " + nom);
+        infoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1E293B; -fx-padding: 10 10 5 10;");
+
+        // WebView pour afficher la carte
+        WebView webView = new WebView();
+        WebEngine webEngine = webView.getEngine();
+        webView.setPrefHeight(520);
+
+        // Utiliser le NOM pour la recherche (c'est ce qui donne les meilleurs résultats)
+        String searchQuery = nom;
+        if (adresse != null && !adresse.isEmpty() && !adresse.equalsIgnoreCase("France") && !adresse.equalsIgnoreCase("Paris")) {
+            searchQuery = nom + " " + adresse;
+        }
+
+        String encodedQuery = URLEncoder.encode(searchQuery, StandardCharsets.UTF_8);
+
+        // Code HTML avec barre de recherche et géocodage
+        String htmlContent = String.format("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Carte</title>
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+                #map { height: 100vh; width: 100%%; }
+                .custom-marker {
+                    background-color: #EC4899;
+                    border-radius: 50%%;
+                    width: 45px;
+                    height: 45px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                }
+                .search-box {
+                    position: absolute;
+                    top: 10px;
+                    left: 50%%;
+                    transform: translateX(-50%%);
+                    z-index: 1000;
+                    background: white;
+                    padding: 8px 15px;
+                    border-radius: 30px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    display: flex;
+                    gap: 10px;
+                    font-size: 14px;
+                }
+                .search-box input {
+                    padding: 8px 15px;
+                    border: 1px solid #ddd;
+                    border-radius: 25px;
+                    width: 280px;
+                    font-size: 14px;
+                    outline: none;
+                }
+                .search-box input:focus {
+                    border-color: #EC4899;
+                }
+                .search-box button {
+                    background-color: #EC4899;
+                    border: none;
+                    color: white;
+                    padding: 8px 18px;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    transition: all 0.2s;
+                }
+                .search-box button:hover {
+                    background-color: #BE185D;
+                }
+                .info-panel {
+                    position: absolute;
+                    bottom: 20px;
+                    left: 20px;
+                    right: 20px;
+                    background: rgba(0,0,0,0.8);
+                    padding: 12px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    z-index: 1000;
+                    text-align: center;
+                    color: white;
+                }
+                .loading {
+                    position: absolute;
+                    top: 50%%;
+                    left: 50%%;
+                    transform: translate(-50%%, -50%%);
+                    background: rgba(0,0,0,0.7);
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 30px;
+                    z-index: 1000;
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Rechercher un lieu..." value="%s">
+                <button onclick="searchLocation()">🔍 Rechercher</button>
+            </div>
+            <div id="map"></div>
+            <div class="info-panel" id="infoPanel">
+                🔍 Chargement de la carte...
+            </div>
+            <script>
+                var defaultLat = 48.8566;
+                var defaultLon = 2.3522;
+                var map = L.map('map').setView([defaultLat, defaultLon], 13);
+                var currentMarker = null;
+                var searchQuery = "%s";
+                
+                // Couche de tuiles OpenStreetMap (plus belle)
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 19,
+                    minZoom: 1
+                }).addTo(map);
+                
+                // Marqueur personnalisé
+                var customIcon = L.divIcon({
+                    html: '<div class="custom-marker">📍</div>',
+                    iconSize: [45, 45],
+                    className: 'custom-div-icon'
+                });
+                
+                function searchLocation() {
+                    var query = document.getElementById('searchInput').value;
+                    if (!query || query.trim() === "") return;
+                    
+                    document.getElementById('infoPanel').innerHTML = '⏳ Recherche de "' + query + '"...';
+                    
+                    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=5&addressdetails=1&accept-language=fr')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.length > 0) {
+                                var lat = parseFloat(data[0].lat);
+                                var lon = parseFloat(data[0].lon);
+                                var displayName = data[0].display_name;
+                                map.setView([lat, lon], 16);
+                                
+                                if (currentMarker) {
+                                    map.removeLayer(currentMarker);
+                                }
+                                currentMarker = L.marker([lat, lon], { icon: customIcon })
+                                    .bindPopup('<b>📍 ' + query + '</b><br>' + displayName)
+                                    .openPopup();
+                                    
+                                document.getElementById('infoPanel').innerHTML = '📍 ' + query + '<br>' + displayName;
+                            } else {
+                                document.getElementById('infoPanel').innerHTML = '❌ Lieu non trouvé. Essayez une recherche plus précise.';
+                                setTimeout(function() {
+                                    if (document.getElementById('infoPanel').innerHTML.includes('non trouvé')) {
+                                        document.getElementById('infoPanel').innerHTML = '📍 ' + searchQuery;
+                                    }
+                                }, 3000);
+                            }
+                        })
+                        .catch(error => {
+                            console.log('Erreur:', error);
+                            document.getElementById('infoPanel').innerHTML = '❌ Erreur de recherche. Vérifiez votre connexion.';
+                        });
+                }
+                
+                // Recherche automatique au chargement
+                if (searchQuery && searchQuery !== "") {
+                    setTimeout(function() {
+                        searchLocation();
+                    }, 800);
+                } else {
+                    document.getElementById('infoPanel').innerHTML = '📍 Entrez un lieu dans la barre de recherche';
+                }
+            </script>
+        </body>
+        </html>
+        """, searchQuery, encodedQuery);
+
+        webEngine.loadContent(htmlContent);
+
+        // Boutons d'action
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        buttonBox.setPadding(new Insets(10, 0, 0, 0));
+
+        Button openBrowserBtn = new Button("🌐 Ouvrir dans Google Maps");
+        openBrowserBtn.setStyle("-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 20; -fx-cursor: hand;");
+        openBrowserBtn.setOnAction(e -> {
+            try {
+                String mapsUrl = "https://www.google.com/maps/search/" + URLEncoder.encode(nom, StandardCharsets.UTF_8.toString());
+                Desktop.getDesktop().browse(new URI(mapsUrl));
+            } catch (Exception ex) {
+                showAlert("Erreur", "Impossible d'ouvrir Google Maps");
+            }
+        });
+
+        Button closeBtn = new Button("Fermer");
+        closeBtn.setStyle("-fx-background-color: #E2E8F0; -fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 10 25; -fx-cursor: hand;");
+        closeBtn.setOnAction(e -> dialog.close());
+
+        buttonBox.getChildren().addAll(openBrowserBtn, closeBtn);
+
+        content.getChildren().addAll(infoLabel, webView, buttonBox);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setStyle("-fx-background-color: transparent; -fx-background-radius: 20;");
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.getDialogPane().lookupButton(ButtonType.CLOSE).setVisible(false);
+
+        dialog.showAndWait();
+    }
+
+    // Méthodes de filtrage
+    @FXML private void filtrerTous() { currentFilter = "all"; updateFilterStyles("all"); afficherCartesCultureFiltrees(); }
+    @FXML private void filtrerLieux() { currentFilter = "lieu"; updateFilterStyles("lieu"); afficherCartesCultureFiltrees(); }
+    @FXML private void filtrerCuisine() { currentFilter = "cuisine"; updateFilterStyles("cuisine"); afficherCartesCultureFiltrees(); }
+    @FXML private void filtrerTraditions() { currentFilter = "tradition"; updateFilterStyles("tradition"); afficherCartesCultureFiltrees(); }
+
+    private void updateFilterStyles(String activeFilter) {
+        String activeStyle = "-fx-background-color: #EC4899; -fx-text-fill: white; -fx-font-size: 11px; -fx-background-radius: 15; -fx-padding: 4 12;";
+        String inactiveStyle = "-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-font-size: 11px; -fx-background-radius: 15; -fx-padding: 4 12;";
+
+        filterAll.setStyle(activeFilter.equals("all") ? activeStyle : inactiveStyle);
+        filterLieux.setStyle(activeFilter.equals("lieu") ? activeStyle : inactiveStyle);
+        filterCuisine.setStyle(activeFilter.equals("cuisine") ? activeStyle : inactiveStyle);
+        filterTraditions.setStyle(activeFilter.equals("tradition") ? activeStyle : inactiveStyle);
+    }
+
+    private void afficherCartesCultureFiltrees() {
+        List<CulturalItem> filtered = currentFilter.equals("all") ? currentCulturalItems :
+                currentCulturalItems.stream()
+                        .filter(item -> item.type.equalsIgnoreCase(currentFilter))
+                        .collect(Collectors.toList());
+
+        culturalResultsContainer.getChildren().clear();
+        for (CulturalItem item : filtered) {
+            culturalResultsContainer.getChildren().add(createCulturalCard(item));
+        }
+    }
+
+    // Ajoutez dans la déclaration des variables @FXML
+    @FXML private VBox puzzleGameContainer;
+    @FXML private ComboBox<String> puzzleLevelCombo;
+    @FXML private Button startPuzzleBtn;
+    @FXML private HBox puzzlePiecesContainer;
+    @FXML private HBox puzzleBuildContainer;
+    @FXML private Label puzzleHintLabel;
+    @FXML private Label puzzleResultLabel;
+    @FXML private ProgressBar puzzleProgressBar;
+    @FXML private Label puzzleScoreLabel;
+
+    // Variables pour le puzzle
+    private List<String> currentPuzzlePieces = new ArrayList<>();
+    private List<String> currentPuzzleBuild = new ArrayList<>();
+    private String currentPuzzleWord = "";
+    private String currentPuzzleDefinition = "";
+    private int puzzleScore = 0;
+    private int puzzleRound = 0;
+    private int puzzleTotalRounds = 5;
+
+    // Méthode pour démarrer le puzzle
+    @FXML private void demarrerPuzzle() {
+        String niveau = puzzleLevelCombo.getValue();
+        if (niveau == null) {
+            showAlert("Information", "Veuillez sélectionner un niveau.");
+            return;
+        }
+
+        puzzleRound = 0;
+        puzzleScore = 0;
+        puzzleTotalRounds = 5;
+        mettreAJourScorePuzzle();
+
+        genererNouveauPuzzle();
+        puzzleGameContainer.setVisible(true);
+        puzzleGameContainer.setManaged(true);
+    }
+
+    private void genererNouveauPuzzle() {
+        if (puzzleRound >= puzzleTotalRounds) {
+            terminerPuzzle();
+            return;
+        }
+
+        String niveau = puzzleLevelCombo.getValue();
+        String langueNom = this.langue != null ? this.langue.getNom() : "Français";
+
+        puzzleResultLabel.setText("");
+        puzzleProgressBar.setProgress((double) puzzleRound / puzzleTotalRounds);
+
+        showLoadingPuzzle(true);
+
+        new Thread(() -> {
+            try {
+                String resultat = iaService.genererPuzzleEtymologique(langueNom, niveau);
+                parserPuzzleData(resultat);
+
+                Platform.runLater(() -> {
+                    showLoadingPuzzle(false);
+                    afficherPuzzle();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    showLoadingPuzzle(false);
+                    utiliserPuzzleSecours();
+                });
+            }
+        }).start();
+    }
+
+    private void parserPuzzleData(String data) {
+        currentPuzzlePieces.clear();
+        currentPuzzleBuild.clear();
+
+        // Extraire le mot complet
+        Pattern motPattern = Pattern.compile("MOT COMPLET:\\s*(.+)", Pattern.CASE_INSENSITIVE);
+        Matcher motMatcher = motPattern.matcher(data);
+        if (motMatcher.find()) {
+            currentPuzzleWord = motMatcher.group(1).trim().toLowerCase();
+        }
+
+        // Extraire la définition/indice
+        Pattern defPattern = Pattern.compile("DÉFINITION:\\s*(.+)", Pattern.CASE_INSENSITIVE);
+        Matcher defMatcher = defPattern.matcher(data);
+        if (defMatcher.find()) {
+            currentPuzzleDefinition = defMatcher.group(1).trim();
+        }
+
+        // Extraire les morceaux
+        Pattern piecesPattern = Pattern.compile("MORCEAUX:\\s*(.+)", Pattern.CASE_INSENSITIVE);
+        Matcher piecesMatcher = piecesPattern.matcher(data);
+        if (piecesMatcher.find()) {
+            String pieces = piecesMatcher.group(1).trim();
+            String[] piecesArray = pieces.split("[|,;]");
+            for (String piece : piecesArray) {
+                piece = piece.trim();
+                if (!piece.isEmpty()) {
+                    currentPuzzlePieces.add(piece);
+                }
+            }
+        }
+
+        // Fallback si l'IA n'a pas bien répondu
+        if (currentPuzzlePieces.isEmpty() && currentPuzzleWord != null && !currentPuzzleWord.isEmpty()) {
+            currentPuzzlePieces = decouperMotEnMorphèmes(currentPuzzleWord);
+        }
+
+        if (currentPuzzleDefinition == null || currentPuzzleDefinition.isEmpty()) {
+            currentPuzzleDefinition = "Trouvez le mot en assemblant les morceaux !";
+        }
+
+        // Mélanger les pièces
+        Collections.shuffle(currentPuzzlePieces);
+    }
+
+    private List<String> decouperMotEnMorphèmes(String mot) {
+        List<String> morphèmes = new ArrayList<>();
+
+        // Préfixes courants
+        String[] prefixes = {"anti", "auto", "bio", "co", "contre", "dé", "dis", "ex", "extra", "hyper",
+                "il", "im", "in", "inter", "intra", "micro", "mini", "multi", "non", "post",
+                "pré", "re", "rétro", "sous", "super", "sur", "trans", "tri", "ultra"};
+
+        // Suffixes courants
+        String[] suffixes = {"able", "ible", "age", "tion", "sion", "ment", "ure", "eur", "euse", "iste",
+                "isme", "al", "el", "eau", "ette", "ien", "ien", "oir", "oire", "ade"};
+
+        String motLower = mot.toLowerCase();
+        String remaining = motLower;
+        List<String> foundMorphèmes = new ArrayList<>();
+
+        // Chercher les préfixes
+        for (String prefix : prefixes) {
+            if (motLower.startsWith(prefix) && prefix.length() < motLower.length()) {
+                foundMorphèmes.add(prefix);
+                remaining = motLower.substring(prefix.length());
+                break;
+            }
+        }
+
+        // Chercher les suffixes
+        for (String suffix : suffixes) {
+            if (remaining.endsWith(suffix) && suffix.length() < remaining.length()) {
+                foundMorphèmes.add(suffix);
+                remaining = remaining.substring(0, remaining.length() - suffix.length());
+                break;
+            }
+        }
+
+        // Racine
+        if (!remaining.isEmpty() && remaining.length() > 2) {
+            foundMorphèmes.add(remaining);
+        }
+
+        // Si on a trouvé des morphèmes, les utiliser
+        if (foundMorphèmes.size() >= 2) {
+            return foundMorphèmes;
+        }
+
+        // Sinon, découpage simple
+        int partLength = (int) Math.ceil((double) mot.length() / 3);
+        for (int i = 0; i < mot.length(); i += partLength) {
+            int end = Math.min(i + partLength, mot.length());
+            morphèmes.add(mot.substring(i, end));
+        }
+
+        return morphèmes;
+    }
+
+    private void afficherPuzzle() {
+        puzzlePiecesContainer.getChildren().clear();
+        puzzleBuildContainer.getChildren().clear();
+
+        puzzleHintLabel.setText("🔍 " + currentPuzzleDefinition);
+        puzzleRound++;
+
+        // Afficher les pièces disponibles
+        for (int i = 0; i < currentPuzzlePieces.size(); i++) {
+            String piece = currentPuzzlePieces.get(i);
+            Button pieceBtn = new Button(piece);
+            pieceBtn.setStyle("-fx-background-color: #EC4899; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 15; -fx-cursor: hand;");
+            final int index = i;
+            pieceBtn.setOnAction(e -> ajouterPieceAuMot(index));
+            puzzlePiecesContainer.getChildren().add(pieceBtn);
+        }
+
+        // Afficher la zone de construction (vide au début)
+        mettreAJourZoneConstruction();
+    }
+
+    private void ajouterPieceAuMot(int index) {
+        if (index >= currentPuzzlePieces.size()) return;
+
+        String piece = currentPuzzlePieces.get(index);
+        currentPuzzleBuild.add(piece);
+        currentPuzzlePieces.remove(index);
+
+        // Reconstruire l'affichage
+        afficherPuzzle();
+    }
+
+    private void retirerPieceDuMot(int index) {
+        if (index >= currentPuzzleBuild.size()) return;
+
+        String piece = currentPuzzleBuild.get(index);
+        currentPuzzlePieces.add(piece);
+        currentPuzzleBuild.remove(index);
+
+        // Mélanger les pièces restantes
+        Collections.shuffle(currentPuzzlePieces);
+
+        afficherPuzzle();
+    }
+
+    private void mettreAJourZoneConstruction() {
+        puzzleBuildContainer.getChildren().clear();
+
+        for (int i = 0; i < currentPuzzleBuild.size(); i++) {
+            String piece = currentPuzzleBuild.get(i);
+            HBox pieceBox = new HBox(5);
+            pieceBox.setAlignment(Pos.CENTER);
+            pieceBox.setStyle("-fx-background-color: #A78BFA; -fx-background-radius: 10; -fx-padding: 8 12;");
+
+            Label pieceLabel = new Label(piece);
+            pieceLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+            Button removeBtn = new Button("✕");
+            removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-cursor: hand;");
+            final int index = i;
+            removeBtn.setOnAction(e -> retirerPieceDuMot(index));
+
+            pieceBox.getChildren().addAll(pieceLabel, removeBtn);
+            puzzleBuildContainer.getChildren().add(pieceBox);
+        }
+
+        // Espace entre les pièces
+        if (!currentPuzzleBuild.isEmpty()) {
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            puzzleBuildContainer.getChildren().add(spacer);
+        }
+    }
+
+    @FXML private void verifierPuzzle() {
+        String motConstruit = String.join("", currentPuzzleBuild);
+
+        if (motConstruit.equalsIgnoreCase(currentPuzzleWord)) {
+            puzzleScore += 20;
+            puzzleResultLabel.setText("✅ BRAVO ! " + motConstruit + " est la bonne réponse ! +20 points");
+            puzzleResultLabel.setStyle("-fx-text-fill: #16A34A; -fx-font-weight: bold;");
+
+            // Ajouter une animation de succès
+            Platform.runLater(() -> {
+                genererNouveauPuzzle();
+            });
+        } else {
+            puzzleScore = Math.max(0, puzzleScore - 5);
+            puzzleResultLabel.setText("❌ Ce n'est pas correct. La bonne réponse était : " + currentPuzzleWord + " (-5 points)");
+            puzzleResultLabel.setStyle("-fx-text-fill: #DC2626; -fx-font-weight: bold;");
+
+            // Passer au puzzle suivant après 2 secondes
+            new Thread(() -> {
+                try { Thread.sleep(2000); } catch (InterruptedException e) {}
+                Platform.runLater(() -> genererNouveauPuzzle());
+            }).start();
+        }
+
+        mettreAJourScorePuzzle();
+    }
+
+    @FXML private void melangerPuzzle() {
+        if (!currentPuzzlePieces.isEmpty()) {
+            Collections.shuffle(currentPuzzlePieces);
+            afficherPuzzle();
+        }
+    }
+
+    @FXML private void donnerIndicePuzzle() {
+        if (puzzleScore >= 5) {
+            puzzleScore -= 5;
+            mettreAJourScorePuzzle();
+
+            // Révéler une lettre ou un morceau
+            if (!currentPuzzleBuild.isEmpty()) {
+                String premierMorceau = currentPuzzleBuild.get(0);
+                puzzleResultLabel.setText("💡 INDICE : Le mot commence par \"" + premierMorceau + "\"");
+            } else {
+                puzzleResultLabel.setText("💡 INDICE : Le mot a " + currentPuzzleWord.length() + " lettres");
+            }
+            puzzleResultLabel.setStyle("-fx-text-fill: #F59E0B; -fx-font-weight: bold;");
+
+            new Thread(() -> {
+                try { Thread.sleep(3000); } catch (InterruptedException e) {}
+                Platform.runLater(() -> puzzleResultLabel.setText(""));
+            }).start();
+        } else {
+            puzzleResultLabel.setText("⚠️ Pas assez de points pour un indice ! (5 points requis)");
+            puzzleResultLabel.setStyle("-fx-text-fill: #F59E0B;");
+        }
+    }
+
+    private void utiliserPuzzleSecours() {
+        // Mots de secours par niveau
+        String niveau = puzzleLevelCombo.getValue();
+        Map<String, List<String[]>> motsSecours = new HashMap<>();
+
+        motsSecours.put("A1 - Débutant", Arrays.asList(
+                new String[]{"bonjour", "bon|jour", "Salutation matinale"},
+                new String[]{"merci", "mer|ci", "Expression de gratitude"},
+                new String[]{"maison", "mai|son", "Lieu où on habite"}
+        ));
+
+        motsSecours.put("B1 - Intermédiaire", Arrays.asList(
+                new String[]{"impossible", "im|pos|sible", "Qui ne peut pas être fait"},
+                new String[]{"malheureux", "mal|heureux", "Qui n'est pas content"},
+                new String[]{"reconstruction", "re|con|struc|tion", "Action de reconstruire"}
+        ));
+
+        List<String[]> motsListe = motsSecours.getOrDefault(niveau, motsSecours.get("A1 - Débutant"));
+        String[] motChoisi = motsListe.get(puzzleRound % motsListe.size());
+
+        currentPuzzleWord = motChoisi[0];
+        String[] pieces = motChoisi[1].split("\\|");
+        currentPuzzlePieces.clear();
+        currentPuzzlePieces.addAll(Arrays.asList(pieces));
+        currentPuzzleDefinition = motChoisi[2];
+        currentPuzzleBuild.clear();
+
+        Collections.shuffle(currentPuzzlePieces);
+        afficherPuzzle();
+    }
+
+    private void terminerPuzzle() {
+        int totalMax = puzzleTotalRounds * 20;
+        double pourcentage = (double) puzzleScore / totalMax * 100;
+
+        String appreciation;
+        if (pourcentage >= 80) appreciation = "🏆 EXCELLENT ! Vous maîtrisez la construction des mots !";
+        else if (pourcentage >= 60) appreciation = "👍 TRÈS BIEN ! Continuez à apprendre les préfixes et suffixes !";
+        else if (pourcentage >= 40) appreciation = "📚 PAS MAL ! Révisez les morphèmes et réessayez !";
+        else appreciation = "💪 CONTINUEZ VOS EFFORTS ! La structure des mots s'apprend avec la pratique !";
+
+        showStyledAlert("🎉 Puzzle terminé !",
+                "Score final : " + puzzleScore + "/" + totalMax + " (" + (int)pourcentage + "%)\n\n" + appreciation,
+                pourcentage >= 60 ? "success" : "info");
+
+        puzzleGameContainer.setVisible(false);
+        puzzleGameContainer.setManaged(false);
+    }
+
+    private void mettreAJourScorePuzzle() {
+        puzzleScoreLabel.setText("Score: " + puzzleScore);
+        puzzleProgressBar.setProgress((double) puzzleRound / puzzleTotalRounds);
+    }
+
+    private void showLoadingPuzzle(boolean show) {
+        // Vous pouvez réutiliser votre loading existant ou créer un indicateur
+        Platform.runLater(() -> {
+            if (show) {
+                startPuzzleBtn.setDisable(true);
+                startPuzzleBtn.setText("⏳ Génération...");
+            } else {
+                startPuzzleBtn.setDisable(false);
+                startPuzzleBtn.setText("🧩 Nouveau puzzle");
+            }
+        });
     }
 
 }

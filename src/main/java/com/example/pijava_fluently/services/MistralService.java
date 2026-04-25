@@ -168,4 +168,69 @@ public class MistralService {
 
         return appelerMistral(systemPrompt);
     }
+
+    public String explorerCulture(String pays, String categorie, String langue) {
+        String prompt = String.format("""
+    Tu es un guide touristique expert. Tu dois présenter des éléments culturels.
+    
+    Pays: %s
+    Catégorie: %s
+    Langue: %s
+    
+    Pour CHAQUE élément, donne une adresse TRÈS PRÉCISE avec le NOM du lieu.
+    
+    FORMAT EXACT:
+    ===
+    NOM: [nom exact du lieu/plat/tradition]
+    TYPE: [lieu|cuisine|tradition|art]
+    DESCRIPTION: [description en 2-3 phrases]
+    ADRESSE: [adresse COMPLÈTE - ex: "Champ de Mars, 5 Avenue Anatole France, 75007 Paris" ou "Quartier Latin, Paris 5e" ou "Place de la Comédie, Montpellier"]
+    HORAIRES: [horaires ou "Toute l'année" ou "Variable"]
+    ===
+    
+    EXEMPLES D'ADRESSES PRÉCISES:
+    - Pour la Tour Eiffel: "Champ de Mars, 5 Avenue Anatole France, 75007 Paris"
+    - Pour le Louvre: "Rue de Rivoli, 75001 Paris"
+    - Pour le Croissant (plat): "Dans toutes les boulangeries françaises, originaire de Vienne (Autriche)"
+    
+    IMPORTANT: 
+    - Utilise la langue %s
+    - Sois TRÈS PRÉCIS sur les adresses
+    - Ne mets pas seulement "Paris" ou "France"
+    """, pays, categorie, langue, langue);
+
+        return appelerMistral(prompt);
+    }
+
+    public String genererPuzzleEtymologique(String langue, String niveau) {
+        String prompt = String.format("""
+    Tu es un professeur de linguistique. Crée un puzzle étymologique pour un étudiant de niveau %s en langue %s.
+    
+    Choisis un mot intéressant de la langue %s. Découpe-le en ses morphèmes (préfixe(s), racine, suffixe(s)).
+    
+    Réponds EXACTEMENT au format suivant:
+    
+    MOT COMPLET: [le mot complet]
+    DÉFINITION: [définition claire du mot]
+    MORCEAUX: [morceau1]|[morceau2]|[morceau3]
+    
+    Exemple pour "impossible" en français:
+    MOT COMPLET: impossible
+    DÉFINITION: Qui ne peut être fait ou réalisé
+    MORCEAUX: im|pos|sible
+    
+    Exemple pour "reconstruction" en français:
+    MOT COMPLET: reconstruction
+    DÉFINITION: Action de reconstruire quelque chose
+    MORCEAUX: re|con|struc|tion
+    
+    IMPORTANT:
+    - Utilise la langue %s pour tout
+    - Les morceaux doivent être séparés par |
+    - Le mot doit être adapté au niveau %s
+    """, niveau, langue, langue, langue, niveau);
+
+        return appelerMistral(prompt);
+    }
+
 }

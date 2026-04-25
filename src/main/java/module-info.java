@@ -8,6 +8,8 @@ module com.example.pijava_fluently {
     requires layout;
     requires okhttp3;
     requires javafx.media;
+    requires org.json;
+    requires javafx.web;
 
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;
