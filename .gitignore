@@ -41,6 +41,8 @@ build/
 src/main/resources/config.properties
 **/config.properties
 
+src/main/resources/credentials.json
+**/credentials.json
 # Fichiers sensibles
 *.properties
 !application.properties
