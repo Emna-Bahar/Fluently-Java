@@ -22,6 +22,13 @@
             <Label text="Ajoutez et gérez les questions associées aux tests"
                    style="-fx-font-size:12px;-fx-text-fill:#8A8FA8;"/>
         </VBox>
+        <Button text="🤖 Générer avec l'IA"
+                onAction="#handleGenererIA"
+                style="-fx-background-color:linear-gradient(to right,#7C3AED,#6C63FF);
+               -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+               -fx-background-radius:12;-fx-padding:11 22;-fx-cursor:hand;
+               -fx-border-color:transparent;
+               -fx-effect:dropshadow(gaussian,rgba(124,58,237,0.38),10,0,0,4);"/>
         <Button text="＋  Ajouter une question" onAction="#handleAjouter"
                 style="-fx-background-color:linear-gradient(to right,#EC4899,#F43F5E);
                        -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;

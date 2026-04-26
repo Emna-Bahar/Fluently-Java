@@ -30,4 +30,17 @@ public class MyDatabase {
     public Connection getConnection() {
         return connection;
     }
+    // Dans MyDatabase.java — ajoute cette méthode
+    public void reconnect() {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+            // Même URL que dans ton constructeur
+            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            System.out.println("[MyDatabase] Reconnexion réussie.");
+        } catch (SQLException e) {
+            System.err.println("[MyDatabase] Erreur reconnexion : " + e.getMessage());
+        }
+    }
 }

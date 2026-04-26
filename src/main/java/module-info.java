@@ -4,12 +4,15 @@ module com.example.pijava_fluently {
     requires java.sql;
     requires java.desktop;
     requires com.google.gson;
+    requires com.fasterxml.jackson.databind;
+    requires com.google.zxing.javase;
+    requires com.google.zxing;
+    requires itextpdf;
     requires kernel;
     requires layout;
-    requires okhttp3;
-    requires javafx.media;
-    requires org.json;
     requires javafx.web;
+    requires okhttp3;
+    requires org.json;
 
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;
