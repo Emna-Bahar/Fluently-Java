@@ -122,6 +122,7 @@ public class NotificationBell {
 
         // ── Démarrage ────────────────────────────────────────────
         demarrerScheduler();
+        Platform.runLater(this::verifierSessions);
     }
 
     // ── Getter ────────────────────────────────────────────────────
@@ -207,6 +208,22 @@ public class NotificationBell {
                     notifiedKeys.add(kNow);
                     ajouterNotification("🎯", "En cours maintenant : " + nom,
                             "🟢 LIVE  ·  " + heure, "#10B981", s, true);
+                }
+            }
+            if (!isProfesseur) {
+                Set<Integer> reservedIds = sessions.stream()
+                        .map(Session::getId)
+                        .collect(java.util.stream.Collectors.toSet());
+                for (Session s : sessionSvc.recupererDisponibles()) {
+                    if (s.getDateHeure() == null) continue;
+                    if (reservedIds.contains(s.getId())) continue;
+                    long minNew = ChronoUnit.MINUTES.between(now, s.getDateHeure());
+                    String keyNew = "new_" + s.getId();
+                    if (minNew > 0 && minNew <= 10080 && !notifiedKeys.contains(keyNew)) {
+                        notifiedKeys.add(keyNew);
+                        ajouterNotification("✨", "Nouvelle session disponible : " + nomSession(s),
+                                "Session prévue le " + s.getDateHeure().format(FMT_DATE), "#8B5CF6", s, true);
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -309,6 +326,7 @@ public class NotificationBell {
     }
 
     private void ouvrirPanneau() {
+        verifierSessions();
         unreadCount = 0;
         majBadge();
         panneauOuvert = true;
