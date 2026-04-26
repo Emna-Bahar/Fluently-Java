@@ -3,6 +3,9 @@ package com.example.pijava_fluently.controller;
 import com.example.pijava_fluently.entites.Groupe;
 import com.example.pijava_fluently.entites.Message;
 import com.example.pijava_fluently.entites.User;
+import com.example.pijava_fluently.services.DictionaryService;
+import com.example.pijava_fluently.services.LanguageDetectionService;
+import com.example.pijava_fluently.services.LangueService;
 import com.example.pijava_fluently.services.ModerationService;
 import com.example.pijava_fluently.services.MessageLogService;
 import com.example.pijava_fluently.services.MessageService;
@@ -53,10 +56,35 @@ public class GroupChatController implements Initializable {
     private MessageService messageService;
     private MessageLogService messageLogService;
     private UserService userService;
+    private final LanguageDetectionService languageDetectionService = new LanguageDetectionService();
+    private final DictionaryService dictionaryService = new DictionaryService();
+    private final LangueService langueService = new LangueService();
     private Groupe currentGroupe;
+    private String expectedLanguage = null; // API language name for this group, e.g. "French"
     private int currentUserId = 1;
     private final Map<Integer, String> userDisplayCache = new HashMap<>();
     private final Map<Integer, Message> messageCacheById = new HashMap<>();
+
+    // Maps DB language names (French) to API Ninjas detection names (English)
+    private static final Map<String, String> LANG_NAME_MAP = new HashMap<>();
+    static {
+        LANG_NAME_MAP.put("français",    "French");
+        LANG_NAME_MAP.put("francais",    "French");
+        LANG_NAME_MAP.put("anglais",     "English");
+        LANG_NAME_MAP.put("espagnol",    "Spanish");
+        LANG_NAME_MAP.put("allemand",    "German");
+        LANG_NAME_MAP.put("arabe",       "Arabic");
+        LANG_NAME_MAP.put("italien",     "Italian");
+        LANG_NAME_MAP.put("portugais",   "Portuguese");
+        LANG_NAME_MAP.put("chinois",     "Chinese");
+        LANG_NAME_MAP.put("japonais",    "Japanese");
+        LANG_NAME_MAP.put("russe",       "Russian");
+        LANG_NAME_MAP.put("coréen",      "Korean");
+        LANG_NAME_MAP.put("coreen",      "Korean");
+        LANG_NAME_MAP.put("turc",        "Turkish");
+        LANG_NAME_MAP.put("néerlandais", "Dutch");
+        LANG_NAME_MAP.put("neerlandais", "Dutch");
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -74,7 +102,19 @@ public class GroupChatController implements Initializable {
         this.currentGroupe = groupe;
         lblGroupName.setText(groupe.getNom());
         lblGroupSubtitle.setText("Messages récents en haut");
+        resolveExpectedLanguage(groupe.getIdLangueId());
         loadMessages();
+    }
+
+    private void resolveExpectedLanguage(int langueId) {
+        try {
+            var langue = langueService.recupererParId(langueId);
+            if (langue != null && langue.getNom() != null) {
+                expectedLanguage = LANG_NAME_MAP.get(langue.getNom().toLowerCase().trim());
+            }
+        } catch (Exception ignored) {
+            expectedLanguage = null;
+        }
     }
 
     public void setCurrentUserId(int currentUserId) {
@@ -125,29 +165,23 @@ public class GroupChatController implements Initializable {
         try {
             ModerationService.ModerationResult moderationResult = messageService.analyserMessage(contenu);
 
-            boolean blockedByApi = moderationResult.isApiAvailable()
-                    && (moderationResult.isFlagged() || moderationResult.getTopScore() >= 0.70);
-            boolean blockedByLocalFallback = isLocallyFlagged(contenu);
-
-            if (blockedByApi || blockedByLocalFallback) {
-                String reason = blockedByApi
-                        ? moderationResult.getTopCategory()
-                        : "suspicious_local_pattern";
-                showError("Message bloque par moderation (" + reason + "). Merci de reformuler.");
+            if (moderationResult.isApiAvailable() && moderationResult.isFlagged()) {
+                showError("Message bloqué : contenu inapproprié détecté. Merci de reformuler.");
                 return;
             }
 
-            if (!moderationResult.isApiAvailable() && isStrictModerationEnabled()) {
-                String detail = moderationResult.getErrorMessage();
-                if (detail == null || detail.isBlank()) {
-                    detail = "API indisponible";
+            if (expectedLanguage != null && contenu.length() >= 8) {
+                String detectedLang = languageDetectionService.detect(contenu);
+                if (detectedLang != null && !detectedLang.equalsIgnoreCase(expectedLanguage)) {
+                    showError("Ce groupe est en " + expectedLanguage + ". Votre message semble être en " + detectedLang + ".");
+                    return;
                 }
-                showError("Verification de moderation indisponible (" + detail + "). Reessayez plus tard.");
-                return;
             }
 
             int messageId = messageService.ajouterEtRetournerId(message, parentMessageId, message.getMentions());
             messageService.enregistrerModeration(messageId, moderationResult);
+            String sentiment = messageService.analyserSentiment(contenu);
+            messageService.enregistrerSentiment(messageId, sentiment);
             txtMessage.clear();
             loadMessages();
         } catch (SQLException e) {
@@ -187,12 +221,13 @@ public class GroupChatController implements Initializable {
             private final Label threadLabel = new Label();
             private final Label mentionsLabel = new Label();
             private final Label metaLabel = new Label();
+            private final Label sentimentBadge = new Label();
             private final Button btnEdit = new Button("Modifier");
             private final Button btnDelete = new Button("Supprimer");
             private final Button btnReply = new Button("Repondre");
             private final HBox actionBox = new HBox(8, btnReply, btnEdit, btnDelete);
             private final Region spacer = new Region();
-            private final HBox metaRow = new HBox(8, metaLabel, spacer, actionBox);
+            private final HBox metaRow = new HBox(8, metaLabel, spacer, sentimentBadge, actionBox);
             private final VBox box = new VBox(8, threadLabel, contentLabel, mentionsLabel, metaRow);
 
             {
@@ -209,6 +244,7 @@ public class GroupChatController implements Initializable {
                 mentionsLabel.setManaged(false);
 
                 metaLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b7280;");
+                sentimentBadge.setStyle("-fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 4;");
                 HBox.setHgrow(spacer, Priority.ALWAYS);
                 metaRow.setAlignment(Pos.CENTER_LEFT);
 
@@ -265,6 +301,25 @@ public class GroupChatController implements Initializable {
                 } else {
                     mentionsLabel.setVisible(false);
                     mentionsLabel.setManaged(false);
+                }
+
+                String sentiment = message.getSentiment();
+                if (sentiment == null) {
+                    sentimentBadge.setText("○ Sentiment inconnu");
+                    sentimentBadge.setStyle("-fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 4; -fx-background-color: #f3f4f6; -fx-text-fill: #6b7280;");
+                } else switch (sentiment) {
+                    case "positive" -> {
+                        sentimentBadge.setText("😊 Positif");
+                        sentimentBadge.setStyle("-fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 4; -fx-background-color: #dcfce7; -fx-text-fill: #166534;");
+                    }
+                    case "negative" -> {
+                        sentimentBadge.setText("😠 Négatif");
+                        sentimentBadge.setStyle("-fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 4; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b;");
+                    }
+                    default -> {
+                        sentimentBadge.setText("😐 Neutre");
+                        sentimentBadge.setStyle("-fx-font-size: 11px; -fx-padding: 2 6; -fx-background-radius: 4; -fx-background-color: #fef9c3; -fx-text-fill: #854d0e;");
+                    }
                 }
 
                 btnEdit.setOnAction(e -> handleEditMessage(message));

@@ -13,6 +13,9 @@ public class Message {
     private int idUserId;
     private Integer parentMessageId;
     private String mentions;
+    private boolean flagged;
+    private boolean moderationChecked;
+    private String sentiment; // "positive", "negative", "neutral", or null
 
     public int getId() {
         return id;
@@ -92,5 +95,29 @@ public class Message {
 
     public void setMentions(String mentions) {
         this.mentions = mentions;
+    }
+
+    public boolean isFlagged() {
+        return flagged;
+    }
+
+    public void setFlagged(boolean flagged) {
+        this.flagged = flagged;
+    }
+
+    public boolean isModerationChecked() {
+        return moderationChecked;
+    }
+
+    public void setModerationChecked(boolean moderationChecked) {
+        this.moderationChecked = moderationChecked;
+    }
+
+    public String getSentiment() {
+        return sentiment;
+    }
+
+    public void setSentiment(String sentiment) {
+        this.sentiment = sentiment;
     }
 }

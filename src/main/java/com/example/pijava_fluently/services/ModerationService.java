@@ -10,8 +10,9 @@ import java.nio.charset.StandardCharsets;
 
 public class ModerationService {
 
-    private static final String PROVIDER = "purgomalum";
-    private static final String ENDPOINT = "https://www.purgomalum.com/service/containsprofanity";
+    private static final String PROVIDER = "api-ninjas";
+    private static final String ENDPOINT = "https://api.api-ninjas.com/v1/profanityfilter";
+    private static final String API_KEY  = com.example.pijava_fluently.utils.AppConfig.get("API_NINJAS_KEY");
 
     public ModerationResult moderate(String content) {
         if (content == null || content.isBlank()) {
@@ -24,6 +25,7 @@ public class ModerationService {
             URL url = new URL(ENDPOINT + "?text=" + encoded);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
+            connection.setRequestProperty("X-Api-Key", API_KEY);
             connection.setRequestProperty("User-Agent", "FluentlyApp/1.0");
             connection.setConnectTimeout(4000);
             connection.setReadTimeout(7000);
@@ -38,7 +40,9 @@ public class ModerationService {
                 return ModerationResult.unavailable(PROVIDER, "HTTP " + responseCode, body);
             }
 
-            boolean flagged = "true".equalsIgnoreCase(body == null ? "" : body.trim());
+            // Response: {"original":"...","censored":"...","has_profanity":true}
+            com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(body).getAsJsonObject();
+            boolean flagged = json.has("has_profanity") && json.get("has_profanity").getAsBoolean();
             return new ModerationResult(
                     PROVIDER,
                     true,

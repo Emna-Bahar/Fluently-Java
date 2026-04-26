@@ -37,6 +37,10 @@ build/
 ### Mac OS ###
 .DS_Store
 
+### Secrets ###
+config.properties
+.env
+
 
 CLAUDE.md
 README_GROUPS.md

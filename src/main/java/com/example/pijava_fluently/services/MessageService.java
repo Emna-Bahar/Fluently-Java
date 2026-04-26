@@ -21,15 +21,18 @@ public class MessageService {
 
     private final Connection connection;
     private final ModerationService moderationService;
+    private final SentimentService sentimentService;
     private Boolean isEpingleNumeric;
 
     public MessageService() {
         connection = MyDatabase.getInstance().getConnection();
         moderationService = new ModerationService();
+        sentimentService = new SentimentService();
         try {
             ensureMembershipTableExists();
             ensureModerationTableExists();
             ensureMessageMetadataTableExists();
+            ensureSentimentTableExists();
         } catch (SQLException e) {
             System.err.println("Warning: unable to initialize message support tables: " + e.getMessage());
         }
@@ -94,14 +97,53 @@ public class MessageService {
         }
     }
 
+    private void ensureSentimentTableExists() throws SQLException {
+        String query = """
+                CREATE TABLE IF NOT EXISTS `message_sentiment` (
+                  `id` INT NOT NULL AUTO_INCREMENT,
+                  `message_id` INT NOT NULL,
+                  `sentiment` VARCHAR(20) NOT NULL,
+                  `checked_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uk_message_sentiment_message` (`message_id`)
+                )
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.execute();
+        }
+    }
+
+    public void enregistrerSentiment(int messageId, String sentiment) throws SQLException {
+        if (messageId <= 0 || sentiment == null) return;
+        String query = """
+                INSERT INTO `message_sentiment` (message_id, sentiment)
+                VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE sentiment = VALUES(sentiment), checked_at = CURRENT_TIMESTAMP
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, messageId);
+            statement.setString(2, sentiment);
+            statement.executeUpdate();
+        }
+    }
+
+    public String analyserSentiment(String contenu) {
+        return sentimentService.analyze(contenu);
+    }
+
     public List<Message> recupererParGroupe(int idGroupe) throws SQLException {
         List<Message> messages = new ArrayList<>();
         String query = """
               SELECT m.id, m.contenu, m.type_message, m.date_creation, m.date_modif,
                   m.statut_message, m.id_groupe_id, m.id_user_id,
-                  md.parent_message_id, md.mentions
+                  md.parent_message_id, md.mentions,
+                  COALESCE(mm.is_flagged, 0)    AS is_flagged,
+                  COALESCE(mm.api_available, 0) AS api_available,
+                  ms.sentiment
               FROM `message` m
-              LEFT JOIN `message_metadata` md ON md.message_id = m.id
+              LEFT JOIN `message_metadata`   md ON md.message_id = m.id
+              LEFT JOIN `message_moderation` mm ON mm.message_id = m.id
+              LEFT JOIN `message_sentiment`  ms ON ms.message_id = m.id
               WHERE m.id_groupe_id = ?
               ORDER BY m.date_creation DESC, m.date_modif DESC, m.id DESC
                 """;
@@ -122,6 +164,11 @@ public class MessageService {
                     int parentMessageId = resultSet.getInt("parent_message_id");
                     message.setParentMessageId(resultSet.wasNull() ? null : parentMessageId);
                     message.setMentions(resultSet.getString("mentions"));
+                    boolean isFlagged = resultSet.getBoolean("is_flagged");
+                    boolean apiAvailable = resultSet.getBoolean("api_available");
+                    message.setFlagged(isFlagged);
+                    message.setModerationChecked(apiAvailable);
+                    message.setSentiment(resultSet.getString("sentiment"));
                     messages.add(message);
                 }
             }
