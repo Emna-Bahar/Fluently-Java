@@ -53,4 +53,9 @@
   "raison" : "Clic droit détecté",
   "testId" : 17,
   "testTitre" : "Test de niveau francais"
+}, {
+  "date" : "26/04/2026 19:54:52",
+  "raison" : "Tentative de quitter le plein écran",
+  "testId" : 17,
+  "testTitre" : "Test de niveau francais"
 } ]
