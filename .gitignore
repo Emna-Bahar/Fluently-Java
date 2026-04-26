@@ -46,3 +46,6 @@ src/main/resources/config.properties
 *.log
 fraude_logs/
 certificats/
+
+CLAUDE.md
+README_GROUPS.md

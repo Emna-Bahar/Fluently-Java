@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.AdminGroupMessagesController"
+      spacing="20" style="-fx-background-color: #F8FAFC; -fx-padding: 0;">
+
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT" spacing="16"
+          style="-fx-background-color: white; -fx-padding: 16 24; -fx-border-color: #E2E8F0; -fx-border-width: 0 0 1 0;">
+        <Button text="&lt; Retour" onAction="#handleBack" styleClass="btn-reset"/>
+        <VBox spacing="2" HBox.hgrow="ALWAYS">
+            <Label fx:id="lblGroupName" text="Messages du groupe" styleClass="page-title"/>
+            <Label fx:id="lblGroupSubtitle" text="" styleClass="admin-page-subtitle"/>
+        </VBox>
+        <Label fx:id="lblMessageCount" text="0 message(s)" styleClass="admin-result-count"/>
+    </HBox>
+
+    <VBox spacing="20" VBox.vgrow="ALWAYS">
+        <padding><Insets top="0" left="24" right="24" bottom="24"/></padding>
+
+        <!-- Messages table -->
+        <VBox styleClass="admin-table-card">
+            <HBox alignment="CENTER_LEFT" spacing="12" styleClass="admin-table-header">
+                <Label text="Messages" styleClass="admin-table-title" HBox.hgrow="ALWAYS"/>
+                <Button text="Actualiser" onAction="#handleRefresh" styleClass="admin-refresh-btn"/>
+            </HBox>
+
+            <TableView fx:id="messagesTable" styleClass="admin-table" prefHeight="300">
+                <columns>
+                    <TableColumn fx:id="colMsgId" text="ID" prefWidth="55"/>
+                    <TableColumn fx:id="colMsgUser" text="Utilisateur" prefWidth="110"/>
+                    <TableColumn fx:id="colMsgContent" text="Contenu" prefWidth="380"/>
+                    <TableColumn fx:id="colMsgDate" text="Date" prefWidth="145"/>
+                    <TableColumn fx:id="colMsgActions" text="Actions" prefWidth="100"/>
+                </columns>
+                <placeholder>
+                    <VBox alignment="CENTER" spacing="10" style="-fx-padding: 40;">
+                        <Label text="Aucun message dans ce groupe" styleClass="admin-table-empty-title"/>
+                    </VBox>
+                </placeholder>
+            </TableView>
+        </VBox>
+
+        <!-- Log table -->
+        <VBox styleClass="admin-table-card" VBox.vgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" spacing="12" styleClass="admin-table-header">
+                <Label text="Journal des actions" styleClass="admin-table-title" HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblLogCount" text="0 entree(s)" styleClass="admin-result-count"/>
+                <Button text="Actualiser" onAction="#handleRefreshLog" styleClass="admin-refresh-btn"/>
+            </HBox>
+
+            <TableView fx:id="logTable" styleClass="admin-table" prefHeight="260">
+                <columns>
+                    <TableColumn fx:id="colLogAction" text="Action" prefWidth="80"/>
+                    <TableColumn fx:id="colLogUser" text="Auteur msg" prefWidth="110"/>
+                    <TableColumn fx:id="colLogOriginal" text="Contenu original" prefWidth="240"/>
+                    <TableColumn fx:id="colLogNew" text="Nouveau contenu" prefWidth="200"/>
+                    <TableColumn fx:id="colLogDate" text="Date action" prefWidth="145"/>
+                </columns>
+                <placeholder>
+                    <VBox alignment="CENTER" spacing="10" style="-fx-padding: 30;">
+                        <Label text="Aucune action enregistrée pour ce groupe" styleClass="admin-table-empty-sub"/>
+                    </VBox>
+                </placeholder>
+            </TableView>
+        </VBox>
+
+    </VBox>
+</VBox>

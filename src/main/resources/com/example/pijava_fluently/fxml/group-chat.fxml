@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.GroupChatController"
+            prefWidth="760" prefHeight="650"
+            style="-fx-background-color: #F8FAFC;">
+
+    <top>
+        <VBox spacing="4" styleClass="chat-header">
+            <Label fx:id="lblGroupName" text="Conversation du groupe" styleClass="chat-group-name"/>
+            <Label fx:id="lblGroupSubtitle" text="Messages récents en haut" styleClass="chat-group-subtitle"/>
+        </VBox>
+    </top>
+
+    <center>
+        <ListView fx:id="listMessages" styleClass="chat-list">
+            <BorderPane.margin>
+                <Insets top="12" right="16" bottom="12" left="16"/>
+            </BorderPane.margin>
+        </ListView>
+    </center>
+
+    <bottom>
+        <VBox spacing="10" styleClass="chat-input-area">
+            <Label fx:id="lblError" visible="false" managed="false" styleClass="chat-error-label"/>
+            <TextArea fx:id="txtMessage" prefRowCount="3" wrapText="true"
+                      promptText="Écrivez votre message..." styleClass="chat-textarea"/>
+            <HBox alignment="CENTER_RIGHT" spacing="10">
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="🔄 Rafraîchir" onAction="#handleRefresh" styleClass="chat-refresh-btn"/>
+                <Button text="Envoyer ➤" onAction="#handleSend" styleClass="chat-send-btn"/>
+            </HBox>
+        </VBox>
+    </bottom>
+</BorderPane>

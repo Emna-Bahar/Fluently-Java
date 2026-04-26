@@ -226,6 +226,10 @@ public class HomeController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/groupes.fxml"));
             Node view = loader.load();
+            GroupesController ctrl = loader.getController();
+            if (currentUser != null) {
+                ctrl.setCurrentUserId(currentUser.getId());
+            }
             setContent(view);
             setActiveButton(btnGroupes);
         } catch (IOException e) {

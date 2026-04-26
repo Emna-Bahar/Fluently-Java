@@ -297,12 +297,74 @@
                     <VBox fx:id="niveauxView"      visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="coursView"        visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="userProgressView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="testsView"        visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="questionsView"    visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="reponsesView"     visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="passagesView"     visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="groupesView"      visible="false" managed="false" VBox.vgrow="ALWAYS"/>
-                    <VBox fx:id="sessionsView"     visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+
+                    <!-- ═══════ VUES TESTS (conteneurs vides, chargés dynamiquement) ═══════ -->
+                    <VBox fx:id="testsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="questionsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="reponsesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+                    <VBox fx:id="passagesView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
+
+                    <!-- ═══════ GROUPES (gestion-groupe branch — inline table) ═══════ -->
+                    <VBox fx:id="groupesView" visible="false" managed="false" spacing="24">
+                        <StackPane VBox.vgrow="ALWAYS">
+                            <VBox spacing="20">
+
+                                <!-- Header -->
+                                <HBox alignment="CENTER_LEFT" spacing="16">
+                                    <VBox HBox.hgrow="ALWAYS" spacing="4">
+                                        <Label text="Gestion des Groupes" styleClass="page-title"/>
+                                        <Label text="Créez et gérez vos groupes d'apprentissage" styleClass="admin-page-subtitle"/>
+                                    </VBox>
+                                    <Button fx:id="btnAddGroup" text="+ Nouveau Groupe"
+                                            styleClass="btn-add" onAction="#handleAddGroup"/>
+                                </HBox>
+
+                                <!-- Search bar -->
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <TextField fx:id="searchField" promptText="Rechercher un groupe..."
+                                               HBox.hgrow="ALWAYS" styleClass="admin-search-field"/>
+                                    <Button text="Rechercher" styleClass="btn-search" onAction="#handleSearch"/>
+                                    <Button text="Réinitialiser" styleClass="btn-reset" onAction="#handleResetFilters"/>
+                                </HBox>
+
+                                <!-- Table card -->
+                                <VBox styleClass="admin-table-card">
+                                    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="admin-table-header">
+                                        <Label text="Liste des Groupes" styleClass="admin-table-title" HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="lblResultCount" text="0 groupe(s)" styleClass="admin-result-count"/>
+                                        <Button text="Actualiser" styleClass="admin-refresh-btn" onAction="#handleRefreshGroups"/>
+                                    </HBox>
+
+                                    <TableView fx:id="groupesTable" styleClass="admin-table" prefHeight="500">
+                                        <columns>
+                                            <TableColumn fx:id="colGroupeId" text="ID" prefWidth="60"/>
+                                            <TableColumn fx:id="colGroupeNom" text="Nom du Groupe" prefWidth="200"/>
+                                            <TableColumn fx:id="colGroupeDescription" text="Description" prefWidth="290"/>
+                                            <TableColumn fx:id="colGroupeCapacite" text="Capacité" prefWidth="90"/>
+                                            <TableColumn fx:id="colGroupeStatut" text="Statut" prefWidth="110"/>
+                                            <TableColumn fx:id="colGroupeDate" text="Date Création" prefWidth="140"/>
+                                            <TableColumn fx:id="colGroupeActions" text="Actions" prefWidth="200"/>
+                                        </columns>
+                                        <placeholder>
+                                            <VBox alignment="CENTER" spacing="12" style="-fx-padding: 50;">
+                                                <Label text="Aucun groupe trouvé" styleClass="admin-table-empty-title"/>
+                                                <Label text="Créez votre premier groupe pour commencer" styleClass="admin-table-empty-sub"/>
+                                            </VBox>
+                                        </placeholder>
+                                    </TableView>
+                                </VBox>
+                            </VBox>
+
+                            <!-- Form overlay (modal) -->
+                            <StackPane fx:id="groupFormOverlay" visible="false" managed="false"
+                                       style="-fx-background-color: rgba(0,0,0,0.4); -fx-padding: 24;">
+                                <StackPane fx:id="groupFormHost" maxWidth="640" style="-fx-background-color: transparent;"/>
+                            </StackPane>
+                        </StackPane>
+                    </VBox>
+
+                    <!-- ═══════ AUTRES VUES ═══════ -->
+                    <VBox fx:id="sessionsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="reservationsView" visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="objectifsView"    visible="false" managed="false" VBox.vgrow="ALWAYS"/>
                     <VBox fx:id="tachesView"       visible="false" managed="false" VBox.vgrow="ALWAYS"/>
@@ -337,7 +399,6 @@
                             <VBox styleClass="profile-form-card" spacing="20" HBox.hgrow="ALWAYS">
                                 <padding><Insets top="28" left="28" right="28" bottom="28"/></padding>
                                 <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <Label text="👤" style="-fx-font-size:18px;"/>
                                     <Label text="Informations personnelles" styleClass="form-card-title"/>
                                 </HBox>
                                 <Separator/>
@@ -388,7 +449,6 @@
                             <VBox styleClass="profile-form-card" spacing="20" prefWidth="320">
                                 <padding><Insets top="28" left="28" right="28" bottom="28"/></padding>
                                 <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <Label text="🔒" style="-fx-font-size:18px;"/>
                                     <Label text="Mot de passe" styleClass="form-card-title"/>
                                 </HBox>
                                 <Separator/>
@@ -419,7 +479,7 @@
 
                         <HBox spacing="14" alignment="CENTER_RIGHT">
                             <Button text="Annuler les modifications" styleClass="btn-pf-cancel" onAction="#handleProfileCancel"/>
-                            <Button text="💾  Enregistrer les modifications" styleClass="btn-pf-save" onAction="#handleProfileSave"/>
+                            <Button text="Enregistrer les modifications" styleClass="btn-pf-save" onAction="#handleProfileSave"/>
                         </HBox>
                     </VBox>
 
