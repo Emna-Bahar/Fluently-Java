@@ -103,8 +103,8 @@ public class FrontProfileController {
         int idx = Math.max(0, score - 1);
         for (int i = 0; i < 4; i++) {
             bars[i].setStyle(i < score
-                ? "-fx-background-color:" + colors[idx] + ";-fx-background-radius:4;"
-                : "-fx-background-color:#E2E8F0;-fx-background-radius:4;");
+                    ? "-fx-background-color:" + colors[idx] + ";-fx-background-radius:4;"
+                    : "-fx-background-color:#E2E8F0;-fx-background-radius:4;");
         }
         fpPwdStrengthLabel.setText("Force : " + labels[idx]);
         fpPwdStrengthLabel.setStyle("-fx-text-fill:" + colors[idx] + ";-fx-font-weight:bold;");
@@ -188,14 +188,14 @@ public class FrontProfileController {
     private void goHome() {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
+                    getClass().getResource("/com/example/pijava_fluently/fxml/home.fxml")
             );
             Parent root = loader.load();
             HomeController ctrl = loader.getController();
             ctrl.setCurrentUser(user);
             Scene scene = new Scene(root);
             scene.getStylesheets().add(
-                getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
+                    getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
             );
             Stage stage = (Stage) fpFieldPrenom.getScene().getWindow();
             stage.setTitle("Fluently - Mon Espace");
@@ -236,7 +236,7 @@ public class FrontProfileController {
     }
     private static String initials(String p, String n) {
         return ((p!=null&&!p.isEmpty()) ? p.substring(0,1).toUpperCase() : "?")
-             + ((n!=null&&!n.isEmpty()) ? n.substring(0,1).toUpperCase() : "?");
+                + ((n!=null&&!n.isEmpty()) ? n.substring(0,1).toUpperCase() : "?");
     }
     private static String nvl(String s) { return s != null ? s : ""; }
 }

@@ -22,12 +22,10 @@ public class ObjectifService {
         ps.setString(5, o.getStatut());
         ps.setInt(6, o.getIdUserId());
         ps.executeUpdate();
-        System.out.println("Objectif ajouté avec succès !");
     }
 
     public void modifier(Objectif o) throws SQLException {
-        String sql = "UPDATE objectif SET titre=?, description=?, date_deb=?, date_fin=?, statut=?, id_user_id=? " +
-                "WHERE id=?";
+        String sql = "UPDATE objectif SET titre=?, description=?, date_deb=?, date_fin=?, statut=?, id_user_id=? WHERE id=?";
         PreparedStatement ps = cnx.prepareStatement(sql);
         ps.setString(1, o.getTitre());
         ps.setString(2, o.getDescription());
@@ -37,22 +35,17 @@ public class ObjectifService {
         ps.setInt(6, o.getIdUserId());
         ps.setInt(7, o.getId());
         ps.executeUpdate();
-        System.out.println("Objectif modifié avec succès !");
     }
 
     public void supprimer(int id) throws SQLException {
-        String sql = "DELETE FROM objectif WHERE id=?";
-        PreparedStatement ps = cnx.prepareStatement(sql);
+        PreparedStatement ps = cnx.prepareStatement("DELETE FROM objectif WHERE id=?");
         ps.setInt(1, id);
         ps.executeUpdate();
-        System.out.println("Objectif supprimé avec succès !");
     }
 
     public List<Objectif> recuperer() throws SQLException {
         List<Objectif> list = new ArrayList<>();
-        String sql = "SELECT * FROM objectif";
-        Statement st = cnx.createStatement();
-        ResultSet rs = st.executeQuery(sql);
+        ResultSet rs = cnx.createStatement().executeQuery("SELECT * FROM objectif");
         while (rs.next()) {
             Objectif o = new Objectif();
             o.setId(rs.getInt("id"));
@@ -65,5 +58,42 @@ public class ObjectifService {
             list.add(o);
         }
         return list;
+    }
+
+    public List<Objectif> recupererParUtilisateur(int userId) throws SQLException {
+        List<Objectif> list = new ArrayList<>();
+        PreparedStatement ps = cnx.prepareStatement("SELECT * FROM objectif WHERE id_user_id = ?");
+        ps.setInt(1, userId);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            Objectif o = new Objectif();
+            o.setId(rs.getInt("id"));
+            o.setTitre(rs.getString("titre"));
+            o.setDescription(rs.getString("description"));
+            o.setDateDeb(rs.getDate("date_deb").toLocalDate());
+            o.setDateFin(rs.getDate("date_fin").toLocalDate());
+            o.setStatut(rs.getString("statut"));
+            o.setIdUserId(rs.getInt("id_user_id"));
+            list.add(o);
+        }
+        return list;
+    }
+
+    public Objectif recupererParId(int id) throws SQLException {
+        PreparedStatement ps = cnx.prepareStatement("SELECT * FROM objectif WHERE id = ?");
+        ps.setInt(1, id);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return new Objectif(
+                    rs.getInt("id"),
+                    rs.getString("titre"),
+                    rs.getString("description"),
+                    rs.getDate("date_deb").toLocalDate(),
+                    rs.getDate("date_fin").toLocalDate(),
+                    rs.getString("statut"),
+                    rs.getInt("id_user_id")
+            );
+        }
+        return null;
     }
 }
