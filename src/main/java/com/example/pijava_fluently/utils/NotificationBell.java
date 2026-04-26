@@ -115,7 +115,10 @@ public class NotificationBell {
                         "-fx-background-color:rgba(0,0,0,0.25);-fx-background-radius:50;" +
                         "-fx-text-fill:white;"
         ));
-        bellRoot.setOnMouseClicked(e -> togglePanneau());
+        bellRoot.setOnMouseClicked(e -> {
+            e.consume();
+            togglePanneau();
+        });
 
         // ── Démarrage ────────────────────────────────────────────
         demarrerScheduler();
@@ -350,7 +353,7 @@ public class NotificationBell {
         targetOverlay.getChildren().add(panneau);
 
         // Fermer si on clique en dehors
-        targetOverlay.setOnMouseClicked(e -> {
+        javafx.application.Platform.runLater(() -> targetOverlay.setOnMouseClicked(e -> {
             if (panneauOuvert && panneau != null) {
                 javafx.geometry.Bounds bounds = panneau.getBoundsInParent();
                 if (!bounds.contains(e.getX(), e.getY())) {
@@ -358,7 +361,7 @@ public class NotificationBell {
                     targetOverlay.setOnMouseClicked(null);
                 }
             }
-        });
+        }));
 
         FadeTransition fd = new FadeTransition(javafx.util.Duration.millis(180), panneau);
         fd.setFromValue(0); fd.setToValue(1);
