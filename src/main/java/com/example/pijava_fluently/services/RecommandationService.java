@@ -31,9 +31,10 @@ public class RecommandationService {
         if (GROQ_KEY == null) GROQ_KEY = System.getProperty("groq.api.key");
         if (GROQ_MODEL == null) GROQ_MODEL = System.getProperty("groq.model", "llama-3.3-70b-versatile");
 
-        if (GROQ_KEY == null || GROQ_KEY.trim().isEmpty()) {
-            throw new ExceptionInInitializerError("GROQ_API_KEY environment variable or system property must be set");
-        }
+        // Don't fail during initialization - check when actually used
+        // if (GROQ_KEY == null || GROQ_KEY.trim().isEmpty()) {
+        //     throw new ExceptionInInitializerError("GROQ_API_KEY environment variable or system property must be set");
+        // }
     }
 
     private static final String STATUT_ANNULEE   = "annulée";
@@ -52,6 +53,13 @@ public class RecommandationService {
         lastRaisons.clear();
         aiExplanations.clear();
 
+        // Check if Groq API is properly configured
+        if (GROQ_KEY == null || GROQ_KEY.trim().isEmpty()) {
+            System.out.println("[RecommandationService] GROQ_API_KEY not configured, using SQL fallback");
+            return fallbackSQL(userId);
+        }
+
+        try {
         try {
             String        userProfile = buildUserProfile(userId);
             List<Session> candidates  = fetchCandidateSessions(userId);
