@@ -6,108 +6,121 @@
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.pijava_fluently.controller.MesTestsController"
-      spacing="0" style="-fx-background-color: #F8FAFF;">
+      spacing="0" style="-fx-background-color:#F0F2FF;">
 
-    <!-- ==================== EN-TÊTE AVEC DÉCORATION ==================== -->
-    <VBox style="-fx-background-color: white;
-                 -fx-border-color: #E8EDF5;
-                 -fx-border-width: 0 0 1 0;
-                 -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.08), 12, 0, 0, 4);">
+    <!-- ══════════════════ HEADER ══════════════════ -->
+    <VBox style="-fx-background-color:white;
+                 -fx-effect:dropshadow(gaussian,rgba(99,102,241,0.12),0,0,0,3);">
 
-        <!-- Décoration supérieure -->
-        <HBox prefHeight="4" style="-fx-background-color: linear-gradient(to right, #6366F1, #8B5CF6, #A855F7);"/>
+        <!-- Barre colorée top -->
+        <HBox prefHeight="5"
+              style="-fx-background-color:linear-gradient(to right,#6366F1,#A855F7,#EC4899);"/>
 
-        <padding><Insets top="28" left="40" right="40" bottom="22"/></padding>
+        <HBox alignment="CENTER_LEFT" spacing="20"
+              style="-fx-padding:22 32 18 32;">
 
-        <HBox alignment="CENTER_LEFT" spacing="16">
-            <VBox spacing="6" HBox.hgrow="ALWAYS">
-                <Label text="📝 Mes Tests"
-                       style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"/>
-                <Label text="Parcourez les tests disponibles par langue et par niveau"
-                       style="-fx-font-size: 13px; -fx-text-fill: #64748B;"/>
+            <!-- Titre + sous-titre -->
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="📝"
+                           style="-fx-font-size:26px;"/>
+                    <Label text="Mes Tests"
+                           style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#1E1B4B;"/>
+                </HBox>
+                <Label text="Pratiquez à votre rythme, progressez chaque jour"
+                       style="-fx-font-size:12px;-fx-text-fill:#94A3B8;-fx-padding:0 0 0 36;"/>
             </VBox>
 
-            <!-- Badge statistiques -->
-            <HBox spacing="8" alignment="CENTER"
-                  style="-fx-background-color: #EEF4FF; -fx-background-radius: 30; -fx-padding: 8 18;">
-                <Label text="📊" style="-fx-font-size: 14px;"/>
-                <Label fx:id="labelStatGlobale" text="0 tests"
-                       style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #6366F1;"/>
+
+        </HBox>
+
+        <!-- Barre d'outils actions -->
+        <HBox spacing="10" alignment="CENTER_LEFT"
+              style="-fx-padding:0 32 16 32;-fx-border-color:#F1F5F9;
+                     -fx-border-width:1 0 0 0;">
+
+            <!-- Recherche -->
+            <HBox alignment="CENTER_LEFT" spacing="8"
+                  style="-fx-background-color:#F8FAFF;-fx-background-radius:24;
+                         -fx-border-color:#E0E7FF;-fx-border-radius:24;
+                         -fx-border-width:1.5;-fx-padding:8 16;"
+                  HBox.hgrow="ALWAYS">
+                <Label text="🔍" style="-fx-font-size:13px;-fx-text-fill:#A5B4FC;"/>
+                <TextField fx:id="searchField"
+                           promptText="Rechercher un test..."
+                           HBox.hgrow="ALWAYS"
+                           style="-fx-background-color:transparent;
+                                  -fx-border-color:transparent;
+                                  -fx-font-size:13px;
+                                  -fx-text-fill:#3730A3;
+                                  -fx-prompt-text-fill:#C7D2FE;"/>
+                <Label fx:id="labelResultat" text=""
+                       style="-fx-font-size:11px;-fx-text-fill:#818CF8;
+                              -fx-background-color:#EEF2FF;
+                              -fx-background-radius:20;-fx-padding:2 8;"/>
             </HBox>
+
+            <!-- Séparateur visuel -->
+            <Separator orientation="VERTICAL"
+                       style="-fx-background-color:#E0E7FF;"/>
+
+            <!-- Boutons actions compacts avec icône + texte -->
+            <Button text="⚔️ Duel" onAction="#handleDuel"
+                    onMouseEntered="#onButtonHover"
+                    onMouseExited="#onButtonExit"
+                    style="-fx-background-color:#6366F1;-fx-text-fill:white;
+                           -fx-font-size:12px;-fx-font-weight:bold;
+                           -fx-background-radius:20;-fx-padding:7 16;-fx-cursor:hand;">
+                <tooltip><Tooltip text="Défier un camarade en duel"/></tooltip>
+            </Button>
+
+            <Button text="🔍 Comportement" onAction="#handleMesInfractions"
+                    onMouseEntered="#onButtonHover"
+                    onMouseExited="#onButtonExit"
+                    style="-fx-background-color:white;-fx-text-fill:#DC2626;
+                           -fx-font-size:12px;-fx-font-weight:bold;
+                           -fx-background-radius:20;-fx-padding:7 16;-fx-cursor:hand;
+                           -fx-border-color:#FEE2E2;-fx-border-radius:20;-fx-border-width:1.5;">
+                <tooltip><Tooltip text="Voir votre historique en mode examen"/></tooltip>
+            </Button>
+
+            <Button text="🏆 Classement" onAction="#handleLeaderboard"
+                    onMouseEntered="#onButtonHover"
+                    onMouseExited="#onButtonExit"
+                    style="-fx-background-color:white;-fx-text-fill:#D97706;
+                           -fx-font-size:12px;-fx-font-weight:bold;
+                           -fx-background-radius:20;-fx-padding:7 16;-fx-cursor:hand;
+                           -fx-border-color:#FDE68A;-fx-border-radius:20;-fx-border-width:1.5;">
+                <tooltip><Tooltip text="Classement des duels"/></tooltip>
+            </Button>
+
+            <Button text="📊 Performances" onAction="#handlePerformances"
+                    style="-fx-background-color:white;-fx-text-fill:#059669;
+                           -fx-font-size:12px;-fx-font-weight:bold;
+                           -fx-background-radius:20;-fx-padding:7 16;-fx-cursor:hand;
+                           -fx-border-color:#A7F3D0;-fx-border-radius:20;-fx-border-width:1.5;">
+                <tooltip><Tooltip text="Analyse de vos performances"/></tooltip>
+            </Button>
+
+            <Button text="🤖 IA" onAction="#handleDashboardIA"
+                    onMouseEntered="#onButtonHoverGradient"
+                    onMouseExited="#onButtonExitGradient"
+                    style="-fx-background-color:linear-gradient(to right,#8B5CF6,#6366F1);
+                           -fx-text-fill:white;-fx-font-size:12px;-fx-font-weight:bold;
+                           -fx-background-radius:20;-fx-padding:7 16;-fx-cursor:hand;">
+                <tooltip><Tooltip text="Dashboard IA — Analyse intelligente"/></tooltip>
+            </Button>
+
         </HBox>
     </VBox>
 
-    <!-- ==================== BARRE D'OUTILS AVEC BOUTONS MODERNES ==================== -->
-    <HBox spacing="16" alignment="CENTER_LEFT"
-          style="-fx-background-color: white; -fx-border-color: #E8EDF5; -fx-border-width: 0 0 1 0;">
-        <padding><Insets top="14" left="40" right="40" bottom="14"/></padding>
-
-        <!-- Zone de recherche -->
-        <HBox alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS"
-              style="-fx-background-color: #F1F5F9; -fx-background-radius: 32;
-                     -fx-padding: 8 18; -fx-border-color: #E2E8F0;
-                     -fx-border-radius: 32; -fx-border-width: 1;">
-            <Label text="🔍" style="-fx-font-size: 15px; -fx-text-fill: #94A3B8;"/>
-            <TextField fx:id="searchField" promptText="Rechercher un test par titre ou type…"
-                       HBox.hgrow="ALWAYS"
-                       style="-fx-background-color: transparent; -fx-border-color: transparent;
-                              -fx-font-size: 13px; -fx-padding: 5 0; -fx-prompt-text-fill: #94A3B8;"/>
-        </HBox>
-
-        <!-- Résultat compteur -->
-        <Label fx:id="labelResultat" text=""
-               style="-fx-font-size: 12px; -fx-font-weight: bold;
-                      -fx-background-color: #EEF4FF; -fx-background-radius: 30;
-                      -fx-padding: 5 14; -fx-text-fill: #6366F1;"/>
-
-        <!-- Boutons d'action avec icônes et tooltips -->
-        <Button text="⚔️ Duel" onAction="#handleDuel"
-                style="-fx-background-color: #6366F1; -fx-text-fill: white;
-                       -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32;
-                       -fx-padding: 8 20; -fx-cursor: hand;"
-                onMouseEntered="#onButtonHover" onMouseExited="#onButtonExit">
-            <tooltip><Tooltip text="Lancer un duel en temps réel contre un camarade"/></tooltip>
-        </Button>
-
-        <Button text="🔍 Mon comportement" onAction="#handleMesInfractions"
-                style="-fx-background-color: #FEF2F2; -fx-text-fill: #DC2626;
-                       -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32;
-                       -fx-padding: 8 20; -fx-cursor: hand; -fx-border-color: #FEE2E2; -fx-border-radius: 32; -fx-border-width: 1;">
-            <tooltip><Tooltip text="Voir votre historique de comportement en mode examen"/></tooltip>
-        </Button>
-
-        <Button text="🏆 Leaderboard" onAction="#handleLeaderboard"
-                style="-fx-background-color: #FFFBEB; -fx-text-fill: #D97706;
-                       -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32;
-                       -fx-padding: 8 20; -fx-cursor: hand; -fx-border-color: #FDE68A; -fx-border-radius: 32; -fx-border-width: 1;">
-            <tooltip><Tooltip text="Classement des meilleurs joueurs en duel"/></tooltip>
-        </Button>
-
-        <Button text="📊 Performances" onAction="#handlePerformances"
-                style="-fx-background-color: #10B981; -fx-text-fill: white;
-                       -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 32;
-                       -fx-padding: 8 20; -fx-cursor: hand;">
-            <tooltip><Tooltip text="Analyse détaillée de vos performances"/></tooltip>
-        </Button>
-
-        <Button text="🤖 Dashboard IA" onAction="#handleDashboardIA"
-                style="-fx-background-color: linear-gradient(to right, #8B5CF6, #6366F1);
-                       -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;
-                       -fx-background-radius: 32; -fx-padding: 8 20; -fx-cursor: hand;"
-                onMouseEntered="#onButtonHoverGradient" onMouseExited="#onButtonExitGradient">
-            <tooltip><Tooltip text="Tableau de bord intelligent avec analyse IA"/></tooltip>
-        </Button>
-    </HBox>
-
-    <!-- ==================== CONTENU SCROLLABLE ==================== -->
+    <!-- ══════════════════ CONTENU ══════════════════ -->
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
-                style="-fx-background: transparent; -fx-background-color: transparent;
-                       -fx-border-color: transparent; -fx-padding: 0;">
-        <VBox fx:id="vboxContenu" spacing="28">
-            <padding><Insets top="28" left="40" right="40" bottom="40"/></padding>
+                style="-fx-background:transparent;-fx-background-color:transparent;
+                       -fx-border-color:transparent;">
+        <VBox fx:id="vboxContenu" spacing="20">
+            <padding><Insets top="24" left="32" right="32" bottom="32"/></padding>
         </VBox>
     </ScrollPane>
 
-    <!-- ================= ANIMATIONS JAVAFX (à ajouter dans le contrôleur) ================= -->
-    <!-- Note: Les effets hover sont gérés via les méthodes dans MesTestsController -->
 </VBox>

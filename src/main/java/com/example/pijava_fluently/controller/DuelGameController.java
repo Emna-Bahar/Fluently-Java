@@ -480,82 +480,62 @@ public class DuelGameController {
             progress.setVisible(true);
             statusLabel.setVisible(true);
             statusLabel.setText("🤖 L'IA analyse votre réponse...");
-
             stopTimer();
 
-            // Appeler l'IA en arrière-plan
             new Thread(() -> {
+                int pts;
+                String commentaire;
+
                 try {
                     AITextCorrectionService aiService = new AITextCorrectionService();
                     Map<String, Object> correction = aiService.correctFreeText(
-                            texte,
-                            q.enonce,
-                            "Français",
-                            "B1"
-                    );
+                            texte, q.enonce, "Français", "B1");
 
                     Object scoreObj = correction.get("score");
                     int iaScore;
-                    if (scoreObj instanceof Integer) {
-                        iaScore = (Integer) scoreObj;
-                    } else if (scoreObj instanceof Double) {
-                        iaScore = ((Double) scoreObj).intValue();
-                    } else if (scoreObj instanceof Number) {
-                        iaScore = ((Number) scoreObj).intValue();
-                    } else {
-                        iaScore = 50;
-                    }
+                    if      (scoreObj instanceof Integer) iaScore = (Integer) scoreObj;
+                    else if (scoreObj instanceof Double)  iaScore = ((Double) scoreObj).intValue();
+                    else if (scoreObj instanceof Number)  iaScore = ((Number) scoreObj).intValue();
+                    else                                  iaScore = 50;
 
-                    double pointsGagnes = (iaScore / 100.0) * q.scoreMax;
-                    int pts = (int) Math.round(pointsGagnes);
-                    scoreMoi += pts;
-
-                    // Stocker pour le détail
-                    mesReponsesTextes.add(texte);
-                    mesScoresParQuestion.add(pts);
-                    mesReponsesCorrectes.add(pts > 0);
-
-                    String commentaire = (String) correction.get("commentaire");
-                    if (commentaire == null) commentaire = "Correction effectuée";
-
-                    final int finalPts = pts;
-                    final String finalCommentaire = commentaire;
-
-                    Platform.runLater(() -> {
-                        progressBox.setVisible(false);
-                        Label feedback = new Label("📝 Score IA: " + finalPts + "/" + q.scoreMax + " pts\n" +
-                                "💬 " + finalCommentaire);
-                        feedback.setStyle("-fx-font-size:12px;-fx-text-fill:#6C63FF;-fx-padding:8 0;-fx-wrap-text:true;");
-                        feedback.setWrapText(true);
-                        box.getChildren().add(feedback);
-
-                        envoyerReponse(idx, -1, finalPts > 0);
-                        mettreAJourScores();
-                        passerQuestionSuivante(idx);
-                    });
+                    pts = (int) Math.round((iaScore / 100.0) * q.scoreMax);
+                    commentaire = (String) correction.getOrDefault("commentaire", "");
 
                 } catch (Exception ex) {
-                    LoggerUtil.error("Erreur correction IA", ex);
-                    // Fallback : score basé sur la longueur
-                    int pts = texte.length() >= 30 ? q.scoreMax : (texte.length() >= 15 ? q.scoreMax / 2 : 0);
-                    scoreMoi += pts;
-
-                    mesReponsesTextes.add(texte);
-                    mesScoresParQuestion.add(pts);
-                    mesReponsesCorrectes.add(pts > 0);
-
-                    Platform.runLater(() -> {
-                        progressBox.setVisible(false);
-                        Label feedback = new Label("⚠️ Correction IA indisponible. Score basé sur la longueur: " + pts + "/" + q.scoreMax + " pts");
-                        feedback.setStyle("-fx-font-size:12px;-fx-text-fill:#D97706;-fx-padding:8 0;-fx-wrap-text:true;");
-                        feedback.setWrapText(true);
-                        box.getChildren().add(feedback);
-
-                        envoyerReponse(idx, -1, pts > 0);
-                        mettreAJourScores();
-                        passerQuestionSuivante(idx);
-                    });
+                    // Fallback si Groq indisponible
+                    pts = 0;
+                    commentaire = "Correction IA indisponible";
                 }
+
+                final int finalPts = pts;
+                final String finalComm = commentaire;
+
+                scoreMoi += finalPts;
+                mesReponsesTextes.add(texte);
+                mesScoresParQuestion.add(finalPts);
+                mesReponsesCorrectes.add(finalPts > 0);
+
+                // ── Envoyer le score RÉEL via le socket ──
+                // L'adversaire recevra ce score et n'aura pas besoin de le recalculer
+                DuelMessage msg = new DuelMessage(DuelMessage.Action.ANSWER);
+                msg.questionIndex = idx;
+                msg.reponseId     = -1;
+                msg.isCorrect     = finalPts > 0;
+                msg.scoreObtenu   = finalPts; // ← score IA transmis
+                sendMessage(msg);
+
+                Platform.runLater(() -> {
+                    progressBox.setVisible(false);
+                    Label feedback = new Label(
+                            "📝 Score IA : " + finalPts + "/" + q.scoreMax + " pts\n"
+                                    + (finalComm.isEmpty() ? "" : "💬 " + finalComm));
+                    feedback.setWrapText(true);
+                    feedback.setStyle("-fx-font-size:12px;-fx-text-fill:#6C63FF;-fx-padding:8 0;");
+                    box.getChildren().add(feedback);
+
+                    mettreAJourScores();
+                    passerQuestionSuivante(idx);
+                });
             }).start();
         });
 
@@ -626,7 +606,13 @@ public class DuelGameController {
             }
             case NAME -> labelNomAdv.setText("⚔️ " + msg.playerName);
             case ANSWER -> {
-                if (msg.isCorrect) scoreAdv += getScoreMaxQuestion(msg.questionIndex);
+                if (msg.scoreObtenu > 0) {
+                    // Score texte libre transmis directement — pas de recalcul
+                    scoreAdv += msg.scoreObtenu;
+                } else if (msg.isCorrect) {
+                    // QCM ou oral — score basé sur le scoreMax de la question
+                    scoreAdv += getScoreMaxQuestion(msg.questionIndex);
+                }
                 mettreAJourScores();
             }
             case FINISHED -> {

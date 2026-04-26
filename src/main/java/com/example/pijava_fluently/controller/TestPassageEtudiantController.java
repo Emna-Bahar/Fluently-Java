@@ -3,7 +3,7 @@ import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.entites.Question;
 import com.example.pijava_fluently.entites.Reponse;
 import com.example.pijava_fluently.entites.Test;
-import com.example.pijava_fluently.entites.TestPassage;
+import com.example.pijava_fluently.entites.*;
 import com.example.pijava_fluently.services.*;
 import com.example.pijava_fluently.utils.LoggerUtil;
 import java.util.HashMap;
@@ -460,44 +460,106 @@ public class TestPassageEtudiantController {
                 (int) Math.round(scoreMaxTotal),
                 pourcentage, parTimer);
 
-        // ── Certificat ────────────────────────────────────────────────────
+        // ── CAS 1 : Test de niveau → attribuer le niveau initial ──
+        boolean estTestDeNiveau = "Test de niveau".equals(test.getType());
+        if (estTestDeNiveau && passageSauvegarde != null) {
+            attribuerNiveauInitial(pourcentage);
+        }
+
+        // ── CAS 2 : Test de fin de niveau réussi → passer au niveau suivant + certificat ──
         boolean estFinDeNiveau = "Test de fin de niveau".equals(test.getType());
         boolean estReussi      = pourcentage >= 50.0;
 
         if (estFinDeNiveau && estReussi && passageSauvegarde != null) {
-
-            // Trouver le niveau CECRL depuis le titre du test
-            // (pas besoin d'entité Niveau — on parse directement)
             String niveauCecrl = extraireNiveauDuTitre(test.getTitre());
+            String nomLangue   = extraireLangueDuTitre(test.getTitre());
+            String prenomNom   = recupererPrenomNom();
 
-            // Trouver la langue depuis les services existants
-            String nomLangue = extraireLangueDuTitre(test.getTitre());
+            passerAuNiveauSuivant();
 
-            // Récupérer le prénom/nom de l'utilisateur connecté
-            // userId est déjà disponible dans le controller
-            String prenomNom = recupererPrenomNom();
-
-            // Construire un objet User minimal pour CertificatController
-            User userPourCertificat    = new User();
+            User userPourCertificat = new User();
             userPourCertificat.setId(userId);
-
-            // Séparer prénom et nom (convention : premier mot = prénom)
             String[] parts = prenomNom.split(" ", 2);
             userPourCertificat.setPrenom(parts.length > 0 ? parts[0] : "Étudiant");
             userPourCertificat.setNom(parts.length > 1 ? parts[1] : "");
 
-            final TestPassage passageFinal = passageSauvegarde;
-            CertificatController certCtrl  = new CertificatController();
+            CertificatController certCtrl = new CertificatController();
             certCtrl.afficherPopupCertificat(
-                    passageFinal,
-                    test,
-                    userPourCertificat,
-                    niveauCecrl,
-                    nomLangue
-            );
+                    passageSauvegarde, test,
+                    userPourCertificat, niveauCecrl, nomLangue);
+
+        }
+
+    }
+    // ── Nouvelle méthode à ajouter ──
+    private void passerAuNiveauSuivant() {
+        try {
+            NiveauService niveauService = new NiveauService();
+
+            int niveauActuelId = test.getNiveauId();
+            if (niveauActuelId <= 0) {
+                System.out.println("[Certificat] test.getNiveauId() = 0");
+                return;
+            }
+
+            List<Niveau> tousNiveaux = niveauService.recuperer();
+
+            Niveau niveauActuel = tousNiveaux.stream()
+                    .filter(n -> n.getId() == niveauActuelId)
+                    .findFirst().orElse(null);
+
+            if (niveauActuel == null) return;
+
+            int langueId    = niveauActuel.getIdLangueId();
+            int ordreActuel = niveauActuel.getOrdre();
+
+            Niveau niveauSuivant = tousNiveaux.stream()
+                    .filter(n -> n.getIdLangueId() == langueId)
+                    .filter(n -> n.getOrdre() == ordreActuel + 1)
+                    .findFirst().orElse(null);
+
+            int nouveauNiveauId = (niveauSuivant != null)
+                    ? niveauSuivant.getId()
+                    : niveauActuelId;
+
+            String sql = """
+            INSERT INTO user_progress
+                (user_id, langue_id, niveau_actuel_id, test_niveau_complete,
+                 dernier_numero_cours, date_derniere_activite)
+            VALUES (?, ?, ?, 1, 0, NOW())
+            ON DUPLICATE KEY UPDATE
+                niveau_actuel_id       = VALUES(niveau_actuel_id),
+                test_niveau_complete   = 1,
+                date_derniere_activite = NOW()
+            """;
+
+            // ← PAS de try-with-resources sur la connexion Singleton
+            // On crée un PreparedStatement qu'on ferme, mais pas la connexion
+            java.sql.Connection conn = com.example.pijava_fluently.utils.MyDatabase
+                    .getInstance().getConnection();
+
+            // Reconnecter si la connexion est fermée ou invalide
+            if (conn == null || conn.isClosed() || !conn.isValid(2)) {
+                com.example.pijava_fluently.utils.MyDatabase.getInstance().reconnect();
+                conn = com.example.pijava_fluently.utils.MyDatabase
+                        .getInstance().getConnection();
+            }
+
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, langueId);
+                ps.setInt(3, nouveauNiveauId);
+                int rows = ps.executeUpdate();
+                System.out.println("[Certificat] Niveau mis à jour : " + rows
+                        + " ligne(s) → nouveauNiveauId=" + nouveauNiveauId);
+            }
+            // ← La connexion reste ouverte pour les prochains services
+
+        } catch (Exception e) {
+            System.err.println("[Certificat] Erreur : " + e.getMessage());
+            e.printStackTrace();
         }
     }
-
 // ── Helpers pour extraire niveau et langue sans nouvelles entités ──
 
     /**
@@ -991,5 +1053,116 @@ public class TestPassageEtudiantController {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+
+    /**
+     * Appelé après un "Test de niveau" pour attribuer le niveau initial
+     * basé sur le score obtenu.
+     */
+    private void attribuerNiveauInitial(double pourcentage) {
+        try {
+            NiveauService niveauService = new NiveauService();
+            LangueService langueService = new LangueService();
+
+            // Trouver la langue du test
+            int langueId = -1;
+            String nomLangue = extraireLangueDuTitre(test.getTitre());
+            for (Langue l : langueService.recuperer()) {
+                if (l.getNom().equalsIgnoreCase(nomLangue)) {
+                    langueId = l.getId();
+                    break;
+                }
+            }
+
+            // Fallback : utiliser langueId du test si dispo
+            if (langueId == -1 && test.getLangueId() > 0) {
+                langueId = test.getLangueId();
+            }
+
+            if (langueId == -1) {
+                System.out.println("[TestNiveau] Langue introuvable pour : " + nomLangue);
+                return;
+            }
+
+            // Déterminer le niveau CECRL selon le score
+            String cecrlObtenu = scoreToNiveau(pourcentage);
+            System.out.println("[TestNiveau] Score=" + pourcentage
+                    + "% → Niveau CECRL=" + cecrlObtenu
+                    + " | langueId=" + langueId);
+
+            // Trouver le niveau correspondant dans la BD
+            // (même langue, difficulté contient le code CECRL)
+            final int langueIdFinal = langueId;
+            List<Niveau> tousNiveaux = niveauService.recuperer();
+
+            Niveau niveauTrouve = tousNiveaux.stream()
+                    .filter(n -> n.getIdLangueId() == langueIdFinal)
+                    .filter(n -> {
+                        String d = n.getDifficulte();
+                        return d != null && d.contains(cecrlObtenu);
+                    })
+                    .findFirst()
+                    .orElse(null);
+
+            // Fallback : prendre le niveau A1 de cette langue
+            if (niveauTrouve == null) {
+                niveauTrouve = tousNiveaux.stream()
+                        .filter(n -> n.getIdLangueId() == langueIdFinal)
+                        .min(java.util.Comparator.comparingInt(Niveau::getOrdre))
+                        .orElse(null);
+                System.out.println("[TestNiveau] Niveau exact non trouvé, fallback vers A1");
+            }
+
+            if (niveauTrouve == null) {
+                System.out.println("[TestNiveau] Aucun niveau trouvé pour langueId=" + langueIdFinal);
+                return;
+            }
+
+            System.out.println("[TestNiveau] Niveau attribué : "
+                    + niveauTrouve.getDifficulte() + " (id=" + niveauTrouve.getId() + ")");
+
+            // Insérer ou mettre à jour user_progress
+            String sql = """
+            INSERT INTO user_progress
+                (user_id, langue_id, niveau_actuel_id, test_niveau_complete,
+                 dernier_numero_cours, date_derniere_activite)
+            VALUES (?, ?, ?, 1, 0, NOW())
+            ON DUPLICATE KEY UPDATE
+                niveau_actuel_id       = VALUES(niveau_actuel_id),
+                test_niveau_complete   = 1,
+                date_derniere_activite = NOW()
+            """;
+
+            java.sql.Connection conn = com.example.pijava_fluently.utils.MyDatabase
+                    .getInstance().getConnection();
+
+            if (conn == null || conn.isClosed() || !conn.isValid(2)) {
+                com.example.pijava_fluently.utils.MyDatabase.getInstance().reconnect();
+                conn = com.example.pijava_fluently.utils.MyDatabase
+                        .getInstance().getConnection();
+            }
+
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, langueId);
+                ps.setInt(3, niveauTrouve.getId());
+                int rows = ps.executeUpdate();
+                System.out.println("[TestNiveau] user_progress mis à jour : "
+                        + rows + " ligne(s) → niveauId=" + niveauTrouve.getId());
+            }
+
+        } catch (Exception e) {
+            System.err.println("[TestNiveau] Erreur : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String scoreToNiveau(double pct) {
+        if (pct >= 90) return "C2";
+        if (pct >= 80) return "C1";
+        if (pct >= 70) return "B2";
+        if (pct >= 60) return "B1";
+        if (pct >= 50) return "A2";
+        return "A1";
     }
 }
