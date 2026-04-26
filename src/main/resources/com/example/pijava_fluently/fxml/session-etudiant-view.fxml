@@ -206,10 +206,10 @@
                                           style="-fx-background-color:transparent;"/>
                                 <HBox spacing="12" alignment="CENTER_LEFT"
                                       style="-fx-padding:8 0 0 0;">
-                                    <Separator HBox.hgrow="ALWAYS"/>
+                                    <Region style="-fx-background-color:#E2E8F0;" HBox.hgrow="ALWAYS" maxHeight="1"/>
                                     <Label text="Toutes les sessions disponibles"
                                            style="-fx-font-size:12px;-fx-text-fill:#94A3B8;-fx-font-weight:bold;"/>
-                                    <Separator HBox.hgrow="ALWAYS"/>
+                                    <Region style="-fx-background-color:#E2E8F0;" HBox.hgrow="ALWAYS" maxHeight="1"/>
                                 </HBox>
                             </VBox>
                             <!-- ══ CARTES SESSIONS ══ -->
