@@ -341,6 +341,7 @@ public class NotificationBell {
 
         panneau.setLayoutX(px);
         panneau.setLayoutY(py);
+        panneau.setManaged(false);
         panneau.setOpacity(0);
         panneau.setScaleY(0.88);
         panneau.setTranslateY(-8);
@@ -461,7 +462,7 @@ public class NotificationBell {
         scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroll.setStyle("-fx-background-color:transparent;-fx-background:#FFFFFF;-fx-border-color:transparent;");
         scroll.setMaxHeight(420);
-        scroll.setPrefHeight(Math.min(notifications.size() * 82 + 20, 420));
+        scroll.setPrefHeight(notifications.isEmpty() ? 240 : Math.min(notifications.size() * 82 + 20, 420));
 
         if (notifications.isEmpty()) {
             VBox empty = new VBox(12);
