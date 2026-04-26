@@ -663,21 +663,25 @@ public class DuelGameController {
         duelTermine = true;
         stopTimer();
 
-        // Sauvegarder dans leaderboard
+        // CHAQUE JOUEUR sauvegarde SON propre résultat
         int finalTestId = (test != null) ? test.getId() : testIdClient;
         if (finalTestId > 0) {
-            new Thread(() -> {
-                try {
-                    LeaderboardService lb = new LeaderboardService();
-                    boolean jaGagne = gagnant.contains(currentUser.getPrenom());
-                    boolean egalite = gagnant.contains("Égalité");
-                    lb.sauvegarderResultatDuel(
-                            currentUser.getId(), finalTestId,
-                            scoreMoi, scoreMaxTotal, jaGagne, egalite);
-                } catch (Exception e) {
-                    LoggerUtil.error("Erreur sauvegarde leaderboard", e);
-                }
-            }).start();
+            boolean jaGagne = gagnant.contains(currentUser.getPrenom());
+            boolean egalite = gagnant.contains("Égalité");
+
+            // Sauvegarde pour le joueur courant (pas dans un thread séparé pour éviter les problèmes)
+            try {
+                LeaderboardService lb = new LeaderboardService();
+                lb.sauvegarderResultatDuel(
+                        currentUser.getId(), finalTestId,
+                        scoreMoi, scoreMaxTotal, jaGagne, egalite);
+                LoggerUtil.info("Leaderboard sauvegardé",
+                        "userId", currentUser.getId(),
+                        "gagne", jaGagne,
+                        "score", scoreMoi);
+            } catch (Exception e) {
+                LoggerUtil.error("Erreur sauvegarde leaderboard pour " + currentUser.getPrenom(), e);
+            }
         }
 
         vboxReponses.setVisible(false);
@@ -693,7 +697,6 @@ public class DuelGameController {
         labelScoreFinMoi.setText(scoreMoi + " / " + scoreMaxTotal + " pts");
         labelScoreFinAdv.setText(scoreAdv + " / " + scoreMaxTotal + " pts");
 
-        // Afficher le détail des réponses
         afficherDetailReponses();
         mettreAJourScores();
     }

@@ -466,30 +466,79 @@ public class TestPassageEtudiantController {
             attribuerNiveauInitial(pourcentage);
         }
 
-        // ── CAS 2 : Test de fin de niveau réussi → passer au niveau suivant + certificat ──
+        // ── CAS 2 : Test de fin de niveau réussi ──
         boolean estFinDeNiveau = "Test de fin de niveau".equals(test.getType());
         boolean estReussi      = pourcentage >= 50.0;
 
         if (estFinDeNiveau && estReussi && passageSauvegarde != null) {
-            String niveauCecrl = extraireNiveauDuTitre(test.getTitre());
-            String nomLangue   = extraireLangueDuTitre(test.getTitre());
-            String prenomNom   = recupererPrenomNom();
+            try {
+                NiveauService niveauService = new NiveauService();
+                LangueService langueService = new LangueService();
 
-            passerAuNiveauSuivant();
+                // Niveau du test lui-même (celui que l'étudiant vient de valider)
+                String niveauCecrl = "A1";
+                String nomLangue   = "Français";
 
-            User userPourCertificat = new User();
-            userPourCertificat.setId(userId);
-            String[] parts = prenomNom.split(" ", 2);
-            userPourCertificat.setPrenom(parts.length > 0 ? parts[0] : "Étudiant");
-            userPourCertificat.setNom(parts.length > 1 ? parts[1] : "");
+                // Lire le niveau depuis test.getNiveauId()
+                if (test.getNiveauId() > 0) {
+                    niveauService.recuperer().stream()
+                            .filter(n -> n.getId() == test.getNiveauId())
+                            .findFirst()
+                            .ifPresent(n -> {
+                                // niveauCecrl = extraireCecrl(n.getDifficulte())
+                                // mais on ne peut pas assigner dans un lambda → utilise un tableau
+                            });
 
-            CertificatController certCtrl = new CertificatController();
-            certCtrl.afficherPopupCertificat(
-                    passageSauvegarde, test,
-                    userPourCertificat, niveauCecrl, nomLangue);
+                    // Alternative sans lambda :
+                    for (Niveau n : niveauService.recuperer()) {
+                        if (n.getId() == test.getNiveauId()) {
+                            niveauCecrl = extraireCecrl(n.getDifficulte());
+                            break;
+                        }
+                    }
+                }
 
+                // Lire la langue depuis test.getLangueId()
+                if (test.getLangueId() > 0) {
+                    for (Langue l : langueService.recuperer()) {
+                        if (l.getId() == test.getLangueId()) {
+                            nomLangue = l.getNom();
+                            break;
+                        }
+                    }
+                }
+
+                System.out.println("[Certificat] Test validé : niveau=" + niveauCecrl
+                        + " | langue=" + nomLangue);
+
+                // Passer au niveau suivant APRÈS avoir lu le niveau du test
+                passerAuNiveauSuivant();
+
+                // Générer le certificat
+                String prenomNom = recupererPrenomNom();
+                User userPourCertificat = new User();
+                userPourCertificat.setId(userId);
+                String[] parts = prenomNom.split(" ", 2);
+                userPourCertificat.setPrenom(parts.length > 0 ? parts[0] : "Étudiant");
+                userPourCertificat.setNom(parts.length > 1 ? parts[1] : "");
+
+                CertificatController certCtrl = new CertificatController();
+                certCtrl.afficherPopupCertificat(
+                        passageSauvegarde, test,
+                        userPourCertificat, niveauCecrl, nomLangue);
+
+            } catch (Exception e) {
+                LoggerUtil.error("Erreur certificat", e);
+            }
         }
-
+    }
+    // Méthode helper pour extraire CECRL de la difficulté
+    private String extraireCecrl(String difficulte) {
+        if (difficulte == null) return "";
+        for (String niv : new String[]{"C2", "C1", "B2", "B1", "A2", "A1"}) {
+            if (difficulte.contains(niv)) return niv;
+        }
+        return "";
     }
     // ── Nouvelle méthode à ajouter ──
     private void passerAuNiveauSuivant() {
