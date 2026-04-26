@@ -11,6 +11,8 @@ public class Message {
     private String statutMessage;
     private int idGroupeId;
     private int idUserId;
+    private Integer parentMessageId;
+    private String mentions;
 
     public int getId() {
         return id;
@@ -74,5 +76,21 @@ public class Message {
 
     public void setIdUserId(int idUserId) {
         this.idUserId = idUserId;
+    }
+
+    public Integer getParentMessageId() {
+        return parentMessageId;
+    }
+
+    public void setParentMessageId(Integer parentMessageId) {
+        this.parentMessageId = parentMessageId;
+    }
+
+    public String getMentions() {
+        return mentions;
+    }
+
+    public void setMentions(String mentions) {
+        this.mentions = mentions;
     }
 }

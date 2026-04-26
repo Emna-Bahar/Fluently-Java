@@ -292,11 +292,21 @@ public class GroupesController implements Initializable {
 
     private void handleJoinGroup(Groupe groupe) {
         try {
-            int currentMembers = messageService.compterParticipantsParGroupe(groupe.getId());
-            boolean alreadyParticipant = messageService.estParticipant(groupe.getId(), currentUserId);
+            MessageService.JoinGroupResult joinResult = messageService.rejoindreGroupe(
+                    groupe.getId(),
+                    currentUserId,
+                    groupe.getCapacite()
+            );
 
-            if (currentMembers >= groupe.getCapacite() && !alreadyParticipant) {
+            if (joinResult == MessageService.JoinGroupResult.GROUP_FULL) {
                 showError("Ce groupe est complet.");
+                loadGroupes();
+                return;
+            }
+
+            if (joinResult == MessageService.JoinGroupResult.LANGUAGE_LEVEL_MISMATCH) {
+                showError("Vous devez avoir la meme langue et le meme niveau dans votre progression pour rejoindre ce groupe.");
+                loadGroupes();
                 return;
             }
 

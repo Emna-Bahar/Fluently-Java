@@ -12,20 +12,98 @@ import java.util.List;
 
 public class MessageService {
 
+    public enum JoinGroupResult {
+        JOINED,
+        ALREADY_PARTICIPANT,
+        LANGUAGE_LEVEL_MISMATCH,
+        GROUP_FULL
+    }
+
     private final Connection connection;
+    private final ModerationService moderationService;
     private Boolean isEpingleNumeric;
 
     public MessageService() {
         connection = MyDatabase.getInstance().getConnection();
+        moderationService = new ModerationService();
+        try {
+            ensureMembershipTableExists();
+            ensureModerationTableExists();
+            ensureMessageMetadataTableExists();
+        } catch (SQLException e) {
+            System.err.println("Warning: unable to initialize message support tables: " + e.getMessage());
+        }
+    }
+
+    private void ensureMembershipTableExists() throws SQLException {
+        String query = """
+                CREATE TABLE IF NOT EXISTS `groupe_membre` (
+                  `id` INT NOT NULL AUTO_INCREMENT,
+                  `id_groupe_id` INT NOT NULL,
+                  `id_user_id` INT NOT NULL,
+                  `date_joined` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uk_groupe_membre` (`id_groupe_id`, `id_user_id`),
+                  KEY `idx_groupe_membre_groupe` (`id_groupe_id`),
+                  KEY `idx_groupe_membre_user` (`id_user_id`)
+                )
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.execute();
+        }
+    }
+
+    private void ensureModerationTableExists() throws SQLException {
+        String query = """
+                CREATE TABLE IF NOT EXISTS `message_moderation` (
+                  `id` INT NOT NULL AUTO_INCREMENT,
+                  `message_id` INT NOT NULL,
+                  `provider` VARCHAR(50) NOT NULL,
+                  `is_flagged` TINYINT(1) NOT NULL DEFAULT 0,
+                  `top_category` VARCHAR(120) NULL,
+                  `top_score` DOUBLE NULL,
+                  `api_available` TINYINT(1) NOT NULL DEFAULT 1,
+                  `error_message` VARCHAR(500) NULL,
+                  `raw_response` LONGTEXT NULL,
+                  `checked_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uk_message_moderation_message` (`message_id`),
+                  KEY `idx_message_moderation_flagged` (`is_flagged`)
+                )
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.execute();
+        }
+    }
+
+    private void ensureMessageMetadataTableExists() throws SQLException {
+        String query = """
+                CREATE TABLE IF NOT EXISTS `message_metadata` (
+                  `id` INT NOT NULL AUTO_INCREMENT,
+                  `message_id` INT NOT NULL,
+                  `parent_message_id` INT NULL,
+                  `mentions` VARCHAR(500) NULL,
+                  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uk_message_metadata_message` (`message_id`),
+                  KEY `idx_message_metadata_parent` (`parent_message_id`)
+                )
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.execute();
+        }
     }
 
     public List<Message> recupererParGroupe(int idGroupe) throws SQLException {
         List<Message> messages = new ArrayList<>();
         String query = """
-                SELECT id, contenu, type_message, date_creation, date_modif, statut_message, id_groupe_id, id_user_id
-                FROM `message`
-                WHERE id_groupe_id = ?
-                ORDER BY date_creation DESC, date_modif DESC, id DESC
+              SELECT m.id, m.contenu, m.type_message, m.date_creation, m.date_modif,
+                  m.statut_message, m.id_groupe_id, m.id_user_id,
+                  md.parent_message_id, md.mentions
+              FROM `message` m
+              LEFT JOIN `message_metadata` md ON md.message_id = m.id
+              WHERE m.id_groupe_id = ?
+              ORDER BY m.date_creation DESC, m.date_modif DESC, m.id DESC
                 """;
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -41,6 +119,9 @@ public class MessageService {
                     message.setStatutMessage(resultSet.getString("statut_message"));
                     message.setIdGroupeId(resultSet.getInt("id_groupe_id"));
                     message.setIdUserId(resultSet.getInt("id_user_id"));
+                    int parentMessageId = resultSet.getInt("parent_message_id");
+                    message.setParentMessageId(resultSet.wasNull() ? null : parentMessageId);
+                    message.setMentions(resultSet.getString("mentions"));
                     messages.add(message);
                 }
             }
@@ -49,13 +130,25 @@ public class MessageService {
     }
 
     public void ajouter(Message message) throws SQLException {
+        ajouterInterne(message, message.getParentMessageId(), message.getMentions());
+    }
+
+    public int ajouterEtRetournerId(Message message) throws SQLException {
+        return ajouterInterne(message, message.getParentMessageId(), message.getMentions());
+    }
+
+    public int ajouterEtRetournerId(Message message, Integer parentMessageId, String mentions) throws SQLException {
+        return ajouterInterne(message, parentMessageId, mentions);
+    }
+
+    private int ajouterInterne(Message message, Integer parentMessageId, String mentions) throws SQLException {
         String query = """
                 INSERT INTO `message`
                 (contenu, type_message, emoji_react, is_epingle, date_creation, date_modif, statut_message, id_groupe_id, id_user_id)
                 VALUES (?, ?, ?, ?, NOW(), NOW(), ?, ?, ?)
                 """;
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
+        try (PreparedStatement statement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, message.getContenu());
             statement.setString(2, message.getTypeMessage());
             statement.setString(3, "");
@@ -69,6 +162,80 @@ public class MessageService {
             statement.setString(5, message.getStatutMessage());
             statement.setInt(6, message.getIdGroupeId());
             statement.setInt(7, message.getIdUserId());
+            statement.executeUpdate();
+
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int messageId = keys.getInt(1);
+                    if (parentMessageId != null || (mentions != null && !mentions.isBlank())) {
+                        enregistrerMetadataMessage(messageId, parentMessageId, mentions);
+                    }
+                    return messageId;
+                }
+            }
+            return 0;
+        }
+    }
+
+    private void enregistrerMetadataMessage(int messageId, Integer parentMessageId, String mentions) throws SQLException {
+        String query = """
+                INSERT INTO `message_metadata` (message_id, parent_message_id, mentions)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                  parent_message_id = VALUES(parent_message_id),
+                  mentions = VALUES(mentions)
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, messageId);
+            if (parentMessageId == null) {
+                statement.setNull(2, java.sql.Types.INTEGER);
+            } else {
+                statement.setInt(2, parentMessageId);
+            }
+
+            if (mentions == null || mentions.isBlank()) {
+                statement.setNull(3, java.sql.Types.VARCHAR);
+            } else {
+                statement.setString(3, mentions);
+            }
+            statement.executeUpdate();
+        }
+    }
+
+    public ModerationService.ModerationResult analyserMessage(String contenu) {
+        return moderationService.moderate(contenu);
+    }
+
+    public void enregistrerModeration(int messageId, ModerationService.ModerationResult moderationResult) throws SQLException {
+        if (messageId <= 0 || moderationResult == null) {
+            return;
+        }
+
+        String query = """
+                INSERT INTO `message_moderation`
+                (message_id, provider, is_flagged, top_category, top_score, api_available, error_message, raw_response)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                  provider = VALUES(provider),
+                  is_flagged = VALUES(is_flagged),
+                  top_category = VALUES(top_category),
+                  top_score = VALUES(top_score),
+                  api_available = VALUES(api_available),
+                  error_message = VALUES(error_message),
+                  raw_response = VALUES(raw_response),
+                  checked_at = CURRENT_TIMESTAMP
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, messageId);
+            statement.setString(2, moderationResult.getProvider());
+            statement.setBoolean(3, moderationResult.isFlagged());
+            statement.setString(4, moderationResult.getTopCategory());
+            statement.setDouble(5, moderationResult.getTopScore());
+            statement.setBoolean(6, moderationResult.isApiAvailable());
+            statement.setString(7, moderationResult.getErrorMessage());
+            statement.setString(8, moderationResult.getRawResponse());
             statement.executeUpdate();
         }
     }
@@ -99,9 +266,17 @@ public class MessageService {
     }
 
     public int compterParticipantsParGroupe(int idGroupe) throws SQLException {
-        String query = "SELECT COUNT(DISTINCT id_user_id) AS total FROM `message` WHERE id_groupe_id = ?";
+        String query = """
+                SELECT COUNT(*) AS total
+                FROM (
+                    SELECT id_user_id FROM `message` WHERE id_groupe_id = ?
+                    UNION
+                    SELECT id_user_id FROM `groupe_membre` WHERE id_groupe_id = ?
+                ) participants
+                """;
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, idGroupe);
+            statement.setInt(2, idGroupe);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return resultSet.getInt("total");
@@ -161,9 +336,12 @@ public class MessageService {
      */
     public Message recupererParId(int idMessage) throws SQLException {
         String query = """
-                SELECT id, contenu, type_message, date_creation, date_modif,
-                       statut_message, id_groupe_id, id_user_id
-                FROM `message` WHERE id = ?
+              SELECT m.id, m.contenu, m.type_message, m.date_creation, m.date_modif,
+                  m.statut_message, m.id_groupe_id, m.id_user_id,
+                  md.parent_message_id, md.mentions
+              FROM `message` m
+              LEFT JOIN `message_metadata` md ON md.message_id = m.id
+              WHERE m.id = ?
                 """;
         try (PreparedStatement st = connection.prepareStatement(query)) {
             st.setInt(1, idMessage);
@@ -178,6 +356,9 @@ public class MessageService {
                     m.setStatutMessage(rs.getString("statut_message"));
                     m.setIdGroupeId(rs.getInt("id_groupe_id"));
                     m.setIdUserId(rs.getInt("id_user_id"));
+                    int parentMessageId = rs.getInt("parent_message_id");
+                    m.setParentMessageId(rs.wasNull() ? null : parentMessageId);
+                    m.setMentions(rs.getString("mentions"));
                     return m;
                 }
             }
@@ -186,7 +367,64 @@ public class MessageService {
     }
 
     public boolean estParticipant(int idGroupe, int idUser) throws SQLException {
-        String query = "SELECT 1 FROM `message` WHERE id_groupe_id = ? AND id_user_id = ? LIMIT 1";
+        String query = """
+                SELECT 1
+                FROM (
+                    SELECT id_user_id FROM `message` WHERE id_groupe_id = ? AND id_user_id = ?
+                    UNION
+                    SELECT id_user_id FROM `groupe_membre` WHERE id_groupe_id = ? AND id_user_id = ?
+                ) participants
+                LIMIT 1
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, idGroupe);
+            statement.setInt(2, idUser);
+            statement.setInt(3, idGroupe);
+            statement.setInt(4, idUser);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+        }
+    }
+
+    public JoinGroupResult rejoindreGroupe(int idGroupe, int idUser, int capacite) throws SQLException {
+        if (capacite <= 0) {
+            return JoinGroupResult.GROUP_FULL;
+        }
+
+        if (estParticipant(idGroupe, idUser)) {
+            return JoinGroupResult.ALREADY_PARTICIPANT;
+        }
+
+        if (!belongsToLangueAndNiveau(idUser, idGroupe)) {
+            return JoinGroupResult.LANGUAGE_LEVEL_MISMATCH;
+        }
+
+        int participantsActuels = compterParticipantsParGroupe(idGroupe);
+        if (participantsActuels >= capacite) {
+            return JoinGroupResult.GROUP_FULL;
+        }
+
+        String query = "INSERT INTO `groupe_membre` (id_groupe_id, id_user_id) VALUES (?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, idGroupe);
+            statement.setInt(2, idUser);
+            statement.executeUpdate();
+            return JoinGroupResult.JOINED;
+        }
+    }
+
+    private boolean belongsToLangueAndNiveau(int idUser, int idGroupe) throws SQLException {
+        String query = """
+                SELECT 1
+                FROM `groupe` g
+                JOIN `user_progress` up
+                  ON up.langue_id = g.id_langue_id
+                 AND up.niveau_actuel_id = g.id_niveau_id
+                WHERE g.id = ?
+                  AND up.user_id = ?
+                LIMIT 1
+                """;
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, idGroupe);
             statement.setInt(2, idUser);
