@@ -73,6 +73,39 @@ public class LangueService implements IService<Langue> {
         }
         return langues;
     }
+    // ── Methods used by GroupesController / GroupFormController ──────────────
+
+    /** Returns active langues (used by group views). */
+    public List<Langue> recupererToutesLanguesActives() throws SQLException {
+        List<Langue> langues = new ArrayList<>();
+        String sql = "SELECT id, nom FROM langue WHERE is_active = 1";
+        Statement st = cnx.createStatement();
+        ResultSet rs = st.executeQuery(sql);
+        while (rs.next()) {
+            Langue l = new Langue();
+            l.setId(rs.getInt("id"));
+            l.setNom(rs.getString("nom"));
+            l.setActive(true);
+            langues.add(l);
+        }
+        return langues;
+    }
+
+    /** Returns a single langue by id (used by group views). */
+    public Langue recupererParId(int id) throws SQLException {
+        String sql = "SELECT id, nom FROM langue WHERE id = ?";
+        PreparedStatement ps = cnx.prepareStatement(sql);
+        ps.setInt(1, id);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            Langue l = new Langue();
+            l.setId(rs.getInt("id"));
+            l.setNom(rs.getString("nom"));
+            return l;
+        }
+        return null;
+    }
+
     // Vérifier si une langue existe déjà avec ce nom
     public boolean existsByNom(String nom, Integer excludeId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM langue WHERE LOWER(nom) = LOWER(?)";

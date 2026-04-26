@@ -1,11 +1,11 @@
 package com.example.pijava_fluently.controller;
 
+import com.example.pijava_fluently.entites.Groupe;
 import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.entites.Test;
 import com.example.pijava_fluently.entites.TestPassage;
-import com.example.pijava_fluently.services.UserService;
-import com.example.pijava_fluently.services.TestService;
-import com.example.pijava_fluently.services.TestPassageService;
+import com.example.pijava_fluently.services.*;
+import java.text.SimpleDateFormat;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -111,6 +111,15 @@ public class AdminDashboardController implements Initializable {
     @FXML private VBox passagesView;
     @FXML private VBox groupesView;
     @FXML private VBox sessionsView;
+    // Groups table fields
+    @FXML private TableView<Groupe> groupesTable;
+    @FXML private TableColumn<Groupe, Integer> colGroupeId, colGroupeCapacite;
+    @FXML private TableColumn<Groupe, String> colGroupeNom, colGroupeDescription, colGroupeStatut, colGroupeDate;
+    @FXML private TableColumn<Groupe, Void> colGroupeActions;
+    @FXML private TextField searchField;
+    @FXML private Label lblResultCount;
+    @FXML private StackPane groupFormOverlay;
+    @FXML private StackPane groupFormHost;
     @FXML private VBox reservationsView;
     @FXML private VBox objectifsView;
     @FXML private VBox tachesView;
@@ -140,10 +149,16 @@ public class AdminDashboardController implements Initializable {
     // ============================================================
     // 8. SERVICES & ÉTAT
     // ============================================================
-    private final UserService              userService  = new UserService();
-    private final ObservableList<User>     usersList    = FXCollections.observableArrayList();
-    private User   currentUser   = null;
-    private User   profiledUser  = null;
+    private final UserService userService = new UserService();
+    private final ObservableList<User> usersList = FXCollections.observableArrayList();
+    private User currentUser = null;
+    private User profiledUser = null;
+    // Groups services
+    private GroupService groupService;
+    private LangueService langueService;
+    private NiveauService niveauService;
+    private ObservableList<Groupe> groupesList;
+    private ObservableList<Groupe> filteredList;
     private ContextMenu adminUserMenu;
     private boolean darkMode = false;           // état thème (ton apport)
 
@@ -172,6 +187,15 @@ public class AdminDashboardController implements Initializable {
         addIfNotNull(tachesView);
         addIfNotNull(profileView);
 
+        // Initialisation groupes
+        groupService = new GroupService();
+        langueService = new LangueService();
+        niveauService = new NiveauService();
+        groupesList = FXCollections.observableArrayList();
+        filteredList = FXCollections.observableArrayList();
+        setupGroupesTable();
+
+        // Initialisation du tableau utilisateurs
         initUsersTable();
         loadStats();
         createAdminUserMenu();
@@ -563,11 +587,7 @@ public class AdminDashboardController implements Initializable {
     @FXML
     private void showEtudiants() {
         hideAll();
-        if (etudiantsView != null && !etudiantsView.getChildren().isEmpty()) {
-            show(etudiantsView);
-        } else {
-            loadPage(etudiantsView, "/com/example/pijava_fluently/fxml/etudiants-view.fxml");
-        }
+        show(etudiantsView);
         setTitle("Utilisateurs", "Administration › Utilisateurs");
         setActive(navEtudiants);
     }
@@ -640,14 +660,10 @@ public class AdminDashboardController implements Initializable {
 
     @FXML private void showGroupes() {
         hideAll();
-        // Tente de charger le FXML dédié ; si absent, affiche le conteneur vide
-        var res = getClass().getResource("/com/example/pijava_fluently/fxml/groupes-view.fxml");
-        if (res != null) {
-            loadPage(groupesView, "/com/example/pijava_fluently/fxml/groupes-view.fxml");
-        } else {
-            show(groupesView);
-        }
-        setTitle("Groupes", "Administration › Groupes"); setActive(navGroupes);
+        show(groupesView);
+        setTitle("Groupes", "Administration › Groupes");
+        setActive(navGroupes);
+        loadGroupes();
     }
 
     @FXML private void showSessions() {
@@ -787,5 +803,185 @@ public class AdminDashboardController implements Initializable {
         return a + b;
     }
 
-    private static String nvl(String s) { return s != null ? s : ""; }
+    private static String nvl(String s) {
+        return s != null ? s : "";
+    }
+
+    // ============================================================
+    // GROUPS MANAGEMENT (gestion-groupe branch)
+    // ============================================================
+
+    private void setupGroupesTable() {
+        if (groupesTable == null) return;
+
+        colGroupeId.setCellValueFactory(c ->
+            new javafx.beans.property.SimpleIntegerProperty(c.getValue().getId()).asObject());
+        colGroupeNom.setCellValueFactory(c ->
+            new javafx.beans.property.SimpleStringProperty(c.getValue().getNom()));
+        colGroupeDescription.setCellValueFactory(c -> {
+            String desc = c.getValue().getDescription();
+            if (desc != null && desc.length() > 60) desc = desc.substring(0, 57) + "...";
+            return new javafx.beans.property.SimpleStringProperty(desc);
+        });
+        colGroupeCapacite.setCellValueFactory(c ->
+            new javafx.beans.property.SimpleIntegerProperty(c.getValue().getCapacite()).asObject());
+        colGroupeStatut.setCellValueFactory(c ->
+            new javafx.beans.property.SimpleStringProperty(c.getValue().getStatut()));
+
+        colGroupeStatut.setCellFactory(col -> new TableCell<>() {
+            private final Label badge = new Label();
+            { setGraphic(badge); setContentDisplay(ContentDisplay.GRAPHIC_ONLY); }
+            @Override
+            protected void updateItem(String statut, boolean empty) {
+                super.updateItem(statut, empty);
+                if (empty || statut == null) { badge.setText(null); badge.setStyle(""); return; }
+                badge.setText(statut);
+                String base = "-fx-padding: 3 10; -fx-background-radius: 12; -fx-font-size: 11px; -fx-font-weight: bold;";
+                badge.setStyle(base + switch (statut.toLowerCase()) {
+                    case "actif"   -> "-fx-background-color: #D1FAE5; -fx-text-fill: #065F46;";
+                    case "inactif" -> "-fx-background-color: #FEE2E2; -fx-text-fill: #991B1B;";
+                    case "complet" -> "-fx-background-color: #FEF3C7; -fx-text-fill: #92400E;";
+                    default        -> "-fx-background-color: #E2E8F0; -fx-text-fill: #374151;";
+                });
+            }
+        });
+
+        colGroupeDate.setCellValueFactory(c -> {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+            String date = c.getValue().getDateCreation() != null
+                    ? sdf.format(c.getValue().getDateCreation()) : "—";
+            return new javafx.beans.property.SimpleStringProperty(date);
+        });
+
+        colGroupeActions.setCellFactory(param -> new TableCell<>() {
+            private final Button btnMessages = new Button("Messages");
+            private final Button btnEdit     = new Button("Editer");
+            private final Button btnDelete   = new Button("Suppr.");
+            private final HBox pane = new HBox(5, btnMessages, btnEdit, btnDelete);
+            {
+                pane.setAlignment(Pos.CENTER);
+                btnMessages.getStyleClass().add("table-action-messages");
+                btnEdit.getStyleClass().add("table-action-edit");
+                btnDelete.getStyleClass().add("table-action-delete");
+                btnMessages.setTooltip(new Tooltip("Voir les messages"));
+                btnEdit.setTooltip(new Tooltip("Modifier"));
+                btnDelete.setTooltip(new Tooltip("Supprimer"));
+                btnMessages.setOnAction(e -> openGroupMessages(getTableView().getItems().get(getIndex())));
+                btnEdit.setOnAction(e -> handleEditGroup(getTableView().getItems().get(getIndex())));
+                btnDelete.setOnAction(e -> handleDeleteGroup(getTableView().getItems().get(getIndex())));
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : pane);
+            }
+        });
+
+        groupesTable.setItems(filteredList);
+    }
+
+    @FXML private void handleAddGroup()  { openGroupForm(null); }
+
+    private void handleEditGroup(Groupe groupe) { openGroupForm(groupe); }
+
+    private void handleDeleteGroup(Groupe groupe) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmation");
+        alert.setHeaderText("Supprimer le groupe");
+        alert.setContentText("Supprimer \"" + groupe.getNom() + "\" ?");
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                groupService.supprimer(groupe.getId());
+                loadGroupes();
+            } catch (SQLException e) {
+                showAlert("Erreur suppression", e.getMessage());
+            }
+        }
+    }
+
+    private void openGroupForm(Groupe groupe) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/group-form.fxml"));
+            Parent form = loader.load();
+            GroupFormController ctrl = loader.getController();
+            ctrl.setGroupService(groupService);
+            ctrl.setParentController(this);
+            ctrl.setOnCloseRequest(this::closeInlineGroupForm);
+            if (groupe != null) ctrl.setGroupe(groupe);
+            if (groupFormHost != null && groupFormOverlay != null) {
+                groupFormHost.getChildren().setAll(form);
+                groupFormOverlay.setVisible(true);
+                groupFormOverlay.setManaged(true);
+            }
+        } catch (IOException e) {
+            showAlert("Erreur formulaire", e.getMessage());
+        }
+    }
+
+    private void openGroupMessages(Groupe groupe) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pijava_fluently/fxml/admin-group-messages.fxml"));
+            Parent view = loader.load();
+            AdminGroupMessagesController ctrl = loader.getController();
+            ctrl.setGroupe(groupe);
+            if (currentUser != null) {
+                ctrl.setAdminContext(currentUser.getId(), currentUser.getPrenom() + " " + currentUser.getNom());
+            }
+            ctrl.setOnBack(() -> {
+                if (groupFormHost != null) groupFormHost.getChildren().clear();
+                if (groupFormOverlay != null) {
+                    groupFormOverlay.setVisible(false);
+                    groupFormOverlay.setManaged(false);
+                }
+                loadGroupes();
+            });
+            if (groupFormHost != null && groupFormOverlay != null) {
+                groupFormHost.getChildren().setAll(view);
+                groupFormOverlay.setVisible(true);
+                groupFormOverlay.setManaged(true);
+            }
+        } catch (IOException e) {
+            showAlert("Erreur messages", e.getMessage());
+        }
+    }
+
+    private void closeInlineGroupForm() {
+        if (groupFormHost != null) groupFormHost.getChildren().clear();
+        if (groupFormOverlay != null) {
+            groupFormOverlay.setVisible(false);
+            groupFormOverlay.setManaged(false);
+        }
+    }
+
+    @FXML private void handleSearch()        { applyFilters(); }
+    @FXML private void handleResetFilters()  { if (searchField != null) searchField.clear(); applyFilters(); }
+    @FXML private void handleRefreshGroups() { loadGroupes(); }
+
+    private void applyFilters() {
+        filteredList.clear();
+        String term = searchField != null ? searchField.getText().trim().toLowerCase() : "";
+        for (Groupe g : groupesList) {
+            if (term.isEmpty()
+                    || g.getNom().toLowerCase().contains(term)
+                    || (g.getDescription() != null && g.getDescription().toLowerCase().contains(term))) {
+                filteredList.add(g);
+            }
+        }
+        if (lblResultCount != null) {
+            int n = filteredList.size();
+            lblResultCount.setText(n + " groupe" + (n > 1 ? "s" : ""));
+        }
+    }
+
+    public void loadGroupes() {
+        try {
+            groupesList.setAll(groupService.recuperer());
+            applyFilters();
+        } catch (SQLException e) {
+            showAlert("Erreur chargement groupes", e.getMessage());
+        }
+    }
 }

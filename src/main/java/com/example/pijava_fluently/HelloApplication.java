@@ -31,6 +31,12 @@ public class HelloApplication extends Application {
         if (css != null)
             scene.getStylesheets().add(css.toExternalForm());
 
+        var css2 = HelloApplication.class.getResource(
+                "/com/example/pijava_fluently/css/groups-enhanced.css"
+        );
+        if (css2 != null)
+            scene.getStylesheets().add(css2.toExternalForm());
+
         stage.setTitle("Fluently");
         stage.setScene(scene);
         stage.setResizable(true);
