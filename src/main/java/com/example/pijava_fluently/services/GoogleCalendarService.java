@@ -5,7 +5,6 @@ import com.example.pijava_fluently.entites.Session;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -50,7 +49,7 @@ public class GoogleCalendarService {
     private Properties chargerConfig() throws IOException {
         Properties props = new Properties();
         InputStream in = getClass().getResourceAsStream(
-                "/com/example/pijava_fluently/config.properties");
+                "/config.properties");
         if (in != null) {
             props.load(in);
             in.close();
@@ -252,7 +251,7 @@ public class GoogleCalendarService {
         try {
             // Trouver le fichier config.properties sur le disque
             URL resourceUrl = getClass().getResource(
-                    "/com/example/pijava_fluently/config.properties");
+                    "/config.properties");
             if (resourceUrl == null) return;
 
             java.io.File file = new java.io.File(resourceUrl.toURI());
