@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox fx:id="rootCalendrier"
+      spacing="16"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pijava_fluently.controller.CalendrierController"
+      style="-fx-background-color:#F0F4FF;-fx-padding:24;">
+
+    <!-- ══ EN-TÊTE ══ -->
+    <HBox alignment="CENTER_LEFT" spacing="16"
+          style="-fx-background-color:linear-gradient(from 0% 0% to 100% 0%,#7C3AED,#3B82F6);
+                 -fx-background-radius:18;-fx-padding:20 28 20 28;
+                 -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.40),20,0,0,8);">
+        <Label text="📅  Calendrier des sessions"
+               style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:white;"
+               HBox.hgrow="ALWAYS"/>
+        <Label fx:id="compteurSessions"
+               style="-fx-background-color:rgba(255,255,255,0.2);-fx-text-fill:white;
+                      -fx-font-size:12px;-fx-font-weight:bold;
+                      -fx-background-radius:30;-fx-padding:5 14 5 14;"/>
+    </HBox>
+
+    <!-- ══ NAVIGATION ══ -->
+    <HBox alignment="CENTER" spacing="12">
+        <Button text="◀" onAction="#moisPrecedent"
+                style="-fx-background-color:white;-fx-text-fill:#7C3AED;
+                       -fx-font-size:14px;-fx-font-weight:bold;
+                       -fx-background-radius:50;-fx-min-width:38;-fx-min-height:38;
+                       -fx-border-color:#E2E8F0;-fx-border-radius:50;-fx-border-width:1.5;
+                       -fx-cursor:hand;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),8,0,0,2);"/>
+        <Label fx:id="labelMoisAnnee"
+               style="-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#1E293B;
+                      -fx-min-width:280;-fx-alignment:CENTER;"/>
+        <Button text="▶" onAction="#moisSuivant"
+                style="-fx-background-color:white;-fx-text-fill:#7C3AED;
+                       -fx-font-size:14px;-fx-font-weight:bold;
+                       -fx-background-radius:50;-fx-min-width:38;-fx-min-height:38;
+                       -fx-border-color:#E2E8F0;-fx-border-radius:50;-fx-border-width:1.5;
+                       -fx-cursor:hand;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),8,0,0,2);"/>
+        <Button text="Aujourd'hui" onAction="#revenirAujourdhui"
+                style="-fx-background-color:linear-gradient(to right,#7C3AED,#3B82F6);
+                       -fx-text-fill:white;-fx-font-size:12px;-fx-font-weight:bold;
+                       -fx-background-radius:10;-fx-padding:8 18 8 18;-fx-cursor:hand;
+                       -fx-effect:dropshadow(gaussian,rgba(124,58,237,0.4),10,0,0,3);"/>
+    </HBox>
+
+    <!-- ══ LÉGENDE ══ -->
+    <HBox fx:id="legendeBox" spacing="10" alignment="CENTER_LEFT"
+          style="-fx-background-color:white;-fx-background-radius:12;
+                 -fx-padding:10 18 10 18;-fx-border-color:#E2E8F0;
+                 -fx-border-radius:12;-fx-border-width:1;
+                 -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.04),8,0,0,2);"/>
+
+    <!-- ══ CORPS : grille + panneau détail côte à côte ══ -->
+    <!-- ScrollPane englobant pour éviter que le scroll soit bloqué -->
+    <ScrollPane fitToWidth="true" fitToHeight="false"
+                hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                VBox.vgrow="ALWAYS"
+                style="-fx-background-color:transparent;-fx-background:#F0F4FF;
+                       -fx-border-color:transparent;">
+        <HBox spacing="16" style="-fx-padding:0 0 20 0;">
+
+            <!-- GRILLE CALENDRIER -->
+            <VBox HBox.hgrow="ALWAYS">
+                <GridPane fx:id="grilleCalendrier"
+                          hgap="6" vgap="6"
+                          HBox.hgrow="ALWAYS">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="14.28"/>
+                        <ColumnConstraints percentWidth="14.28"/>
+                        <ColumnConstraints percentWidth="14.28"/>
+                        <ColumnConstraints percentWidth="14.28"/>
+                        <ColumnConstraints percentWidth="14.28"/>
+                        <ColumnConstraints percentWidth="14.28"/>
+                        <ColumnConstraints percentWidth="14.28"/>
+                    </columnConstraints>
+                </GridPane>
+            </VBox>
+
+            <!-- PANNEAU DÉTAIL DU JOUR (droite) -->
+            <VBox fx:id="panneauDetail"
+                  prefWidth="290" maxWidth="290"
+                  spacing="10"
+                  style="-fx-background-color:white;-fx-background-radius:18;
+                         -fx-border-color:#E2E8F0;-fx-border-radius:18;-fx-border-width:1;
+                         -fx-padding:18;
+                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),16,0,0,5);">
+
+                <Label fx:id="labelDetail"
+                       style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#1E293B;
+                              -fx-wrap-text:true;" wrapText="true"/>
+
+                <Separator style="-fx-background-color:#E2E8F0;"/>
+
+                <ScrollPane fitToWidth="true"
+                            vbarPolicy="AS_NEEDED"
+                            hbarPolicy="NEVER"
+                            VBox.vgrow="ALWAYS"
+                            style="-fx-background:transparent;-fx-background-color:transparent;
+                                   -fx-border-color:transparent;">
+                    <VBox fx:id="listeSessionsJour" spacing="10"/>
+                </ScrollPane>
+            </VBox>
+
+        </HBox>
+    </ScrollPane>
+
+</VBox>

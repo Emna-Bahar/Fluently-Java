@@ -1,5 +1,5 @@
 package com.example.pijava_fluently;
-
+import com.example.pijava_fluently.utils.ReminderScheduler;
 import com.example.pijava_fluently.utils.MyDatabase;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -15,7 +15,7 @@ public class HelloApplication extends Application {
 
         FXMLLoader fxmlLoader = new FXMLLoader(
                 HelloApplication.class.getResource(
-                        "/com/example/pijava_fluently/fxml/admin-dashboard.fxml"
+                        "/com/example/pijava_fluently/fxml/login.fxml"
                 )
         );
 
@@ -36,7 +36,10 @@ public class HelloApplication extends Application {
         stage.setScene(scene);
         stage.setResizable(true);
         stage.show();
+        stage.setOnCloseRequest(e ->
+                ReminderScheduler.getInstance().stop());
     }
+
 
     public static void main(String[] args) {
         launch();

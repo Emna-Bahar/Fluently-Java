@@ -1,4 +1,5 @@
 package com.example.pijava_fluently.controller;
+import com.example.pijava_fluently.utils.ReminderScheduler;
 
 import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.UserService;
@@ -35,7 +36,8 @@ public class HomeController implements Initializable {
     @FXML private Button btnObjectifs;
     @FXML private Button btnTheme;
     @FXML private VBox   rootPane;
-
+    // ✅ Ajoute avec les autres boutons @FXML
+    @FXML private Button btnCalendrier;
     private ContextMenu   userMenu;
     private User          currentUser;
     private final UserService userService = new UserService();
@@ -198,6 +200,7 @@ public class HomeController implements Initializable {
     }
 
     @FXML
+    // ── Dans showSessionsProf(), après ctrl.setProfId(profId) ──
     public void showSessionsProf() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
@@ -208,6 +211,12 @@ public class HomeController implements Initializable {
             ctrl.setProfId(profId);
             setContent(content);
             setActiveButton(btnSessions);
+
+            // ✅ AJOUTE CES 3 LIGNES
+            if (contentArea != null) {
+                ReminderScheduler.getInstance().start(profId, true, contentArea);
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
             showError("Erreur chargement sessions prof : " + e.getMessage());
@@ -217,10 +226,7 @@ public class HomeController implements Initializable {
     private void showSessionsEtudiant() {
         var url = getClass().getResource(
                 "/com/example/pijava_fluently/fxml/session-etudiant-view.fxml");
-        if (url == null) {
-            showError("session-etudiant-view.fxml introuvable");
-            return;
-        }
+        if (url == null) { showError("session-etudiant-view.fxml introuvable"); return; }
         try {
             FXMLLoader loader = new FXMLLoader(url);
             Node content = loader.load();
@@ -228,6 +234,12 @@ public class HomeController implements Initializable {
             int userId = (currentUser != null) ? currentUser.getId() : 3;
             ctrl.setUserId(userId);
             setContent(content);
+
+            // ✅ AJOUTE CES 3 LIGNES
+            if (contentArea != null) {
+                ReminderScheduler.getInstance().start(userId, false, contentArea);
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
             showError(e.getMessage());
@@ -308,6 +320,7 @@ public class HomeController implements Initializable {
     }
 
     private void handleLogout() {
+        ReminderScheduler.getInstance().stop();
         if (currentUser != null) {
             try {
                 userService.updateStatut(currentUser.getId(), "offline");
@@ -338,5 +351,38 @@ public class HomeController implements Initializable {
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
         alert.showAndWait();
+    }
+    // ✅ AJOUTE cette méthode complète dans HomeController
+    @FXML
+    public void showCalendrier() {
+        var url = getClass().getResource(
+                "/com/example/pijava_fluently/fxml/calendrier.fxml");
+        if (url == null) {
+            showError("calendrier.fxml introuvable");
+            return;
+        }
+        try {
+            FXMLLoader loader = new FXMLLoader(url);
+            Node content = loader.load();
+            CalendrierController ctrl = loader.getController();
+
+            boolean isProf = currentUser != null
+                    && currentUser.getRoles() != null
+                    && (currentUser.getRoles().contains("ROLE_PROF")
+                    || currentUser.getRoles().contains("ROLE_PROFESSEUR"));
+
+            int userId = (currentUser != null) ? currentUser.getId() : -1;
+            ctrl.setUserId(userId, isProf);
+            setContent(content);
+
+            // Démarrer aussi le scheduler ici
+            if (contentArea != null) {
+                ReminderScheduler.getInstance().start(userId, isProf, contentArea);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showError("Erreur chargement calendrier : " + e.getMessage());
+        }
     }
 }
