@@ -60,7 +60,6 @@ public class RecommandationService {
         }
 
         try {
-        try {
             String        userProfile = buildUserProfile(userId);
             List<Session> candidates  = fetchCandidateSessions(userId);
 
