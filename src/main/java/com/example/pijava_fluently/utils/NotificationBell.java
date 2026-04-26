@@ -200,7 +200,7 @@ public class NotificationBell {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  CHARGEMENT SESSIONS — FIX : pas de fallback diagnostic
+    //  CHARGEMENT SESSIONS
     // ═════════════════════════════════════════════════════════════
 
     private List<Session> chargerSessions() throws SQLException {
@@ -208,7 +208,6 @@ public class NotificationBell {
             return sessionSvc.recuperer();
         }
 
-        // Étudiant : uniquement les sessions acceptées ou en attente
         List<Session> result = new ArrayList<>();
         List<Reservation> resas = reservationSvc.recupererParEtudiant(userId);
 
@@ -222,7 +221,6 @@ public class NotificationBell {
             }
         }
 
-        // ✅ PAS DE FALLBACK — si 0 sessions acceptées, on retourne vide
         if (!ids.isEmpty()) {
             for (Session s : sessionSvc.recuperer()) {
                 if (ids.contains(s.getId())) result.add(s);
@@ -233,7 +231,7 @@ public class NotificationBell {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  AJOUT NOTIFICATION — FIX : méthode complète et correcte
+    //  AJOUT NOTIFICATION
     // ═════════════════════════════════════════════════════════════
 
     public void ajouterNotification(String icon, String titre, String message,
@@ -302,10 +300,31 @@ public class NotificationBell {
 
         panneau = buildPanneau();
 
-        // Positionnement sous la cloche
-        javafx.geometry.Point2D pt     = bellRoot.localToScene(0, 0);
-        javafx.geometry.Point2D ptLocal = rootOverlay.sceneToLocal(pt.getX(), pt.getY());
-        double px = Math.max(8, ptLocal.getX() - 350 + 40);
+        // ✅ FIX : On remonte jusqu'au Pane racine de la scène
+        // pour positionner le panneau en absolu par rapport à la fenêtre
+        javafx.geometry.Point2D ptScene = bellRoot.localToScene(0, 0);
+
+        // Chercher le vrai Pane racine (pas le ScrollPane ni le VBox)
+        javafx.scene.Parent sceneRoot = rootOverlay.getScene().getRoot();
+
+        Pane targetOverlay;
+        if (sceneRoot instanceof Pane) {
+            targetOverlay = (Pane) sceneRoot;
+        } else {
+            targetOverlay = rootOverlay; // fallback
+        }
+
+        javafx.geometry.Point2D ptLocal = targetOverlay.sceneToLocal(ptScene.getX(), ptScene.getY());
+
+        double panneauWidth = 380;
+        double px = ptLocal.getX() - panneauWidth + 40;
+        // S'assurer que le panneau ne sort pas à gauche
+        px = Math.max(8, px);
+        // S'assurer que le panneau ne sort pas à droite
+        double sceneWidth = rootOverlay.getScene().getWidth();
+        if (px + panneauWidth > sceneWidth - 8) {
+            px = sceneWidth - panneauWidth - 8;
+        }
         double py = ptLocal.getY() + 48;
 
         panneau.setLayoutX(px);
@@ -314,29 +333,51 @@ public class NotificationBell {
         panneau.setScaleY(0.88);
         panneau.setTranslateY(-8);
 
-        rootOverlay.getChildren().add(panneau);
+        // Ajouter au bon overlay (la racine de la scène)
+        targetOverlay.getChildren().add(panneau);
 
-        FadeTransition fd = new FadeTransition(Duration.millis(180), panneau);
+        // Fermer si on clique en dehors
+        targetOverlay.setOnMouseClicked(e -> {
+            if (panneauOuvert && panneau != null) {
+                javafx.geometry.Bounds bounds = panneau.getBoundsInParent();
+                if (!bounds.contains(e.getX(), e.getY())) {
+                    fermerPanneau();
+                    targetOverlay.setOnMouseClicked(null);
+                }
+            }
+        });
+
+        FadeTransition fd = new FadeTransition(javafx.util.Duration.millis(180), panneau);
         fd.setFromValue(0); fd.setToValue(1);
-        ScaleTransition sc = new ScaleTransition(Duration.millis(180), panneau);
+        ScaleTransition sc = new ScaleTransition(javafx.util.Duration.millis(180), panneau);
         sc.setFromY(0.88); sc.setToY(1.0);
         sc.setInterpolator(Interpolator.EASE_OUT);
-        TranslateTransition td = new TranslateTransition(Duration.millis(180), panneau);
+        TranslateTransition td = new TranslateTransition(javafx.util.Duration.millis(180), panneau);
         td.setFromY(-8); td.setToY(0);
         td.setInterpolator(Interpolator.EASE_OUT);
         new ParallelTransition(fd, sc, td).play();
     }
+
+    // ═════════════════════════════════════════════════════════════
+    //  REMPLACE aussi fermerPanneau() — pour retirer du bon parent
+    // ═════════════════════════════════════════════════════════════
 
     private void fermerPanneau() {
         panneauOuvert = false;
         if (panneau == null) return;
         VBox p = panneau;
         panneau = null;
-        FadeTransition fd = new FadeTransition(Duration.millis(140), p);
+
+        FadeTransition fd = new FadeTransition(javafx.util.Duration.millis(140), p);
         fd.setFromValue(1); fd.setToValue(0);
-        ScaleTransition sc = new ScaleTransition(Duration.millis(140), p);
+        ScaleTransition sc = new ScaleTransition(javafx.util.Duration.millis(140), p);
         sc.setFromY(1.0); sc.setToY(0.9);
-        fd.setOnFinished(e -> rootOverlay.getChildren().remove(p));
+        fd.setOnFinished(e -> {
+            if (p.getParent() instanceof Pane parent) {
+                parent.getChildren().remove(p);
+                parent.setOnMouseClicked(null);
+            }
+        });
         new ParallelTransition(fd, sc).play();
     }
 
@@ -540,7 +581,7 @@ public class NotificationBell {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  TOAST — FIX : positionnement via scene + Platform.runLater
+    //  TOAST
     // ═════════════════════════════════════════════════════════════
 
     private void afficherToast(NotifItem item) {
@@ -617,21 +658,17 @@ public class NotificationBell {
         toastBox.getChildren().addAll(toast, prog);
         toastBox.setMaxWidth(360);
 
-        // ✅ FIX POSITIONNEMENT : utilise la taille de la scène via Platform.runLater
-        // pour éviter le problème de rootOverlay.getWidth() == 0 au démarrage
         rootOverlay.getChildren().add(toastBox);
 
         Platform.runLater(() -> {
             double rw, rh;
-            // Essai 1 : dimensions du rootOverlay
             rw = rootOverlay.getWidth();
             rh = rootOverlay.getHeight();
-            // Fallback : dimensions de la scène si rootOverlay pas encore dimensionné
             if (rw < 100 && rootOverlay.getScene() != null) {
                 rw = rootOverlay.getScene().getWidth();
                 rh = rootOverlay.getScene().getHeight();
             }
-            if (rw < 100) { rw = 1200; rh = 700; } // valeurs par défaut
+            if (rw < 100) { rw = 1200; rh = 700; }
 
             double toastH = toastBox.prefHeight(360);
             double x = rw - 376;

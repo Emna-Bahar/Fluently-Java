@@ -41,9 +41,14 @@ build/
 src/main/resources/config.properties
 **/config.properties
 
-
 src/main/resources/credentials.json
 **/credentials.json
+
+# Environment variables file
+.env
+.env.local
+.env.*.local
+
 # Fichiers sensibles
 *.properties
 !application.properties
