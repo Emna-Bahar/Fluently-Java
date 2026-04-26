@@ -77,8 +77,9 @@ public class NotificationBell {
                 "-fx-font-size:20px;" +
                         "-fx-cursor:hand;" +
                         "-fx-padding:7 8 7 8;" +
-                        "-fx-background-color:rgba(255,255,255,0.18);" +
-                        "-fx-background-radius:50;"
+                        "-fx-background-color:rgba(0,0,0,0.25);" +
+                        "-fx-background-radius:50;" +
+                        "-fx-text-fill:white;"
         );
 
         // ── Badge rouge ────────────────────────────────────────────
@@ -106,11 +107,13 @@ public class NotificationBell {
         // ── Interactions ──────────────────────────────────────────
         bellRoot.setOnMouseEntered(e -> bellIcon.setStyle(
                 "-fx-font-size:20px;-fx-cursor:hand;-fx-padding:7 8 7 8;" +
-                        "-fx-background-color:rgba(255,255,255,0.30);-fx-background-radius:50;"
+                        "-fx-background-color:rgba(0,0,0,0.4);-fx-background-radius:50;" +
+                        "-fx-text-fill:white;"
         ));
         bellRoot.setOnMouseExited(e -> bellIcon.setStyle(
                 "-fx-font-size:20px;-fx-cursor:hand;-fx-padding:7 8 7 8;" +
-                        "-fx-background-color:rgba(255,255,255,0.18);-fx-background-radius:50;"
+                        "-fx-background-color:rgba(0,0,0,0.25);-fx-background-radius:50;" +
+                        "-fx-text-fill:white;"
         ));
         bellRoot.setOnMouseClicked(e -> togglePanneau());
 
@@ -399,9 +402,9 @@ public class NotificationBell {
         root.setStyle(
                 "-fx-background-color:#FFFFFF;" +
                         "-fx-background-radius:16;" +
-                        "-fx-border-color:#E4E6EB;" +
+                        "-fx-border-color:#7C3AED;" +
                         "-fx-border-radius:16;-fx-border-width:1;" +
-                        "-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.22),32,0,0,12);"
+                        "-fx-effect:dropshadow(gaussian,rgba(124,58,237,0.25),32,0,0,12);"
         );
 
         // Header
@@ -417,7 +420,7 @@ public class NotificationBell {
         if (!notifications.isEmpty()) {
             Button btnAll = new Button("Tout effacer");
             btnAll.setStyle(
-                    "-fx-background-color:transparent;-fx-text-fill:#1877F2;" +
+                    "-fx-background-color:transparent;-fx-text-fill:#7C3AED;" +
                             "-fx-font-size:12px;-fx-font-weight:bold;-fx-cursor:hand;" +
                             "-fx-padding:4 8 4 8;-fx-background-radius:8;"
             );
@@ -439,7 +442,7 @@ public class NotificationBell {
         root.getChildren().addAll(header, tabs);
 
         Separator sep = new Separator();
-        sep.setStyle("-fx-background-color:#E4E6EB;");
+        sep.setStyle("-fx-background-color:#7C3AED;");
         root.getChildren().add(sep);
 
         VBox liste = new VBox(0);
@@ -496,20 +499,20 @@ public class NotificationBell {
 
         if (!notifications.isEmpty()) {
             Separator sep2 = new Separator();
-            sep2.setStyle("-fx-background-color:#E4E6EB;");
+            sep2.setStyle("-fx-background-color:#7C3AED;");
             Button btnVoir = new Button("Voir toutes les notifications");
             btnVoir.setMaxWidth(Double.MAX_VALUE);
             btnVoir.setStyle(
-                    "-fx-background-color:transparent;-fx-text-fill:#1877F2;" +
+                    "-fx-background-color:transparent;-fx-text-fill:#7C3AED;" +
                             "-fx-font-size:13px;-fx-font-weight:bold;-fx-cursor:hand;" +
                             "-fx-padding:12 0 12 0;-fx-background-radius:0 0 16 16;"
             );
             btnVoir.setOnMouseEntered(e -> btnVoir.setStyle(
-                    "-fx-background-color:#F0F2F5;-fx-text-fill:#1877F2;" +
+                    "-fx-background-color:#F0F2F5;-fx-text-fill:#7C3AED;" +
                             "-fx-font-size:13px;-fx-font-weight:bold;-fx-cursor:hand;" +
                             "-fx-padding:12 0 12 0;-fx-background-radius:0 0 16 16;"));
             btnVoir.setOnMouseExited(e -> btnVoir.setStyle(
-                    "-fx-background-color:transparent;-fx-text-fill:#1877F2;" +
+                    "-fx-background-color:transparent;-fx-text-fill:#7C3AED;" +
                             "-fx-font-size:13px;-fx-font-weight:bold;-fx-cursor:hand;" +
                             "-fx-padding:12 0 12 0;-fx-background-radius:0 0 16 16;"));
             root.getChildren().addAll(sep2, btnVoir);
@@ -528,8 +531,8 @@ public class NotificationBell {
     private Button buildTab(String text, boolean active) {
         Button btn = new Button(text);
         btn.setStyle(
-                "-fx-background-color:" + (active ? "#E7F3FF" : "transparent") + ";" +
-                        "-fx-text-fill:" + (active ? "#1877F2" : "#65676B") + ";" +
+                "-fx-background-color:" + (active ? "#F0E6FF" : "transparent") + ";" +
+                        "-fx-text-fill:" + (active ? "#7C3AED" : "#65676B") + ";" +
                         "-fx-font-size:13px;-fx-font-weight:" + (active ? "bold" : "normal") + ";" +
                         "-fx-background-radius:20;-fx-padding:6 14 6 14;-fx-cursor:hand;"
         );
