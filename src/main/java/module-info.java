@@ -4,16 +4,17 @@ module com.example.pijava_fluently {
     requires java.sql;
     requires java.desktop;
     requires com.google.gson;
-    // ── Ajouter ces lignes ──
-    requires com.google.zxing;          // ZXing Core
-    requires com.google.zxing.javase;   // ZXing JavaSE
-    requires webcam.capture;            // Webcam Capture
-    requires jdk.httpserver;//
+    requires com.google.zxing;
+    requires com.google.zxing.javase;
+    requires webcam.capture;
+    requires jdk.httpserver;
     requires javafx.swing;
-    requires org.json;//hedhy ia
-    opens com.example.pijava_fluently.services to java.base;//hedhy google api
+    requires org.json;
     requires java.net.http;
+    requires javafx.web;
+    requires jdk.jsobject;
 
+    opens com.example.pijava_fluently.services to java.base;
     opens com.example.pijava_fluently to javafx.fxml;
     opens com.example.pijava_fluently.controller to javafx.fxml;
     opens com.example.pijava_fluently.entites to javafx.base, javafx.fxml;

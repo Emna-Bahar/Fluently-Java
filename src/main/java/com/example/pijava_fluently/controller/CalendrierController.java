@@ -489,7 +489,7 @@ public class CalendrierController {
             btnJitsi.setOnMouseEntered(e -> btnJitsi.setOpacity(0.85));
             btnJitsi.setOnMouseExited(e  -> btnJitsi.setOpacity(1.0));
             btnJitsi.setOnAction(e ->
-                    com.example.pijava_fluently.utils.JitsiUtil.ouvrirDansNavigateur(s.getLienReunion()));
+                    com.example.pijava_fluently.utils.JitsiUtil.ouvrirDansAppDesktop(s.getLienReunion()));
             card.getChildren().add(btnJitsi);
         }
 

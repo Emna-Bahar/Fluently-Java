@@ -1025,7 +1025,7 @@ public class Sessionetudiantcontroller {
                             "-fx-font-size:12px;-fx-font-weight:bold;-fx-background-radius:10;" +
                             "-fx-padding:9 0 9 0;-fx-cursor:hand;");
                     btnRejoindre.setOnAction(ev ->
-                            JitsiUtil.ouvrirDansNavigateur(sessionLiee.getLienReunion()));
+                            JitsiUtil.ouvrirDansAppDesktop(sessionLiee.getLienReunion()));
                     actions.getChildren().add(btnRejoindre);
                 } else {
                     Label info = new Label("✅ Acceptée");

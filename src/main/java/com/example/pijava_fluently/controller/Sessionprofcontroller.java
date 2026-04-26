@@ -912,7 +912,7 @@ public class Sessionprofcontroller {
         Button btnMeet;
         if (s.getLienReunion() != null && !s.getLienReunion().isBlank()) {
             btnMeet = makeBtn("🎥  Rejoindre Jitsi", "#EEF2FF", "#4F46E5");
-            btnMeet.setOnAction(e -> JitsiUtil.ouvrirDansNavigateur(s.getLienReunion()));
+            btnMeet.setOnAction(e -> JitsiUtil.ouvrirDansAppDesktop(s.getLienReunion()));
         } else {
             btnMeet = makeBtn("🔗  Aucun lien", "#F8FAFC", "#94A3B8");
             btnMeet.setDisable(true);
@@ -1063,7 +1063,7 @@ public class Sessionprofcontroller {
             btnJitsi.setStyle("-fx-background-color:linear-gradient(to right," + c1 + "," + c2 + ");" +
                     "-fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;" +
                     "-fx-background-radius:10;-fx-padding:11 0 11 0;-fx-cursor:hand;");
-            btnJitsi.setOnAction(e -> JitsiUtil.ouvrirDansNavigateur(s.getLienReunion()));
+            btnJitsi.setOnAction(e -> JitsiUtil.ouvrirDansAppDesktop(s.getLienReunion()));
             body.getChildren().add(btnJitsi);
         }
 
