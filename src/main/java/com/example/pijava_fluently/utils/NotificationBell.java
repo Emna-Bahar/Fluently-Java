@@ -14,6 +14,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
 import javafx.util.Duration;
 
 import java.sql.SQLException;
@@ -72,14 +73,13 @@ public class NotificationBell {
         this.rootOverlay  = rootOverlay;
 
         // ── Cloche ────────────────────────────────────────────────
-        bellIcon = new Label("🔔");
+        bellIcon = new Label();
+        bellIcon.setGraphic(createBellShape());
         bellIcon.setStyle(
-                "-fx-font-size:20px;" +
-                        "-fx-cursor:hand;" +
-                        "-fx-padding:7 8 7 8;" +
+                "-fx-cursor:hand;" +
+                        "-fx-padding:10;" +
                         "-fx-background-color:rgba(0,0,0,0.25);" +
-                        "-fx-background-radius:50;" +
-                        "-fx-text-fill:white;"
+                        "-fx-background-radius:50;"
         );
 
         // ── Badge rouge ────────────────────────────────────────────
@@ -123,7 +123,16 @@ public class NotificationBell {
 
     // ── Getter ────────────────────────────────────────────────────
     public StackPane getBellRoot() { return bellRoot; }
-
+    private Node createBellShape() {
+        SVGPath bellShape = new SVGPath();
+        bellShape.setContent("M12 22c1.1 0 2-.9 2-2h-4a2 2 0 002 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 00-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2h16l-2-2z");
+        bellShape.setFill(Color.WHITE);
+        bellShape.setScaleX(1.2);
+        bellShape.setScaleY(1.2);
+        bellShape.setTranslateX(4);
+        bellShape.setTranslateY(4);
+        return bellShape;
+    }
     // ═════════════════════════════════════════════════════════════
     //  SCHEDULER
     // ═════════════════════════════════════════════════════════════
@@ -458,8 +467,8 @@ public class NotificationBell {
             VBox empty = new VBox(12);
             empty.setAlignment(Pos.CENTER);
             empty.setPadding(new Insets(40));
-            Label ic  = new Label("🔕");
-            ic.setStyle("-fx-font-size:40px;");
+            Label ic  = new Label("!");
+            ic.setStyle("-fx-font-size:40px;-fx-font-weight:bold;-fx-text-fill:#7C3AED;");
             Label msg = new Label("Pas de notifications");
             msg.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#65676B;");
             Label sub = new Label("Les rappels de vos sessions apparaîtront ici");
