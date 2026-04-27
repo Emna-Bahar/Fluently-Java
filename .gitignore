@@ -37,4 +37,4 @@ build/
 ### Mac OS ###
 .DS_Store
 ### API Keys ###
-config.properties
+ src/main/resources/com/example/pijava_fluently/config.properties
