@@ -1,9 +1,10 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.User;
-import com.example.pijava_fluently.services.NotificationService;
 import com.example.pijava_fluently.services.UserService;
+import com.example.pijava_fluently.services.NotificationService;
 import com.example.pijava_fluently.services.UserSessionService;
+import com.example.pijava_fluently.utils.LanguageManager;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -37,15 +38,12 @@ public class HomeController implements Initializable {
     @FXML private Button btnSessions;
     @FXML private Button btnObjectifs;
     @FXML private Button btnTheme;
+    @FXML private Button btnLang;
     @FXML private VBox   rootPane;
 
     private ContextMenu   userMenu;
     private User          currentUser;
     private final UserService userService = new UserService();
-
-    // ============================================================
-    // INITIALISATION
-    // ============================================================
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -57,7 +55,7 @@ public class HomeController implements Initializable {
         // Initialiser NotificationService avec HomeController
         NotificationService.setHomeController(this);
 
-        // Charger la page d'accueil
+        setupLanguage();
         showAccueil();
     }
 
@@ -67,26 +65,41 @@ public class HomeController implements Initializable {
             navUsername.setText(user.getPrenom() + " " + user.getNom());
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  DÉMARRER LA SESSION UTILISATEUR (TRACKING STREAK)
-        // ════════════════════════════════════════════════════════════════
+        // Démarrer la session utilisateur (tracking streak)
         if (user != null) {
             UserSessionService.getInstance().startSession(user.getId());
             System.out.println("✅ Session démarrée pour " + user.getPrenom());
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════
-    //  MÉTHODE À APPELER À LA FERMETURE DE L'APPLICATION
-    // ════════════════════════════════════════════════════════════════════
+    // Méthode à appeler à la fermeture de l'application
     public void endSessionOnClose() {
         System.out.println("🏁 Fermeture de l'application - Fin de session");
         UserSessionService.getInstance().endSession();
     }
 
-    // ============================================================
-    // THEME SOMBRE / CLAIR
-    // ============================================================
+    private void setupLanguage() {
+        LanguageManager lm = LanguageManager.getInstance();
+        lm.languageProperty().addListener((obs, oldVal, newVal) -> applyLanguage());
+        applyLanguage();
+    }
+
+    private void applyLanguage() {
+        LanguageManager lm = LanguageManager.getInstance();
+        if (btnAccueil  != null) btnAccueil.setText(lm.t("nav.home"));
+        if (btnLangues  != null) btnLangues.setText(lm.t("nav.languages"));
+        if (btnTests    != null) btnTests.setText(lm.t("nav.tests"));
+        if (btnGroupes  != null) btnGroupes.setText(lm.t("nav.groups"));
+        if (btnSessions != null) btnSessions.setText(lm.t("nav.sessions"));
+        if (btnObjectifs!= null) btnObjectifs.setText(lm.t("nav.objectives"));
+        if (btnLang     != null) btnLang.setText(lm.t("lang.btn"));
+    }
+
+    @FXML
+    private void toggleLanguage() {
+        Scene scene = btnLang.getScene();
+        LanguageManager.getInstance().toggle(scene);
+    }
 
     @FXML
     private void toggleTheme() {
@@ -115,16 +128,12 @@ public class HomeController implements Initializable {
         return null;
     }
 
-    // ============================================================
-    // USER MENU
-    // ============================================================
-
     private void createUserMenu() {
         userMenu = new ContextMenu();
         MenuItem profile  = new MenuItem("Mon Profil");
         MenuItem settings = new MenuItem("Parametres");
-        SeparatorMenuItem sep = new SeparatorMenuItem();
         MenuItem streakBtn = new MenuItem("🔥 Mes Streaks & Progression");
+        SeparatorMenuItem sep = new SeparatorMenuItem();
         MenuItem logout   = new MenuItem("Deconnexion");
 
         profile.setOnAction(e  -> showProfile());
@@ -140,10 +149,6 @@ public class HomeController implements Initializable {
         if (userMenu != null && navUserPill != null)
             userMenu.show(navUserPill, event.getScreenX(), event.getScreenY() + 8);
     }
-
-    // ============================================================
-    // STREAK DASHBOARD
-    // ============================================================
 
     private void openStreakDashboard() {
         if (currentUser == null) {
@@ -170,11 +175,8 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ============================================================
-    // NAVIGATION
-    // ============================================================
-
-    @FXML public void showAccueil() {
+    @FXML
+    public void showAccueil() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/home-content.fxml"));
@@ -226,10 +228,6 @@ public class HomeController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/groupes.fxml"));
             Node view = loader.load();
-            GroupesController ctrl = loader.getController();
-            if (currentUser != null) {
-                ctrl.setCurrentUserId(currentUser.getId());
-            }
             setContent(view);
             setActiveButton(btnGroupes);
         } catch (IOException e) {
@@ -238,7 +236,8 @@ public class HomeController implements Initializable {
         }
     }
 
-    @FXML public void showSessions() {
+    @FXML
+    public void showSessions() {
         boolean isProf = currentUser != null
                 && currentUser.getRoles() != null
                 && (currentUser.getRoles().contains("ROLE_PROF")
@@ -252,7 +251,8 @@ public class HomeController implements Initializable {
         setActiveButton(btnSessions);
     }
 
-    @FXML public void showSessionsProf() {
+    @FXML
+    public void showSessionsProf() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/session-prof-view.fxml"));
@@ -308,10 +308,6 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ============================================================
-    // CONTENU CENTRAL
-    // ============================================================
-
     public void setContent(Node view) {
         if (contentArea != null) {
             contentArea.getChildren().clear();
@@ -319,30 +315,17 @@ public class HomeController implements Initializable {
         }
     }
 
-    // ============================================================
-    // HELPERS PRIVES
-    // ============================================================
-
     private void setActiveButton(Button activeBtn) {
         if (activeBtn == null) return;
         Button[] all = {btnAccueil, btnLangues, btnTests, btnGroupes, btnSessions, btnObjectifs};
         for (Button b : all) {
-            if (b != null) {
-                b.getStyleClass().remove("nav-link-active");
-            }
+            if (b != null) b.getStyleClass().remove("nav-link-active");
         }
         activeBtn.getStyleClass().add("nav-link-active");
     }
 
-    // ============================================================
-    // ACTIONS MENU UTILISATEUR
-    // ============================================================
-
     private void showProfile() {
-        if (currentUser == null) {
-            System.out.println("Aucun utilisateur connecte");
-            return;
-        }
+        if (currentUser == null) { System.out.println("Aucun utilisateur connecte"); return; }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/front-profile.fxml"));
@@ -361,14 +344,10 @@ public class HomeController implements Initializable {
         }
     }
 
-    private void showSettings() {
-        System.out.println("Parametres ouverts");
-    }
+    private void showSettings() { System.out.println("Parametres ouverts"); }
 
     private void handleLogout() {
-        // ════════════════════════════════════════════════════════════════
-        //  TERMINER LA SESSION AVANT DÉCONNEXION
-        // ════════════════════════════════════════════════════════════════
+        // Terminer la session avant déconnexion
         UserSessionService.getInstance().endSession();
         System.out.println("👋 Session terminée - Déconnexion");
 
