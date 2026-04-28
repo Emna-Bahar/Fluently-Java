@@ -82,12 +82,18 @@ public class Reservationservice {
 
     /** Réservations d'un étudiant donné */
     public List<Reservation> recupererParEtudiant(int idUser) throws SQLException {
+        System.out.println("=== recupererParEtudiant appelé avec userId=" + idUser);
         List<Reservation> list = new ArrayList<>();
         PreparedStatement ps = cnx.prepareStatement(
-                "SELECT * FROM reservation WHERE id_user_id=? ORDER BY date_reservation DESC");
+                "SELECT * FROM reservation WHERE id_user_id = ? ORDER BY date_reservation DESC"
+        );
         ps.setInt(1, idUser);
         ResultSet rs = ps.executeQuery();
-        while (rs.next()) list.add(map(rs));
+        while (rs.next()) {
+            Reservation r = map(rs);
+            System.out.println("  → RESA #" + r.getId() + " userId=" + r.getIdUserId());
+            list.add(r);
+        }
         return list;
     }
 
@@ -117,5 +123,49 @@ public class Reservationservice {
         Timestamp ts = rs.getTimestamp("date_confirmation");
         r.setDateConfirmation(ts != null ? ts.toLocalDateTime() : null);
         return r;
+    }
+    // REMPLACE peutNoter() existant — supprime la condition presence
+    public boolean peutNoter(int sessionId, int userId) throws SQLException {
+        String sql = """
+        SELECT r.id FROM reservation r
+        JOIN session s ON s.id = r.id_session_id
+        WHERE r.id_session_id = ?
+          AND r.id_user_id = ?
+          AND r.statut = 'acceptée'
+          AND s.statut = 'terminée'
+    """;
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, sessionId);
+            ps.setInt(2, userId);
+            return ps.executeQuery().next();
+        }
+    }
+
+    // AJOUTE cette nouvelle méthode pour le professeur
+    public boolean peutNoterCommeProf(int sessionId, int profId) throws SQLException {
+        String sql = """
+        SELECT id FROM session
+        WHERE id = ?
+          AND id_user_id = ?
+          AND statut = 'terminée'
+          AND rating IS NULL
+    """;
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, sessionId);
+            ps.setInt(2, profId);
+            return ps.executeQuery().next();
+        }
+    }
+    public void mettreAJourStatut(int reservationId, String nouveauStatut) throws SQLException {
+        String sql = "UPDATE reservation SET statut = ?" +
+                (("acceptée".equals(nouveauStatut))
+                        ? ", date_confirmation = NOW()"
+                        : "") +
+                " WHERE id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, nouveauStatut);
+            ps.setInt(2, reservationId);
+            ps.executeUpdate();
+        }
     }
 }

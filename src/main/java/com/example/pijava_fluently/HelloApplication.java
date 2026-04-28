@@ -1,6 +1,7 @@
 package com.example.pijava_fluently;
 
 import com.example.pijava_fluently.utils.MyDatabase;
+import com.example.pijava_fluently.utils.ReminderScheduler;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -48,6 +49,8 @@ public class HelloApplication extends Application {
         });
         stage.setResizable(true);
         stage.show();
+        stage.setOnCloseRequest(e ->
+                ReminderScheduler.getInstance().stop());
     }
 
     public static void main(String[] args) {

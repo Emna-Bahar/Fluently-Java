@@ -32,6 +32,8 @@ module com.example.pijava_fluently {
 
     // Email
     requires jakarta.mail;
+    requires javafx.swing;
+    requires jdk.jsobject;
 
     // Ouverture pour reflexion (FXML)
     opens com.example.pijava_fluently to javafx.fxml;

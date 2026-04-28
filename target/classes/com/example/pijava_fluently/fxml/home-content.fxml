@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pijava_fluently.controller.HomeContentController"
+            fitToWidth="true"
+            styleClass="home-scroll-pane">
+
+    <VBox styleClass="home-container" spacing="0">
+
+        <!-- ===== SECTION HERO AVEC IMAGE DE FOND ===== -->
+        <StackPane styleClass="hero-section-new">
+            <!-- Image de fond avec URL correcte -->
+            <ImageView styleClass="hero-background-image" preserveRatio="false" smooth="true" fitWidth="1280" fitHeight="550">
+                <Image url="https://images.pexels.com/photos/1181677/desk-laptop-notebook-pen-1181677.jpg" />
+            </ImageView>
+
+            <!-- Overlay sombre -->
+            <VBox styleClass="hero-overlay" StackPane.alignment="CENTER">
+                <VBox styleClass="hero-content" maxWidth="700">
+
+                    <!-- Badge de bienvenue -->
+                    <HBox alignment="CENTER" styleClass="hero-welcome-badge-container">
+                        <Label text="✨ BIENVENUE SUR FLUENTLY" styleClass="hero-welcome-badge"/>
+                    </HBox>
+
+                    <!-- Titre principal -->
+
+
+                    <!-- Description -->
+                    <Text styleClass="hero-description" textAlignment="CENTER">
+                        Fluently vous offre une expérience d'apprentissage immersive avec des cours interactifs, des tests personnalisés et un suivi de progression en temps réel.
+                    </Text>
+
+                    <!-- Boutons d'action -->
+                    <HBox spacing="20" alignment="CENTER" styleClass="hero-buttons">
+                        <Button text="🚀 Commencer maintenant" styleClass="btn-primary-new" onAction="#onStartLearning"/>
+                        <Button text="🎯 Explorer les cours" styleClass="btn-outline-new" onAction="#onExploreCourses"/>
+                    </HBox>
+
+                    <!-- Statistiques -->
+                    <HBox spacing="50" alignment="CENTER" styleClass="hero-stats">
+                        <VBox alignment="CENTER" spacing="5">
+                            <Label text="50+" styleClass="stat-number-large"/>
+                            <Label text="Langues disponibles" styleClass="stat-label-large"/>
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="5">
+                            <Label text="10K+" styleClass="stat-number-large"/>
+                            <Label text="Apprenants actifs" styleClass="stat-label-large"/>
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="5">
+                            <Label text="98%" styleClass="stat-number-large"/>
+                            <Label text="Taux de satisfaction" styleClass="stat-label-large"/>
+                        </VBox>
+                    </HBox>
+
+                </VBox>
+            </VBox>
+        </StackPane>
+
+        <!-- ===== SECTION POURQUOI FLUENTLY ===== -->
+        <VBox styleClass="features-section" spacing="30">
+            <VBox alignment="CENTER" spacing="15" styleClass="section-header">
+                <Label text="Pourquoi Fluently ?" styleClass="section-badge"/>
+                <Label text="Une méthode d'apprentissage innovante" styleClass="section-title"/>
+                <Label text="Découvrez pourquoi des milliers d'étudiants nous font confiance" styleClass="section-subtitle"/>
+            </VBox>
+
+            <HBox spacing="30" alignment="CENTER" styleClass="feature-grid">
+                <!-- Carte 1 -->
+                <VBox spacing="15" alignment="CENTER" styleClass="feature-card" onMouseClicked="#onTestsClick">
+                    <Label text="📝" styleClass="feature-icon"/>
+                    <Label text="Tests adaptatifs" styleClass="feature-title"/>
+                    <Label text="Des tests qui s'adaptent à votre niveau pour une progression optimale" wrapText="true" styleClass="feature-desc" textAlignment="CENTER"/>
+                </VBox>
+
+                <!-- Carte 2 -->
+                <VBox spacing="15" alignment="CENTER" styleClass="feature-card" onMouseClicked="#onGroupesClick">
+                    <Label text="👥" styleClass="feature-icon"/>
+                    <Label text="Groupes d'étude" styleClass="feature-title"/>
+                    <Label text="Apprenez en groupe et progressez plus vite grâce à l'entraide" wrapText="true" styleClass="feature-desc" textAlignment="CENTER"/>
+                </VBox>
+
+                <!-- Carte 3 -->
+                <VBox spacing="15" alignment="CENTER" styleClass="feature-card" onMouseClicked="#onObjectifsClick">
+                    <Label text="🎯" styleClass="feature-icon"/>
+                    <Label text="Objectifs personnalisés" styleClass="feature-title"/>
+                    <Label text="Fixez vos objectifs et suivez votre progression jour après jour" wrapText="true" styleClass="feature-desc" textAlignment="CENTER"/>
+                </VBox>
+            </HBox>
+
+            <HBox spacing="30" alignment="CENTER" styleClass="feature-grid">
+                <!-- Carte 4 -->
+                <VBox spacing="15" alignment="CENTER" styleClass="feature-card" onMouseClicked="#onSessionsClick">
+                    <Label text="🎓" styleClass="feature-icon"/>
+                    <Label text="Sessions live" styleClass="feature-title"/>
+                    <Label text="Participez à des sessions en direct avec des professeurs qualifiés" wrapText="true" styleClass="feature-desc" textAlignment="CENTER"/>
+                </VBox>
+
+                <!-- Carte 5 -->
+                <VBox spacing="15" alignment="CENTER" styleClass="feature-card" onMouseClicked="#onCertificatsClick">
+                    <Label text="🏆" styleClass="feature-icon"/>
+                    <Label text="Certificats officiels" styleClass="feature-title"/>
+                    <Label text="Obtenez des certificats reconnus pour valoriser vos compétences" wrapText="true" styleClass="feature-desc" textAlignment="CENTER"/>
+                </VBox>
+
+                <!-- Carte 6 -->
+                <VBox spacing="15" alignment="CENTER" styleClass="feature-card" onMouseClicked="#onStatsClick">
+                    <Label text="📊" styleClass="feature-icon"/>
+                    <Label text="Statistiques détaillées" styleClass="feature-title"/>
+                    <Label text="Analysez vos progrès avec des statistiques complètes" wrapText="true" styleClass="feature-desc" textAlignment="CENTER"/>
+                </VBox>
+            </HBox>
+        </VBox>
+
+        <!-- ===== SECTION LANGUES POPULAIRES ===== -->
+        <VBox styleClass="popular-languages-section" spacing="30">
+            <VBox alignment="CENTER" spacing="15" styleClass="section-header">
+                <Label text="Langues populaires" styleClass="section-badge"/>
+                <Label text="Apprenez parmi 50+ langues" styleClass="section-title"/>
+                <Label text="Des langues les plus parlées aux dialectes régionaux" styleClass="section-subtitle"/>
+            </VBox>
+
+            <GridPane hgap="30" vgap="20" alignment="CENTER" styleClass="language-grid">
+                <!-- Ligne 1 -->
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="🇬🇧" styleClass="language-flag"/>
+                    <Label text="Anglais" styleClass="language-name"/>
+                    <Label text="1.5M apprenants" styleClass="language-speakers"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="🇪🇸" styleClass="language-flag"/>
+                    <Label text="Espagnol" styleClass="language-name"/>
+                    <Label text="850K apprenants" styleClass="language-speakers"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                    <Label text="🇫🇷" styleClass="language-flag"/>
+                    <Label text="Français" styleClass="language-name"/>
+                    <Label text="720K apprenants" styleClass="language-speakers"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="3" GridPane.rowIndex="0">
+                    <Label text="🇩🇪" styleClass="language-flag"/>
+                    <Label text="Allemand" styleClass="language-name"/>
+                    <Label text="550K apprenants" styleClass="language-speakers"/>
+                </VBox>
+
+                <!-- Ligne 2 -->
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="🇯🇵" styleClass="language-flag"/>
+                    <Label text="Japonais" styleClass="language-name"/>
+                    <Label text="420K apprenants" styleClass="language-speakers"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="🇨🇳" styleClass="language-flag"/>
+                    <Label text="Chinois" styleClass="language-name"/>
+                    <Label text="380K apprenants" styleClass="language-speakers"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                    <Label text="🇮🇹" styleClass="language-flag"/>
+                    <Label text="Italien" styleClass="language-name"/>
+                    <Label text="310K apprenants" styleClass="language-speakers"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="8" GridPane.columnIndex="3" GridPane.rowIndex="1">
+                    <Label text="🇰🇷" styleClass="language-flag"/>
+                    <Label text="Coréen" styleClass="language-name"/>
+                    <Label text="290K apprenants" styleClass="language-speakers"/>
+                </VBox>
+            </GridPane>
+
+            <HBox alignment="CENTER" styleClass="view-all-container">
+                <Button text="Voir toutes les langues →" styleClass="btn-view-all" onAction="#onViewAllLanguages"/>
+            </HBox>
+        </VBox>
+
+        <!-- ===== SECTION TÉMOIGNAGES ===== -->
+        <VBox styleClass="testimonials-section" spacing="30">
+            <VBox alignment="CENTER" spacing="15" styleClass="testimonials-header">
+                <Label text="Témoignages" styleClass="testimonials-badge"/>
+                <Label text="Ce que disent nos apprenants" styleClass="testimonials-title"/>
+                <Label text="Rejoignez une communauté de plus de 10 000 apprenants satisfaits" style="-fx-text-fill: rgba(255,255,255,0.9);"/>
+            </VBox>
+
+            <HBox spacing="30" alignment="CENTER" styleClass="testimonials-grid">
+                <VBox spacing="15" styleClass="testimonial-card" maxWidth="280">
+                    <Label text="⭐⭐⭐⭐⭐" styleClass="testimonial-stars"/>
+                    <Text styleClass="testimonial-text" wrappingWidth="250">
+                        "Grâce à Fluently, j'ai pu apprendre l'anglais en seulement 3 mois. Les tests adaptatifs m'ont vraiment aidé à progresser rapidement !"
+                    </Text>
+                    <HBox spacing="10" alignment="CENTER_LEFT" styleClass="testimonial-author">
+                        <Label text="👩‍🎓" styleClass="author-avatar"/>
+                        <VBox spacing="2">
+                            <Label text="Marie Dubois" styleClass="author-name"/>
+                            <Label text="Étudiante en anglais" styleClass="author-role"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="15" styleClass="testimonial-card" maxWidth="280">
+                    <Label text="⭐⭐⭐⭐⭐" styleClass="testimonial-stars"/>
+                    <Text styleClass="testimonial-text" wrappingWidth="250">
+                        "Les sessions en direct avec les professeurs sont exceptionnelles. J'ai gagné en confiance à l'oral !"
+                    </Text>
+                    <HBox spacing="10" alignment="CENTER_LEFT" styleClass="testimonial-author">
+                        <Label text="👨‍💼" styleClass="author-avatar"/>
+                        <VBox spacing="2">
+                            <Label text="Thomas Martin" styleClass="author-name"/>
+                            <Label text="Apprenant espagnol" styleClass="author-role"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="15" styleClass="testimonial-card" maxWidth="280">
+                    <Label text="⭐⭐⭐⭐⭐" styleClass="testimonial-stars"/>
+                    <Text styleClass="testimonial-text" wrappingWidth="250">
+                        "La plateforme est intuitive et les objectifs personnalisés me motivent chaque jour. Je recommande vivement !"
+                    </Text>
+                    <HBox spacing="10" alignment="CENTER_LEFT" styleClass="testimonial-author">
+                        <Label text="👩‍💻" styleClass="author-avatar"/>
+                        <VBox spacing="2">
+                            <Label text="Sophie Bernard" styleClass="author-name"/>
+                            <Label text="Apprenante japonais" styleClass="author-role"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </HBox>
+        </VBox>
+
+        <!-- ===== SECTION CTA FINALE ===== -->
+        <VBox styleClass="cta-section" spacing="30">
+            <VBox alignment="CENTER" spacing="20" styleClass="cta-card">
+                <Label text="🚀" styleClass="cta-icon"/>
+                <Label text="Prêt à commencer votre voyage linguistique ?" styleClass="cta-title"/>
+                <Label text="Rejoignez Fluently aujourd'hui et commencez à apprendre une nouvelle langue gratuitement" styleClass="cta-subtitle"/>
+                <Button text="Commencer gratuitement →" styleClass="cta-button" onAction="#onStartLearning"/>
+            </VBox>
+        </VBox>
+
+        <!-- ===== FOOTER ===== -->
+        <VBox spacing="30" styleClass="footer">
+            <HBox spacing="50" alignment="CENTER">
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <Label text="🎓 Fluently" styleClass="footer-logo"/>
+                    <Label text="Apprendre une langue n'a jamais été aussi simple et amusant. Rejoignez notre communauté dès aujourd'hui !" wrapText="true" styleClass="footer-text" maxWidth="300"/>
+                </VBox>
+
+                <HBox spacing="40" styleClass="footer-links">
+                    <VBox spacing="10">
+                        <Label text="PLATEFORME" styleClass="footer-link-title"/>
+                        <Label text="Cours" styleClass="footer-link" onMouseClicked="#onExploreCourses"/>
+                        <Label text="Tests" styleClass="footer-link" onMouseClicked="#onTestsClick"/>
+                        <Label text="Groupes" styleClass="footer-link" onMouseClicked="#onGroupesClick"/>
+                        <Label text="Sessions" styleClass="footer-link" onMouseClicked="#onSessionsClick"/>
+                    </VBox>
+
+                    <VBox spacing="10">
+                        <Label text="RESSOURCES" styleClass="footer-link-title"/>
+                        <Label text="Blog" styleClass="footer-link"/>
+                        <Label text="FAQ" styleClass="footer-link"/>
+                        <Label text="Support" styleClass="footer-link"/>
+                        <Label text="Contact" styleClass="footer-link"/>
+                    </VBox>
+
+                    <VBox spacing="10">
+                        <Label text="LÉGAL" styleClass="footer-link-title"/>
+                        <Label text="Conditions" styleClass="footer-link"/>
+                        <Label text="Confidentialité" styleClass="footer-link"/>
+                        <Label text="Cookies" styleClass="footer-link"/>
+                    </VBox>
+                </HBox>
+            </HBox>
+
+            <Separator styleClass="footer-separator"/>
+
+            <HBox alignment="CENTER" spacing="20">
+                <Label text="© 2024 Fluently. Tous droits réservés." styleClass="footer-copyright"/>
+                <HBox spacing="15" styleClass="social-icons">
+                    <Label text="📘" styleClass="social-icon" onMouseClicked="#openFacebook"/>
+                    <Label text="🐦" styleClass="social-icon" onMouseClicked="#openTwitter"/>
+                    <Label text="📸" styleClass="social-icon" onMouseClicked="#openInstagram"/>
+                    <Label text="💼" styleClass="social-icon" onMouseClicked="#openLinkedin"/>
+                </HBox>
+            </HBox>
+        </VBox>
+
+    </VBox>
+</ScrollPane>

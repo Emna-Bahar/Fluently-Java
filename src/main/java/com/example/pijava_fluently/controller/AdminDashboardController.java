@@ -953,7 +953,13 @@ public class AdminDashboardController implements Initializable {
     @FXML private void showNiveaux() { hideAll(); loadPage(niveauxView, "/com/example/pijava_fluently/fxml/niveau-view.fxml"); setTitle("Niveaux", "Administration › Langues › Niveaux"); }
     @FXML private void showCours() { hideAll(); loadPage(coursView, "/com/example/pijava_fluently/fxml/cours-view.fxml"); setTitle("Cours", "Administration › Langues › Cours"); }
     @FXML private void showUserProgress() { hideAll(); loadPage(userProgressView, "/com/example/pijava_fluently/fxml/user-progress.fxml"); setTitle("Progression des Étudiants", "Administration › Langues › Progression"); setActive(navUserProgress); }
-    @FXML private void showLangueStats() { hideAll(); try { FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pijava_fluently/fxml/langues-stats.fxml")); Node view = loader.load(); languesView.getChildren().setAll(view); setTitle("Statistiques des Langues", "Administration › Langues › Statistiques"); } catch (IOException e) { e.printStackTrace(); } setActive(navLangueStats); }
+    @FXML
+    private void showLangueStats() {
+        hideAll();
+        loadPage(languesView, "/com/example/pijava_fluently/fxml/langues-stats.fxml");
+        setTitle("Statistiques des Langues", "Administration › Langues › Statistiques");
+        setActive(navLangueStats);
+    }
     @FXML private void showTests() { hideAll(); loadPage(testsView, "/com/example/pijava_fluently/fxml/tests.fxml"); setTitle("Gestion des Tests", "Administration › Tests › Tests"); setActive(navTests); }
     @FXML private void showQuestions() { hideAll(); loadPage(questionsView, "/com/example/pijava_fluently/fxml/questions.fxml"); setTitle("Gestion des Questions", "Administration › Tests › Questions"); setActive(navQuestions); }
     @FXML private void showReponses() { hideAll(); loadPage(reponsesView, "/com/example/pijava_fluently/fxml/reponses.fxml"); setTitle("Gestion des Réponses", "Administration › Tests › Réponses"); setActive(navReponses); }

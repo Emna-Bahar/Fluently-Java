@@ -28,6 +28,11 @@
                        style="-fx-background-color:#FFFFFF33;-fx-text-fill:white;
                               -fx-font-size:13px;-fx-font-weight:bold;
                               -fx-background-radius:30;-fx-padding:8 18 8 18;"/>
+                <StackPane fx:id="bellContainer"
+                           alignment="CENTER"
+                           minWidth="40" prefWidth="40" maxWidth="40"
+                           minHeight="40" prefHeight="40"
+                           style="-fx-padding:0 4 0 4;"/>
             </HBox>
         </HBox>
 
@@ -53,6 +58,12 @@
                            -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
                            -fx-background-radius:12;-fx-padding:12 22 12 22;-fx-cursor:hand;
                            -fx-effect:dropshadow(gaussian,rgba(59,130,246,0.4),12,0,0,4);"/>
+            <Button text="📅  Mon Calendrier"
+                    onAction="#handleOuvrirCalendrier"
+                    style="-fx-background-color:linear-gradient(from 0% 0% to 100% 0%,#6C63FF,#8B5CF6);
+               -fx-text-fill:white;-fx-font-size:13px;-fx-font-weight:bold;
+               -fx-background-radius:12;-fx-padding:12 22 12 22;-fx-cursor:hand;
+               -fx-effect:dropshadow(gaussian,rgba(108,99,255,0.4),12,0,0,4);"/>
         </HBox>
 
         <!-- ══ Formulaire ══ -->
@@ -80,7 +91,20 @@
             </HBox>
 
             <Separator/>
-
+            <!-- Nom de la session -->
+            <HBox spacing="16">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="📛  Nom de la session *  (ex : Français B2 — Expression orale)"
+                           style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
+                    <TextField fx:id="fieldNom"
+                               promptText="Ex : Anglais A2 — Conversation quotidienne"
+                               style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                          -fx-border-radius:10;-fx-background-radius:10;
+                          -fx-border-width:1.5;-fx-padding:11 14 11 14;-fx-font-size:13px;"/>
+                    <Label fx:id="errNom" text="" visible="false" managed="false"
+                           style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
+                </VBox>
+            </HBox>
             <!-- Ligne 1 : Date + Heure + Statut -->
             <HBox spacing="16">
                 <VBox spacing="4" HBox.hgrow="ALWAYS">
@@ -129,10 +153,17 @@
                 <VBox spacing="4" HBox.hgrow="ALWAYS">
                     <Label text="🔗  Lien réunion * (https://…)"
                            style="-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:#64748B;"/>
-                    <TextField fx:id="fieldLien" promptText="https://meet.google.com/…"
-                               style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
-                                      -fx-border-radius:10;-fx-background-radius:10;
-                                      -fx-border-width:1.5;-fx-padding:11 14 11 14;-fx-font-size:13px;"/>
+                    <HBox spacing="8">
+                        <TextField fx:id="fieldLien" promptText="https://meet.jit.si/…"
+                                   HBox.hgrow="ALWAYS"
+                                   style="-fx-background-color:#F8FAFC;-fx-border-color:#E2E8F0;
+                          -fx-border-radius:10;-fx-background-radius:10;
+                          -fx-border-width:1.5;-fx-padding:11 14 11 14;-fx-font-size:13px;"/>
+                        <Button text="🔄" onAction="#handleGenererLien"
+                                style="-fx-background-color:#EEF2FF;-fx-text-fill:#6C63FF;
+                       -fx-font-size:14px;-fx-background-radius:10;
+                       -fx-padding:11 14 11 14;-fx-cursor:hand;"/>
+                    </HBox>
                     <Label fx:id="errLien" text="" visible="false" managed="false"
                            style="-fx-font-size:11px;-fx-text-fill:#E11D48;-fx-font-weight:bold;"/>
                 </VBox>

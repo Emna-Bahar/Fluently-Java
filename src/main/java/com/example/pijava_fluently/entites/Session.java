@@ -15,23 +15,24 @@ public class Session {
     private Double prix;
     private String description;
     private Integer capaciteMax;
-
+    private String nom;
     // ── Constructeur vide ──────────────────────────────────────────
     public Session() {}
 
     // ── Constructeur sans id ───────────────────────────────────────
     public Session(LocalDateTime dateHeure, String statut, String lienReunion,
-                   int idGroupId, int idUserId, Integer duree,
-                   Double prix, String description, Integer capaciteMax) {
-        this.dateHeure   = dateHeure;
-        this.statut      = statut;
-        this.lienReunion = lienReunion;
-        this.idGroupId   = idGroupId;
-        this.idUserId    = idUserId;
-        this.duree       = duree;
-        this.prix        = prix;
-        this.description = description;
-        this.capaciteMax = capaciteMax;
+                   int idGroupId, int idUserId, Integer duree, Double prix,
+                   String description, Integer capaciteMax, String nom) {
+        this.dateHeure    = dateHeure;
+        this.statut       = statut;
+        this.lienReunion  = lienReunion;
+        this.idGroupId    = idGroupId;
+        this.idUserId     = idUserId;
+        this.duree        = duree;
+        this.prix         = prix;
+        this.description  = description;
+        this.capaciteMax  = capaciteMax;
+        this.nom          = nom;
     }
 
     // ── Constructeur complet ───────────────────────────────────────
@@ -74,7 +75,8 @@ public class Session {
     public void setDescription(String d)            { this.description = d; }
     public Integer getCapaciteMax()                 { return capaciteMax; }
     public void setCapaciteMax(Integer c)           { this.capaciteMax = c; }
-
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
     @Override
     public String toString() {
         return "Session{id=" + id + ", statut='" + statut + "', dateHeure=" + dateHeure + "}";
