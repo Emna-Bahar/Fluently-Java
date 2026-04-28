@@ -37,10 +37,9 @@ build/
 ### Mac OS ###
 .DS_Store
 
-# Fichiers de configuration avec clés API
+# Fichiers de configuration avec clés API (sensibles)
 src/main/resources/config.properties
 **/config.properties
-
 src/main/resources/credentials.json
 **/credentials.json
 
@@ -48,7 +47,3 @@ src/main/resources/credentials.json
 .env
 .env.local
 .env.*.local
-
-# Fichiers sensibles
-*.properties
-!application.properties

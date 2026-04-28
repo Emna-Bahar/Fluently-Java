@@ -4,9 +4,10 @@ import com.example.pijava_fluently.entites.Session;
 import com.example.pijava_fluently.utils.MyDatabase;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.io.IOException;
+import java.util.Properties;
 import java.io.InputStream;
+import java.io.IOException;
+
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -21,20 +22,28 @@ public class RecommandationService {
     private static String GROQ_MODEL;
 
     static {
-        // Load configuration from environment variables
-        GROQ_URL = System.getenv("GROQ_API_URL");
-        GROQ_KEY = System.getenv("GROQ_API_KEY");
-        GROQ_MODEL = System.getenv("GROQ_MODEL");
+        // Lire d'abord config.properties
+        try (InputStream in = RecommandationService.class
+                .getResourceAsStream("/config.properties")) {
+            if (in != null) {
+                Properties props = new Properties();
+                props.load(in);
+                GROQ_URL   = props.getProperty("groq.api.url");
+                GROQ_KEY   = props.getProperty("groq.api.key");
+                GROQ_MODEL = props.getProperty("groq.model");
+            }
+        } catch (Exception e) {
+            System.err.println("config.properties non trouvé : " + e.getMessage());
+        }
 
-        // Fallback to system properties if environment variables not set
-        if (GROQ_URL == null) GROQ_URL = System.getProperty("groq.api.url", "https://api.groq.com/openai/v1/chat/completions");
-        if (GROQ_KEY == null) GROQ_KEY = System.getProperty("groq.api.key");
-        if (GROQ_MODEL == null) GROQ_MODEL = System.getProperty("groq.model", "llama-3.3-70b-versatile");
+        // Fallback sur les variables d'environnement
+        if (GROQ_URL == null)   GROQ_URL   = System.getenv("GROQ_API_URL");
+        if (GROQ_KEY == null)   GROQ_KEY   = System.getenv("GROQ_API_KEY");
+        if (GROQ_MODEL == null) GROQ_MODEL = System.getenv("GROQ_MODEL");
 
-        // Don't fail during initialization - check when actually used
-        // if (GROQ_KEY == null || GROQ_KEY.trim().isEmpty()) {
-        //     throw new ExceptionInInitializerError("GROQ_API_KEY environment variable or system property must be set");
-        // }
+        // Valeurs par défaut
+        if (GROQ_URL == null)   GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions";
+        if (GROQ_MODEL == null) GROQ_MODEL = "llama-3.3-70b-versatile";
     }
 
     private static final String STATUT_ANNULEE   = "annulée";
