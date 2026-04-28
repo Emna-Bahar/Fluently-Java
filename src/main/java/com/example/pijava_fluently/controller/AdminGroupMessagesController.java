@@ -3,8 +3,10 @@ package com.example.pijava_fluently.controller;
 import com.example.pijava_fluently.entites.Groupe;
 import com.example.pijava_fluently.entites.Message;
 import com.example.pijava_fluently.entites.MessageLog;
+import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.MessageLogService;
 import com.example.pijava_fluently.services.MessageService;
+import com.example.pijava_fluently.services.UserService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -45,6 +47,8 @@ public class AdminGroupMessagesController implements Initializable {
 
     private MessageService messageService;
     private MessageLogService messageLogService;
+    private UserService userService;
+    private final java.util.Map<Integer, String> userDisplayCache = new java.util.HashMap<>();
     private Groupe currentGroupe;
     private Runnable onBack;
 
@@ -56,6 +60,7 @@ public class AdminGroupMessagesController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         messageService = new MessageService();
         messageLogService = new MessageLogService();
+        userService = new UserService();
         setupMessagesTable();
         setupLogTable();
     }
@@ -124,7 +129,7 @@ public class AdminGroupMessagesController implements Initializable {
 
     private void setupMessagesTable() {
         colMsgId.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getId())));
-        colMsgUser.setCellValueFactory(c -> new SimpleStringProperty("User #" + c.getValue().getIdUserId()));
+        colMsgUser.setCellValueFactory(c -> new SimpleStringProperty(resolveUsername(c.getValue().getIdUserId())));
         colMsgContent.setCellValueFactory(c -> {
             String txt = c.getValue().getContenu();
             return new SimpleStringProperty(txt != null && txt.length() > 80 ? txt.substring(0, 77) + "…" : txt);
@@ -207,6 +212,16 @@ public class AdminGroupMessagesController implements Initializable {
         } catch (SQLException e) {
             showError("Erreur suppression : " + e.getMessage());
         }
+    }
+
+    private String resolveUsername(int userId) {
+        return userDisplayCache.computeIfAbsent(userId, id -> {
+            try {
+                User u = userService.findById(id);
+                if (u != null) return u.getPrenom() + " " + u.getNom();
+            } catch (Exception ignored) {}
+            return "User #" + id;
+        });
     }
 
     private void showError(String msg) {

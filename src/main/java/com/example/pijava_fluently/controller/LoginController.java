@@ -335,6 +335,10 @@ public class LoginController {
         scene.getStylesheets().add(
                 getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
         );
+        var groupsCss = getClass().getResource("/com/example/pijava_fluently/css/groups-enhanced.css");
+        if (groupsCss != null) scene.getStylesheets().add(groupsCss.toExternalForm());
+        var adminCss = getClass().getResource("/com/example/pijava_fluently/css/admin-dashboard.css");
+        if (adminCss != null) scene.getStylesheets().add(adminCss.toExternalForm());
         TranslateButton.attachTo(scene);
         return scene;
     }

@@ -461,7 +461,7 @@ public class MessageService {
         }
     }
 
-    private boolean belongsToLangueAndNiveau(int idUser, int idGroupe) throws SQLException {
+    public boolean belongsToLangueAndNiveau(int idUser, int idGroupe) throws SQLException {
         String query = """
                 SELECT 1
                 FROM `groupe` g

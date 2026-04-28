@@ -7,6 +7,8 @@ import com.example.pijava_fluently.services.GroupService;
 import com.example.pijava_fluently.services.LangueService;
 import com.example.pijava_fluently.services.MessageService;
 import com.example.pijava_fluently.services.NiveauService;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -14,6 +16,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -38,6 +41,7 @@ public class GroupesController implements Initializable {
     @FXML private ComboBox<String> filterLangue;
     @FXML private ComboBox<String> filterNiveau;
     @FXML private ComboBox<String> filterStatut;
+    @FXML private CheckBox checkCanJoin;
     @FXML private Label lblResultCount;
     @FXML private FlowPane groupsContainer;
     @FXML private VBox groupsBrowseSection;
@@ -51,6 +55,9 @@ public class GroupesController implements Initializable {
     private MessageService messageService;
     private List<Groupe> allGroupes;
     private int currentUserId = 1;
+    private final Map<String, Integer> langueNameToId = new HashMap<>();
+    private final Map<String, Integer> niveauNameToId = new HashMap<>();
+    private java.util.Set<Integer> eligibleGroupIds = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -75,13 +82,16 @@ public class GroupesController implements Initializable {
         try {
             List<Langue> langues = langueService.recupererToutesLanguesActives();
             filterLangue.getItems().add("Toutes");
-            filterLangue.getItems().addAll(langues.stream()
-                    .map(Langue::getNom)
-                    .collect(Collectors.toList()));
+            for (Langue l : langues) {
+                filterLangue.getItems().add(l.getNom());
+                langueNameToId.put(l.getNom(), l.getId());
+            }
             filterLangue.setValue("Toutes");
 
             filterNiveau.getItems().add("Tous");
             filterNiveau.setValue("Tous");
+
+            filterLangue.valueProperty().addListener((obs, old, val) -> updateNiveauFilter(val));
         } catch (SQLException e) {
             showError("Erreur lors du chargement des filtres : " + e.getMessage());
         }
@@ -90,6 +100,7 @@ public class GroupesController implements Initializable {
     private void loadGroupes() {
         try {
             allGroupes = groupService.recuperer();
+            eligibleGroupIds = null;
             applyFilters();
         } catch (SQLException e) {
             showError("Erreur lors du chargement des groupes : " + e.getMessage());
@@ -111,11 +122,67 @@ public class GroupesController implements Initializable {
 
         List<Groupe> filtered = allGroupes.stream()
                 .filter(this::matchesSearch)
+                .filter(this::matchesLangueFilter)
+                .filter(this::matchesNiveauFilter)
                 .filter(this::matchesStatutFilter)
+                .filter(this::matchesCanJoinFilter)
                 .collect(Collectors.toList());
 
         displayGroupes(filtered);
         lblResultCount.setText(filtered.size() + " groupe" + (filtered.size() > 1 ? "s" : ""));
+    }
+
+    private void updateNiveauFilter(String langueName) {
+        niveauNameToId.clear();
+        filterNiveau.getItems().clear();
+        filterNiveau.getItems().add("Tous");
+        filterNiveau.setValue("Tous");
+        if (langueName == null || langueName.equals("Toutes")) return;
+        Integer langueId = langueNameToId.get(langueName);
+        if (langueId == null) return;
+        try {
+            List<Niveau> niveaux = niveauService.recupererNiveauxParLangue(langueId);
+            for (Niveau n : niveaux) {
+                filterNiveau.getItems().add(n.getTitre());
+                niveauNameToId.put(n.getTitre(), n.getId());
+            }
+        } catch (SQLException e) {
+            showError("Erreur lors du chargement des niveaux : " + e.getMessage());
+        }
+    }
+
+    private boolean matchesLangueFilter(Groupe groupe) {
+        String selected = filterLangue.getValue();
+        if (selected == null || selected.equals("Toutes")) return true;
+        Integer langueId = langueNameToId.get(selected);
+        return langueId != null && groupe.getIdLangueId() == langueId;
+    }
+
+    private boolean matchesNiveauFilter(Groupe groupe) {
+        String selected = filterNiveau.getValue();
+        if (selected == null || selected.equals("Tous")) return true;
+        Integer niveauId = niveauNameToId.get(selected);
+        return niveauId != null && groupe.getIdNiveauId() == niveauId;
+    }
+
+    private boolean matchesCanJoinFilter(Groupe groupe) {
+        if (checkCanJoin == null || !checkCanJoin.isSelected()) return true;
+        if (eligibleGroupIds == null) computeEligibleGroups();
+        return eligibleGroupIds.contains(groupe.getId());
+    }
+
+    private void computeEligibleGroups() {
+        eligibleGroupIds = new java.util.HashSet<>();
+        if (allGroupes == null) return;
+        for (Groupe g : allGroupes) {
+            try {
+                boolean alreadyMember = isCurrentUserParticipant(g.getId());
+                boolean notFull = getCurrentMemberCount(g.getId()) < g.getCapacite();
+                boolean levelMatches = messageService.belongsToLangueAndNiveau(currentUserId, g.getId());
+                if (levelMatches && (alreadyMember || notFull))
+                    eligibleGroupIds.add(g.getId());
+            } catch (SQLException ignored) {}
+        }
     }
 
     private boolean matchesSearch(Groupe groupe) {

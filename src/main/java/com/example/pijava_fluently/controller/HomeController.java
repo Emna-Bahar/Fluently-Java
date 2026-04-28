@@ -1,6 +1,7 @@
 package com.example.pijava_fluently.controller;
 
 import com.example.pijava_fluently.entites.User;
+import com.example.pijava_fluently.controller.GroupesController;
 import com.example.pijava_fluently.services.UserService;
 import com.example.pijava_fluently.services.NotificationService;
 import com.example.pijava_fluently.services.UserSessionService;
@@ -228,6 +229,8 @@ public class HomeController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/pijava_fluently/fxml/groupes.fxml"));
             Node view = loader.load();
+            GroupesController ctrl = loader.getController();
+            if (currentUser != null) ctrl.setCurrentUserId(currentUser.getId());
             setContent(view);
             setActiveButton(btnGroupes);
         } catch (IOException e) {
