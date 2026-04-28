@@ -29,7 +29,8 @@ public class FaceLoginController {
 
         new Thread(() -> {
             try {
-                String scriptPath = "C:/Users/emnab/Documents/PI_Java/PIJava_Fluently/face_capture.py";
+                String projectRoot = System.getProperty("user.dir");
+                String scriptPath = projectRoot + "/face_capture.py";
 
                 ProcessBuilder pb = new ProcessBuilder("python", scriptPath);
                 // DO NOT use pb.inheritIO() — it sends output to terminal, not to Java

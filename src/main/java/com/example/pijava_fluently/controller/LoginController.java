@@ -217,7 +217,9 @@ public class LoginController {
 
         new Thread(() -> {
             try {
-                String scriptPath = "C:/Users/emnab/Documents/PI_Java/PIJava_Fluently/face_register.py";
+                // Dynamic path: works on any machine
+                String projectRoot = System.getProperty("user.dir");
+                String scriptPath = projectRoot + "/face_register.py";
                 ProcessBuilder pb = new ProcessBuilder("python", scriptPath);
                 pb.redirectErrorStream(true);
                 Process process = pb.start();

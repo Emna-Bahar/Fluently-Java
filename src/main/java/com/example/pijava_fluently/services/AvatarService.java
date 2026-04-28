@@ -18,7 +18,7 @@ import com.example.pijava_fluently.utils.ConfigLoader;
 public class AvatarService {
 
     // ── CREDENTIALS ───────────────────────────────────────────────────────────
-    private static final String API_KEY           = "YOUR_API_KEY_HERE";  // sk-ant-api03-…
+    private static final String API_KEY = ConfigLoader.get("anthropic.api.key");// sk-ant-api03-…
     private static final String MODEL             = "claude-sonnet-4-20250514";
     private static final String ENDPOINT          = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
