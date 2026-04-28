@@ -62,6 +62,10 @@ public class UserSessionService {
         }
     }
 
+    // ══════════════════════════════════════════════════════════════
+    //  SESSION LIFECYCLE
+    // ══════════════════════════════════════════════════════════════
+
     public void startSession(int userId) {
         try {
             LocalDate today = LocalDate.now();
@@ -73,9 +77,11 @@ public class UserSessionService {
             ResultSet rs = check.executeQuery();
 
             if (rs.next()) {
+                // Session déjà créée aujourd'hui → on la reprend
                 currentSession = new UserSession(userId, today, LocalDateTime.now());
                 currentSession.setId(rs.getInt("id"));
             } else {
+                // Nouvelle session
                 PreparedStatement ps = cnx.prepareStatement(
                         "INSERT INTO user_session (user_id, session_date, login_time) VALUES (?,?,?)",
                         Statement.RETURN_GENERATED_KEYS
@@ -103,27 +109,39 @@ public class UserSessionService {
         if (currentSession == null) return;
         try {
             LocalDateTime now = LocalDateTime.now();
+            // ✅ FIX : calcul exact de la durée depuis le login
             long minutes = ChronoUnit.MINUTES.between(currentSession.getLoginTime(), now);
+            minutes = Math.max(1, minutes); // minimum 1 minute
+
             PreparedStatement ps = cnx.prepareStatement("""
                 UPDATE user_session
-                SET logout_time = ?, duree_minutes = duree_minutes + ?,
-                    taches_completees = ?, taches_commencees = ?,
-                    objectifs_consultes = ?, points_gagnes = points_gagnes + ?
+                SET logout_time          = ?,
+                    duree_minutes        = duree_minutes + ?,
+                    taches_completees    = ?,
+                    taches_commencees    = ?,
+                    objectifs_consultes  = ?,
+                    points_gagnes        = points_gagnes + ?
                 WHERE id = ?
             """);
             ps.setTimestamp(1, Timestamp.valueOf(now));
-            ps.setLong(2, Math.max(1, minutes));
+            ps.setLong(2, minutes);
             ps.setInt(3, currentSession.getTachesCompletees());
             ps.setInt(4, currentSession.getTachesCommencees());
             ps.setInt(5, currentSession.getObjectifsConsultes());
             ps.setInt(6, currentSession.getPointsGagnes());
             ps.setInt(7, currentSession.getId());
             ps.executeUpdate();
+
+            System.out.println("✅ Session fermée — durée : " + minutes + " min");
             currentSession = null;
         } catch (SQLException e) {
             System.err.println("endSession error: " + e.getMessage());
         }
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  ENREGISTREMENT D'ÉVÉNEMENTS
+    // ══════════════════════════════════════════════════════════════
 
     public void recordTaskCompleted() {
         if (currentSession == null) return;
@@ -148,66 +166,43 @@ public class UserSessionService {
 
     public void recordTaskFailed() {
         if (currentSession == null) return;
-        int newPoints = Math.max(0, currentSession.getPointsGagnes() - 20);
-        int deducted = currentSession.getPointsGagnes() - newPoints;
-        currentSession.setPointsGagnes(newPoints);
-        flushSessionIncrement("points_gagnes", -deducted);
+        int deducted = Math.min(20, currentSession.getPointsGagnes());
+        currentSession.setPointsGagnes(currentSession.getPointsGagnes() - deducted);
+        if (deducted > 0) flushSessionIncrement("points_gagnes", -deducted);
     }
 
-    private void flushSessionIncrement(String col1, int val1, String col2, int val2) {
-        if (currentSession == null || currentSession.getId() == 0) return;
-        try {
-            PreparedStatement ps = cnx.prepareStatement(
-                    "UPDATE user_session SET " + col1 + "=" + col1 + "+?, " + col2 + "=" + col2 + "+? WHERE id=?"
-            );
-            ps.setInt(1, val1);
-            ps.setInt(2, val2);
-            ps.setInt(3, currentSession.getId());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("flush error: " + e.getMessage());
-        }
-    }
-
-    private void flushSessionIncrement(String col, int val) {
-        if (currentSession == null || currentSession.getId() == 0) return;
-        try {
-            PreparedStatement ps = cnx.prepareStatement(
-                    "UPDATE user_session SET " + col + "=" + col + "+? WHERE id=?"
-            );
-            ps.setInt(1, val);
-            ps.setInt(2, currentSession.getId());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("flush error: " + e.getMessage());
-        }
-    }
+    // ══════════════════════════════════════════════════════════════
+    //  ✅ FIX PRINCIPAL : getUserStats inclut la session ACTIVE
+    // ══════════════════════════════════════════════════════════════
 
     public UserStats getUserStats(int userId) {
         UserStats stats = new UserStats();
         stats.setUserId(userId);
 
         try {
-            // Récupérer les tâches de l'utilisateur
+            // ── Tâches de l'utilisateur ───────────────────────────
             PreparedStatement taskPs = cnx.prepareStatement(
                     "SELECT COUNT(*) as total, " +
                             "SUM(CASE WHEN statut = 'Terminée' THEN 1 ELSE 0 END) as terminees " +
-                            "FROM tache WHERE id_objectif_id IN (SELECT id FROM objectif WHERE id_user_id = ?)"
+                            "FROM tache WHERE id_objectif_id IN " +
+                            "(SELECT id FROM objectif WHERE id_user_id = ?)"
             );
             taskPs.setInt(1, userId);
             ResultSet taskRs = taskPs.executeQuery();
             if (taskRs.next()) {
-                int totalTaches = taskRs.getInt("total");
+                int totalTaches     = taskRs.getInt("total");
                 int tachesTerminees = taskRs.getInt("terminees");
                 stats.setTotalTachesCompletees(tachesTerminees);
                 stats.setTotalTachesCommencees(totalTaches);
-                stats.setTauxCompletion(totalTaches > 0 ? (double) tachesTerminees / totalTaches * 100 : 0);
+                stats.setTauxCompletion(
+                        totalTaches > 0 ? (double) tachesTerminees / totalTaches * 100 : 0
+                );
             }
 
-            // Stats de sessions
+            // ── Stats sessions DB ─────────────────────────────────
             PreparedStatement ps = cnx.prepareStatement("""
                 SELECT
-                    COUNT(*) AS total_sessions,
+                    COUNT(*)                     AS total_sessions,
                     COALESCE(SUM(duree_minutes), 0) AS total_minutes,
                     COALESCE(SUM(points_gagnes), 0) AS total_pts,
                     COUNT(DISTINCT session_date) AS total_jours
@@ -223,15 +218,38 @@ public class UserSessionService {
                 stats.setTotalJoursActifs(rs.getInt("total_jours"));
             }
 
+            // ✅ FIX SCREEN TIME : ajouter la durée de la session EN COURS
+            // La session active n'a pas encore été flush dans duree_minutes
+            if (currentSession != null && currentSession.getUserId() == userId) {
+                long minutesActuelles = ChronoUnit.MINUTES.between(
+                        currentSession.getLoginTime(), LocalDateTime.now()
+                );
+                long dureeActive = Math.max(1, minutesActuelles);
+
+                // Ajouter le temps actif non sauvegardé
+                stats.setDureeMinutesTotale(
+                        stats.getDureeMinutesTotale() + (int) dureeActive
+                );
+
+                // Ajouter les points non encore flush (événements session active)
+                // Note: les points d'événements SONT flush en temps réel via flushSessionIncrement
+                // Seul le temps manque → on l'ajoute ici
+
+                System.out.println("⏱ Session active : +" + dureeActive + " min (non encore flush)");
+            }
+
+            // ── Streak ────────────────────────────────────────────
             stats.setStreakActuel(calculateCurrentStreak(userId));
             stats.setStreakMax(calculateMaxStreak(userId));
 
+            // ── Niveau ────────────────────────────────────────────
             int[] niveauData = calculateNiveau(stats.getTotalPoints());
             stats.setNiveau(niveauData[0]);
             stats.setPointsVersProchinNiveau(niveauData[1]);
             stats.setPointsProchinNiveau(niveauData[2]);
             stats.setNiveauLabel(getNiveauLabel(niveauData[0]));
 
+            // ── Graphe hebdo + badges ─────────────────────────────
             fillActiviteHebdo(userId, stats);
             stats.setBadges(calculateBadges(stats));
 
@@ -242,18 +260,27 @@ public class UserSessionService {
         return stats;
     }
 
+    // ══════════════════════════════════════════════════════════════
+    //  STREAK
+    // ══════════════════════════════════════════════════════════════
+
     private int calculateCurrentStreak(int userId) throws SQLException {
         PreparedStatement ps = cnx.prepareStatement(
-                "SELECT DISTINCT session_date FROM user_session WHERE user_id = ? ORDER BY session_date DESC"
+                "SELECT DISTINCT session_date FROM user_session " +
+                        "WHERE user_id = ? ORDER BY session_date DESC"
         );
         ps.setInt(1, userId);
         ResultSet rs = ps.executeQuery();
         List<LocalDate> dates = new ArrayList<>();
         while (rs.next()) dates.add(rs.getDate("session_date").toLocalDate());
+
         if (dates.isEmpty()) return 0;
-        LocalDate today = LocalDate.now();
+        LocalDate today     = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
+
+        // Le streak doit avoir une entrée aujourd'hui ou hier
         if (!dates.get(0).equals(today) && !dates.get(0).equals(yesterday)) return 0;
+
         int streak = 1;
         for (int i = 0; i < dates.size() - 1; i++) {
             long diff = ChronoUnit.DAYS.between(dates.get(i + 1), dates.get(i));
@@ -265,12 +292,14 @@ public class UserSessionService {
 
     private int calculateMaxStreak(int userId) throws SQLException {
         PreparedStatement ps = cnx.prepareStatement(
-                "SELECT DISTINCT session_date FROM user_session WHERE user_id = ? ORDER BY session_date ASC"
+                "SELECT DISTINCT session_date FROM user_session " +
+                        "WHERE user_id = ? ORDER BY session_date ASC"
         );
         ps.setInt(1, userId);
         ResultSet rs = ps.executeQuery();
         List<LocalDate> dates = new ArrayList<>();
         while (rs.next()) dates.add(rs.getDate("session_date").toLocalDate());
+
         if (dates.isEmpty()) return 0;
         int maxStreak = 1, currentStreak = 1;
         for (int i = 1; i < dates.size(); i++) {
@@ -287,14 +316,14 @@ public class UserSessionService {
 
     private void recalculateStreak(int userId) {
         try {
-            int streak = calculateCurrentStreak(userId);
+            int streak    = calculateCurrentStreak(userId);
             int maxStreak = calculateMaxStreak(userId);
             PreparedStatement ps = cnx.prepareStatement("""
                 INSERT INTO user_stats_cache (user_id, streak_actuel, streak_max)
                 VALUES (?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     streak_actuel = VALUES(streak_actuel),
-                    streak_max = GREATEST(streak_max, VALUES(streak_max))
+                    streak_max    = GREATEST(streak_max, VALUES(streak_max))
             """);
             ps.setInt(1, userId);
             ps.setInt(2, streak);
@@ -305,9 +334,14 @@ public class UserSessionService {
         }
     }
 
+    // ══════════════════════════════════════════════════════════════
+    //  GRAPHE HEBDOMADAIRE
+    // ══════════════════════════════════════════════════════════════
+
     private void fillActiviteHebdo(int userId, UserStats stats) throws SQLException {
-        int[] points = new int[7];
+        int[]     points = new int[7];
         boolean[] actifs = new boolean[7];
+
         PreparedStatement ps = cnx.prepareStatement("""
             SELECT session_date, SUM(points_gagnes) AS pts
             FROM user_session
@@ -318,16 +352,27 @@ public class UserSessionService {
         ps.setDate(2, Date.valueOf(LocalDate.now().minusDays(6)));
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
-            LocalDate d = rs.getDate("session_date").toLocalDate();
-            int idx = (int) ChronoUnit.DAYS.between(LocalDate.now().minusDays(6), d);
+            LocalDate d   = rs.getDate("session_date").toLocalDate();
+            int       idx = (int) ChronoUnit.DAYS.between(LocalDate.now().minusDays(6), d);
             if (idx >= 0 && idx < 7) {
                 points[idx] = rs.getInt("pts");
                 actifs[idx] = true;
             }
         }
+
+        // ✅ FIX : ajouter les points de la session active dans le graphe d'aujourd'hui
+        if (currentSession != null && currentSession.getUserId() == userId) {
+            points[6] += currentSession.getPointsGagnes();
+            actifs[6]  = true;
+        }
+
         stats.setActiviteHebdo(points);
         stats.setJoursActifs(actifs);
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  NIVEAU & BADGES
+    // ══════════════════════════════════════════════════════════════
 
     private int[] calculateNiveau(int totalPoints) {
         int[] seuils = {0, 100, 300, 600, 1000, 1500, 2500, 4000, 6000, 10000};
@@ -339,35 +384,39 @@ public class UserSessionService {
             return new int[]{seuils.length, totalPoints - seuils[seuils.length - 1], 0};
         }
         int pointsVersProchain = totalPoints - seuils[niveau - 1];
-        int pointsProchain = seuils[niveau] - seuils[niveau - 1];
+        int pointsProchain     = seuils[niveau] - seuils[niveau - 1];
         return new int[]{niveau, pointsVersProchain, pointsProchain};
     }
 
     private String getNiveauLabel(int niveau) {
-        switch (niveau) {
-            case 1: return "🌱 Graine";
-            case 2: return "🌿 Pousse";
-            case 3: return "🍃 Apprenti";
-            case 4: return "🌳 Explorateur";
-            case 5: return "⭐ Érudit";
-            case 6: return "🔥 Maître";
-            case 7: return "💎 Expert";
-            case 8: return "🚀 Champion";
-            case 9: return "👑 Légende";
-            default: return "🌌 Mythique";
-        }
+        return switch (niveau) {
+            case 1  -> "🌱 Graine";
+            case 2  -> "🌿 Pousse";
+            case 3  -> "🍃 Apprenti";
+            case 4  -> "🌳 Explorateur";
+            case 5  -> "⭐ Érudit";
+            case 6  -> "🔥 Maître";
+            case 7  -> "💎 Expert";
+            case 8  -> "🚀 Champion";
+            case 9  -> "👑 Légende";
+            default -> "🌌 Mythique";
+        };
     }
 
     private List<String> calculateBadges(UserStats stats) {
         List<String> badges = new ArrayList<>();
-        if (stats.getStreakActuel() >= 3) badges.add("🔥 Streak 3j");
-        if (stats.getStreakActuel() >= 7) badges.add("💫 Semaine parfaite");
+        if (stats.getStreakActuel()         >= 3)  badges.add("🔥 Streak 3j");
+        if (stats.getStreakActuel()         >= 7)  badges.add("💫 Semaine parfaite");
         if (stats.getTotalTachesCompletees() >= 10) badges.add("✅ 10 tâches");
         if (stats.getTotalTachesCompletees() >= 50) badges.add("🏆 50 tâches");
-        if (stats.getTauxCompletion() >= 80) badges.add("⚡ Efficace");
-        if (stats.getDureeMinutesTotale() >= 60) badges.add("⏰ 1h d'étude");
+        if (stats.getTauxCompletion()        >= 80) badges.add("⚡ Efficace");
+        if (stats.getDureeMinutesTotale()   >= 60)  badges.add("⏰ 1h d'étude");
         return badges;
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SESSIONS RÉCENTES
+    // ══════════════════════════════════════════════════════════════
 
     public List<UserSession> getRecentSessions(int userId, int limit) {
         List<UserSession> list = new ArrayList<>();
@@ -394,10 +443,58 @@ public class UserSessionService {
                 s.setPointsGagnes(rs.getInt("points_gagnes"));
                 list.add(s);
             }
+
+            // ✅ FIX : si la session active appartient à cet utilisateur,
+            // mettre à jour la première entrée avec la durée réelle en cours
+            if (currentSession != null && currentSession.getUserId() == userId && !list.isEmpty()) {
+                UserSession first = list.get(0);
+                if (first.getId() == currentSession.getId()) {
+                    long minutesActuelles = Math.max(1, ChronoUnit.MINUTES.between(
+                            currentSession.getLoginTime(), LocalDateTime.now()
+                    ));
+                    first.setDureeMinutes((int) minutesActuelles);
+                }
+            }
+
         } catch (SQLException e) {
             System.err.println("getRecentSessions error: " + e.getMessage());
         }
         return list;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  FLUSH HELPERS
+    // ══════════════════════════════════════════════════════════════
+
+    private void flushSessionIncrement(String col1, int val1, String col2, int val2) {
+        if (currentSession == null || currentSession.getId() == 0) return;
+        try {
+            PreparedStatement ps = cnx.prepareStatement(
+                    "UPDATE user_session SET "
+                            + col1 + " = " + col1 + " + ?, "
+                            + col2 + " = " + col2 + " + ? WHERE id = ?"
+            );
+            ps.setInt(1, val1);
+            ps.setInt(2, val2);
+            ps.setInt(3, currentSession.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("flush error: " + e.getMessage());
+        }
+    }
+
+    private void flushSessionIncrement(String col, int val) {
+        if (currentSession == null || currentSession.getId() == 0) return;
+        try {
+            PreparedStatement ps = cnx.prepareStatement(
+                    "UPDATE user_session SET " + col + " = " + col + " + ? WHERE id = ?"
+            );
+            ps.setInt(1, val);
+            ps.setInt(2, currentSession.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("flush error: " + e.getMessage());
+        }
     }
 
     public UserSession getCurrentSession() { return currentSession; }

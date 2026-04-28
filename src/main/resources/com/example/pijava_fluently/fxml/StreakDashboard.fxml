@@ -2,110 +2,266 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.*?>
 
+<!--
+    ✅ FIXES :
+    1. prefWidth réduit à 520 (était 680) → fenêtre moins large
+    2. prefHeight contrôlé par maxHeight du ScrollPane (500) → hauteur fixe avec scroll interne
+    3. Espacing réduit (16 au lieu de 20) → contenu plus compact
+    4. Padding réduit sur la VBox interne
+-->
 <DialogPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.pijava_fluently.controller.StreakDashboardController"
-            prefWidth="680" prefHeight="850"
-            style="-fx-background-color:#0F172A;-fx-padding:0;">
+            prefWidth="520"
+            maxWidth="520"
+            style="-fx-background-color:#0F172A; -fx-padding:0;">
 
     <content>
-        <ScrollPane fitToWidth="true" style="-fx-background:#0F172A;-fx-background-color:#0F172A;-fx-border-color:transparent;">
-            <VBox spacing="24" style="-fx-background-color:#0F172A;-fx-padding:20 24 30 24;">
+        <ScrollPane fitToWidth="true"
+                    hbarPolicy="NEVER"
+                    vbarPolicy="AS_NEEDED"
+                    prefHeight="540"
+                    maxHeight="540"
+                    style="-fx-background:#0F172A;
+                           -fx-background-color:#0F172A;
+                           -fx-border-color:transparent;
+                           -fx-focus-color:transparent;
+                           -fx-faint-focus-color:transparent;">
 
-                <!-- ══ HEADER ═══════════════════════════════════════════════════════ -->
-                <HBox spacing="16" alignment="CENTER_LEFT">
-                    <StackPane style="-fx-background-color: #FF6B35; -fx-background-radius: 50; -fx-min-width: 65; -fx-min-height: 65;">
-                        <Label text="👤" style="-fx-font-size:32px;"/>
+            <VBox spacing="16"
+                  style="-fx-background-color:#0F172A; -fx-padding:20 20 24 20;">
+
+                <!-- ══════════════════════════════════════════════════
+                     HEADER : avatar + nom + niveau + points XP
+                ══════════════════════════════════════════════════ -->
+                <HBox spacing="14" alignment="CENTER_LEFT">
+
+                    <!-- Avatar circulaire compact -->
+                    <StackPane minWidth="52" minHeight="52" maxWidth="52" maxHeight="52"
+                               style="-fx-background-color:#FF6B35;
+                                      -fx-background-radius:50;">
+                        <Label text="👤" style="-fx-font-size:24px;"/>
                     </StackPane>
 
-                    <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label fx:id="lblUserName" text="Bonjour 👋" style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#FFFFFF;"/>
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Label fx:id="lblNiveauLabel" text="🌱 Graine"
-                                   style="-fx-background-color:#FF6B3522;-fx-text-fill:#FF6B35;-fx-font-size:11px;-fx-font-weight:bold;
-                                          -fx-background-radius:20;-fx-padding:4 14 4 14;"/>
-                            <Label fx:id="lblNiveauNum" text="Niveau 1" style="-fx-font-size:11px;-fx-text-fill:#94A3B8;"/>
+                    <!-- Nom + niveau -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label fx:id="lblUserName"
+                               text="Bonjour 👋"
+                               style="-fx-font-size:17px;
+                                      -fx-font-weight:bold;
+                                      -fx-text-fill:#FFFFFF;"/>
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Label fx:id="lblNiveauLabel"
+                                   text="🌱 Graine"
+                                   style="-fx-background-color:#FF6B3522;
+                                          -fx-text-fill:#FF6B35;
+                                          -fx-font-size:10px;
+                                          -fx-font-weight:bold;
+                                          -fx-background-radius:20;
+                                          -fx-padding:3 12 3 12;"/>
+                            <Label fx:id="lblNiveauNum"
+                                   text="Niveau 1"
+                                   style="-fx-font-size:10px;
+                                          -fx-text-fill:#94A3B8;"/>
                         </HBox>
                     </VBox>
 
+                    <!-- Points XP -->
                     <VBox alignment="CENTER_RIGHT" spacing="2">
-                        <Label text="⭐ POINTS XP" style="-fx-font-size:9px;-fx-text-fill:#64748B;-fx-font-weight:bold;-fx-letter-spacing:1;"/>
-                        <Label fx:id="lblTotalPoints" text="0" style="-fx-font-size:32px;-fx-font-weight:bold;-fx-text-fill:#FFD700;"/>
+                        <Label text="⭐ XP"
+                               style="-fx-font-size:9px;
+                                      -fx-text-fill:#64748B;
+                                      -fx-font-weight:bold;"/>
+                        <Label fx:id="lblTotalPoints"
+                               text="0"
+                               style="-fx-font-size:26px;
+                                      -fx-font-weight:bold;
+                                      -fx-text-fill:#FFD700;"/>
                     </VBox>
+
                 </HBox>
 
-                <!-- ══ PROGRESSION VERS PROCHAIN NIVEAU ═══════════════════════════════ -->
-                <HBox spacing="20" alignment="CENTER" style="-fx-padding:5 0 0 0;">
-                    <StackPane fx:id="arcContainer" minWidth="130" minHeight="130"/>
+                <!-- ══════════════════════════════════════════════════
+                     ARC DE NIVEAU + MINI STATS (2×2)
+                ══════════════════════════════════════════════════ -->
+                <HBox spacing="16" alignment="CENTER_LEFT">
 
-                    <VBox spacing="12" HBox.hgrow="ALWAYS">
-                        <HBox spacing="16" alignment="CENTER_LEFT">
-                            <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label text="📊 Taux complétion" style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
-                                <Label fx:id="lblTauxCompletion" text="0%" style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#10B981;"/>
+                    <!-- Arc taille fixe 120×120 -->
+                    <StackPane fx:id="arcContainer"
+                               minWidth="120" minHeight="120"
+                               maxWidth="120" maxHeight="120"
+                               prefWidth="120" prefHeight="120"/>
+
+                    <!-- Mini stats 2×2 compactes -->
+                    <VBox spacing="10" HBox.hgrow="ALWAYS">
+
+                        <HBox spacing="10">
+                            <VBox spacing="2" HBox.hgrow="ALWAYS"
+                                  style="-fx-background-color:#1E293B;
+                                         -fx-background-radius:10;
+                                         -fx-padding:10 12 10 12;">
+                                <Label text="📊 Complétion"
+                                       style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
+                                <Label fx:id="lblTauxCompletion"
+                                       text="0%"
+                                       style="-fx-font-size:18px;
+                                              -fx-font-weight:bold;
+                                              -fx-text-fill:#10B981;"/>
                             </VBox>
-                            <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label text="✅ Tâches faites" style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
-                                <Label fx:id="lblTachesTotal" text="0" style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#F8FAFC;"/>
+                            <VBox spacing="2" HBox.hgrow="ALWAYS"
+                                  style="-fx-background-color:#1E293B;
+                                         -fx-background-radius:10;
+                                         -fx-padding:10 12 10 12;">
+                                <Label text="✅ Tâches"
+                                       style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
+                                <Label fx:id="lblTachesTotal"
+                                       text="0"
+                                       style="-fx-font-size:18px;
+                                              -fx-font-weight:bold;
+                                              -fx-text-fill:#F8FAFC;"/>
                             </VBox>
                         </HBox>
 
-                        <HBox spacing="16" alignment="CENTER_LEFT">
-                            <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label text="⏱ Temps d'étude" style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
-                                <Label fx:id="lblDureeTotal" text="0m" style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#3B82F6;"/>
+                        <HBox spacing="10">
+                            <!-- ✅ FIX : le label lblDureeTotal affiche maintenant
+                                 le vrai screen time (session active incluse) -->
+                            <VBox spacing="2" HBox.hgrow="ALWAYS"
+                                  style="-fx-background-color:#1E293B;
+                                         -fx-background-radius:10;
+                                         -fx-padding:10 12 10 12;">
+                                <Label text="⏱ Temps étude"
+                                       style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
+                                <Label fx:id="lblDureeTotal"
+                                       text="0m"
+                                       style="-fx-font-size:18px;
+                                              -fx-font-weight:bold;
+                                              -fx-text-fill:#3B82F6;"/>
                             </VBox>
-                            <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label text="🎯 Sessions" style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
-                                <Label fx:id="lblSessions" text="0" style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#8B5CF6;"/>
+                            <VBox spacing="2" HBox.hgrow="ALWAYS"
+                                  style="-fx-background-color:#1E293B;
+                                         -fx-background-radius:10;
+                                         -fx-padding:10 12 10 12;">
+                                <Label text="🎯 Sessions"
+                                       style="-fx-font-size:9px;-fx-text-fill:#64748B;"/>
+                                <Label fx:id="lblSessions"
+                                       text="0"
+                                       style="-fx-font-size:18px;
+                                              -fx-font-weight:bold;
+                                              -fx-text-fill:#8B5CF6;"/>
                             </VBox>
                         </HBox>
+
                     </VBox>
                 </HBox>
 
-                <!-- ══ CARTE STREAK ═══════════════════════════════════════════════════ -->
+                <!-- ══════════════════════════════════════════════════
+                     CARTE STREAK (plus compacte)
+                ══════════════════════════════════════════════════ -->
                 <VBox alignment="CENTER" spacing="8"
-                      style="-fx-background-color:#1E293B;-fx-background-radius:24;
-                             -fx-border-color:#FF6B35;-fx-border-width:1;-fx-border-radius:24;-fx-padding:24 20 20 20;">
-                    <Label fx:id="lblStreakFire" text="🔥" style="-fx-font-size:48px;"/>
-                    <Label fx:id="lblStreakCount" text="0" style="-fx-font-size:52px;-fx-font-weight:bold;-fx-text-fill:#FF6B35;"/>
-                    <Label text="JOURS DE STREAK" style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#64748B;-fx-letter-spacing:2;"/>
-                    <ProgressBar fx:id="streakProgressBar" progress="0.0"
-                                 style="-fx-accent: #FF6B35; -fx-background-radius: 10; -fx-padding: 0;"
-                                 prefWidth="200" maxWidth="200"/>
-                    <Label fx:id="lblStreakSub" text="Commencez aujourd'hui !" style="-fx-font-size:12px;-fx-text-fill:#94A3B8;"/>
-                    <Label fx:id="lblStreakMax" text="🏆 Record : 0 jours" style="-fx-font-size:11px;-fx-text-fill:#FFD700;"/>
+                      style="-fx-background-color:#1E293B;
+                             -fx-background-radius:20;
+                             -fx-border-color:#FF6B35;
+                             -fx-border-width:1;
+                             -fx-border-radius:20;
+                             -fx-padding:18 16 16 16;
+                             -fx-effect:dropshadow(gaussian,#FF6B3530,16,0,0,0);">
+
+                    <Label fx:id="lblStreakFire"
+                           text="❄️"
+                           style="-fx-font-size:36px;"/>
+
+                    <Label fx:id="lblStreakCount"
+                           text="0"
+                           style="-fx-font-size:46px;
+                                  -fx-font-weight:bold;
+                                  -fx-text-fill:#FF6B35;"/>
+
+                    <Label text="JOURS DE STREAK"
+                           style="-fx-font-size:10px;
+                                  -fx-font-weight:bold;
+                                  -fx-text-fill:#64748B;"/>
+
+                    <ProgressBar fx:id="streakProgressBar"
+                                 progress="0.0"
+                                 prefWidth="180" maxWidth="180"
+                                 style="-fx-accent:#FF6B35;
+                                        -fx-background-radius:10;"/>
+
+                    <Label fx:id="lblStreakSub"
+                           text="Commencez aujourd'hui !"
+                           style="-fx-font-size:11px;-fx-text-fill:#94A3B8;"
+                           wrapText="true" textAlignment="CENTER"/>
+
+                    <Label fx:id="lblStreakMax"
+                           text="🏆 Record : 0 jours"
+                           style="-fx-font-size:10px;
+                                  -fx-text-fill:#FFD700;
+                                  -fx-font-weight:bold;"/>
                 </VBox>
 
-                <!-- ══ SESSIONS RÉCENTES ══════════════════════════════════════════════ -->
-                <VBox spacing="12">
-                    <Label text="🕐 SESSIONS RÉCENTES" style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#475569;-fx-letter-spacing:2;"/>
-                    <VBox fx:id="sessionsContainer" spacing="8"/>
-                </VBox>
+                <!-- ══════════════════════════════════════════════════
+                     GRAPHE ACTIVITÉ HEBDOMADAIRE (hauteur réduite)
+                ══════════════════════════════════════════════════ -->
+                <VBox spacing="10"
+                      style="-fx-background-color:#1E293B;
+                             -fx-background-radius:16;
+                             -fx-padding:14 14 14 14;">
 
-                <!-- ══ ACTIVITÉ HEBDOMADAIRE ══════════════════════════════════════════ -->
-                <VBox spacing="12"
-                      style="-fx-background-color:#1E293B;-fx-background-radius:20;-fx-padding:16;">
                     <HBox alignment="CENTER_LEFT" spacing="8">
-                        <Label text="📈" style="-fx-font-size:16px;"/>
-                        <Label text="Activité 7 derniers jours" style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#F8FAFC;"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="lblBestDay" text="" style="-fx-font-size:10px;-fx-text-fill:#FFD700;"/>
+                        <Label text="📈" style="-fx-font-size:14px;"/>
+                        <Label text="Activité — 7 derniers jours"
+                               style="-fx-font-size:12px;
+                                      -fx-font-weight:bold;
+                                      -fx-text-fill:#F8FAFC;"
+                               HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblBestDay"
+                               text=""
+                               style="-fx-font-size:9px;-fx-text-fill:#FFD700;"/>
                     </HBox>
-                    <HBox fx:id="hebdoChart" alignment="BOTTOM_CENTER" spacing="8" style="-fx-padding:10 0 5 0;"/>
+
+                    <!-- Hauteur réduite : 95 au lieu de 120 -->
+                    <HBox fx:id="hebdoChart"
+                          alignment="BOTTOM_CENTER"
+                          spacing="8"
+                          prefHeight="95"
+                          minHeight="95"
+                          style="-fx-padding:6 0 2 0;"/>
+
                 </VBox>
 
-                <!-- ══ BADGES ═════════════════════════════════════════════════════════ -->
-                <VBox spacing="12">
-                    <HBox alignment="CENTER_LEFT" spacing="8">
-                        <Label text="🏅" style="-fx-font-size:16px;"/>
-                        <Label text="BADGES" style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#475569;-fx-letter-spacing:2;"/>
-                        <Label fx:id="lblBadgesCount" text="0 badge(s)" style="-fx-font-size:11px;-fx-text-fill:#FFD700;"/>
+                <!-- ══════════════════════════════════════════════════
+                     SESSIONS RÉCENTES (max 3 pour compacité)
+                ══════════════════════════════════════════════════ -->
+                <VBox spacing="8">
+                    <Label text="🕐  SESSIONS RÉCENTES"
+                           style="-fx-font-size:10px;
+                                  -fx-font-weight:bold;
+                                  -fx-text-fill:#475569;"/>
+                    <VBox fx:id="sessionsContainer" spacing="6"/>
+                </VBox>
+
+                <!-- ══════════════════════════════════════════════════
+                     BADGES
+                ══════════════════════════════════════════════════ -->
+                <VBox spacing="8">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="🏅  BADGES"
+                               style="-fx-font-size:10px;
+                                      -fx-font-weight:bold;
+                                      -fx-text-fill:#475569;"/>
+                        <Label fx:id="lblBadgesCount"
+                               text="0 badge(s)"
+                               style="-fx-font-size:10px;
+                                      -fx-text-fill:#FFD700;
+                                      -fx-font-weight:bold;"/>
                     </HBox>
-                    <FlowPane fx:id="badgesContainer" hgap="10" vgap="10"
-                              style="-fx-background-color:#1E293B;-fx-background-radius:20;-fx-padding:16;"/>
+                    <FlowPane fx:id="badgesContainer"
+                              hgap="8" vgap="8"
+                              style="-fx-background-color:#1E293B;
+                                     -fx-background-radius:14;
+                                     -fx-padding:12;
+                                     -fx-min-height:50;"/>
                 </VBox>
 
             </VBox>
