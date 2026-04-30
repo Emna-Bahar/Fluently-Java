@@ -162,6 +162,8 @@ public class LanguagePickerController {
             scene.getStylesheets().add(
                     getClass().getResource("/com/example/pijava_fluently/css/fluently.css").toExternalForm()
             );
+            var groupsCss = getClass().getResource("/com/example/pijava_fluently/css/groups-enhanced.css");
+            if (groupsCss != null) scene.getStylesheets().add(groupsCss.toExternalForm());
             stage.setTitle("Fluently – Mon Espace");
             stage.setScene(scene);
             stage.centerOnScreen();

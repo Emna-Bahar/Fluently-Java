@@ -1,5 +1,7 @@
 package com.example.pijava_fluently.services;
 
+import org.json.JSONObject;
+import org.json.JSONArray;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -7,39 +9,24 @@ import java.nio.charset.StandardCharsets;
 import com.example.pijava_fluently.utils.ConfigLoader;
 
 /**
- * Generates an SVG avatar via the Claude (Anthropic) API
+ * Generates an SVG avatar via the Groq API (free)
  * based on the language the user chose to study.
- *
- * Credential style matches the rest of the project
- * (GoogleAuthController, EmailService → hardcoded constants).
- *
- * Replace YOUR_API_KEY_HERE with your real sk-ant-... key.
  */
 public class AvatarService {
 
-    // ── CREDENTIALS ───────────────────────────────────────────────────────────
-    private static final String API_KEY = ConfigLoader.get("anthropic.api.key");// sk-ant-api03-…
-    private static final String MODEL             = "claude-sonnet-4-20250514";
-    private static final String ENDPOINT          = "https://api.anthropic.com/v1/messages";
-    private static final String ANTHROPIC_VERSION = "2023-06-01";
+    private static final String API_KEY  = ConfigLoader.get("groq.api.key");
+    private static final String MODEL    = "meta-llama/llama-4-scout-17b-16e-instruct";
+    private static final String ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
-    // ── PUBLIC API ────────────────────────────────────────────────────────────
-
-    /**
-     * Calls Claude and returns a compact, self-contained SVG avatar
-     * themed around the chosen language / culture.
-     *
-     * @param languageName  e.g. "French", "Japanese", "Arabic" ...
-     * @return SVG markup starting with <svg ...>
-     */
     public static String generateAvatar(String languageName) throws IOException {
+        System.out.println("🎨 AvatarService: generating for " + languageName);
+
         String body = buildRequestBody(languageName);
 
         HttpURLConnection conn = (HttpURLConnection) new URL(ENDPOINT).openConnection();
         conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type",      "application/json");
-        conn.setRequestProperty("x-api-key",         API_KEY);
-        conn.setRequestProperty("anthropic-version", ANTHROPIC_VERSION);
+        conn.setRequestProperty("Authorization", "Bearer " + API_KEY);
+        conn.setRequestProperty("Content-Type",  "application/json");
         conn.setConnectTimeout(15_000);
         conn.setReadTimeout(30_000);
         conn.setDoOutput(true);
@@ -49,33 +36,69 @@ public class AvatarService {
         }
 
         int status = conn.getResponseCode();
+        System.out.println("📡 Groq API status: " + status);
+
         InputStream is = (status < 400) ? conn.getInputStream() : conn.getErrorStream();
         String response = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         conn.disconnect();
 
         if (status != 200) {
-            throw new IOException("Claude API error " + status + ": " + response);
+            throw new IOException("Groq API error " + status + ": " + response);
         }
 
-        return extractSvg(response);
+        // Use org.json to properly parse the response (handles unicode escapes automatically)
+        JSONObject json = new JSONObject(response);
+        JSONArray choices = json.getJSONArray("choices");
+        String content = choices.getJSONObject(0)
+                .getJSONObject("message")
+                .getString("content");
+
+        System.out.println("📝 Content (first 200): " + content.substring(0, Math.min(200, content.length())));
+
+        // Extract SVG block
+        int svgStart = content.indexOf("<svg");
+        int svgEnd   = content.lastIndexOf("</svg>");
+
+        if (svgStart < 0 || svgEnd < 0) {
+            throw new RuntimeException("No valid SVG in response. Got: " + content.substring(0, Math.min(300, content.length())));
+        }
+
+        String svg = content.substring(svgStart, svgEnd + 6).trim();
+        System.out.println("✅ SVG generated, length: " + svg.length());
+        return svg;
     }
 
-    // ── REQUEST BUILDER ───────────────────────────────────────────────────────
-
     private static String buildRequestBody(String language) {
-        String prompt = "You are an SVG avatar generator for a language-learning app called Fluently.\n"
-                + "Create a circular human face avatar (viewBox=\"0 0 100 100\") for a student learning " + language + ".\n"
-                + "The avatar must look like a cartoon human face/bust (head, eyes, nose, mouth, neck, shoulders).\n"
-                + "The face skin colour AND hair colour must be inspired by the FLAG colours of the country associated with " + language + ".\n"
-                + "For example: Korean flag is white+red+blue → use those as skin/hair/clothing colours.\n"
-                + "Rules:\n"
+        String prompt = "You are a professional SVG avatar artist for a language-learning app called Fluently.\n"
+                + "Create a circular cartoon avatar (viewBox=\"0 0 100 100\") for a student learning " + language + ".\n"
+                + "\n"
+                + "CONCEPT: The avatar is a cartoon human face where the FACE SKIN is painted\n"
+                + "with the FLAG PATTERN of the country associated with " + language + ".\n"
+                + "Like face paint at a sports event — the flag design is painted ON the face.\n"
+                + "\n"
+                + "For example:\n"
+                + "- French flag (blue/white/red vertical stripes) → paint those 3 vertical stripes on the face\n"
+                + "- Japanese flag (white + red circle) → white face with red circle painted in center\n"
+                + "- German flag (black/red/gold horizontal stripes) → 3 horizontal stripes on the face\n"
+                + "- Korean flag (white + red/blue yin-yang) → white face with red and blue yin-yang painted on it\n"
+                + "\n"
+                + "Draw these elements:\n"
+                + "1. Circular background in neutral dark colour\n"
+                + "2. Round head shape\n"
+                + "3. FLAG PATTERN painted on the face as skin (use clipPath to clip flag to face shape)\n"
+                + "4. Eyes on top of the flag face: white sclera + dark iris + black pupil\n"
+                + "5. Simple nose\n"
+                + "6. Smiling mouth with white teeth\n"
+                + "7. Hair in a solid colour above the head\n"
+                + "8. Shoulders/clothing at bottom\n"
+                + "\n"
+                + "Technical rules:\n"
                 + "- Output ONLY the raw SVG — no markdown, no explanation, no code fence.\n"
                 + "- Start with <svg viewBox=\"0 0 100 100\" xmlns=\"http://www.w3.org/2000/svg\"> and end with </svg>.\n"
-                + "- Keep it under 1200 characters.\n"
-                + "- Draw: circular background, shoulders/bust, neck, round head, two eyes, nose, smiling mouth, and hair.\n"
-                + "- Use flag-inspired colours for: background circle, skin, hair, and clothing.\n"
+                + "- Use <clipPath> to clip the flag pattern inside the face circle.\n"
+                + "- Keep it under 2000 characters.\n"
                 + "- Do NOT include any text or letters.\n"
-                + "- Must look great at both 36x36 px (table row) and 96x96 px (profile card).";
+                + "- Must look great at both 36x36 px and 96x96 px.";
 
         return "{"
                 + "\"model\":\"" + MODEL + "\","
@@ -83,47 +106,6 @@ public class AvatarService {
                 + "\"messages\":[{\"role\":\"user\",\"content\":" + jsonString(prompt) + "}]"
                 + "}";
     }
-
-    // ── RESPONSE PARSER ───────────────────────────────────────────────────────
-
-    private static String extractSvg(String json) {
-        int textIdx = json.indexOf("\"text\":\"");
-        if (textIdx < 0) {
-            throw new RuntimeException("No 'text' field in Claude response: " + json);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        int i = textIdx + 8;
-        while (i < json.length()) {
-            char c = json.charAt(i);
-            if (c == '\\' && i + 1 < json.length()) {
-                char next = json.charAt(++i);
-                switch (next) {
-                    case '"':  sb.append('"');  break;
-                    case '\\': sb.append('\\'); break;
-                    case 'n':  sb.append('\n'); break;
-                    case 'r':  sb.append('\r'); break;
-                    case 't':  sb.append('\t'); break;
-                    default:   sb.append(next);
-                }
-            } else if (c == '"') {
-                break;
-            } else {
-                sb.append(c);
-            }
-            i++;
-        }
-
-        String text = sb.toString().trim();
-        int svgStart = text.indexOf("<svg");
-        int svgEnd   = text.lastIndexOf("</svg>");
-        if (svgStart < 0 || svgEnd < 0) {
-            throw new RuntimeException("Claude did not return valid SVG. Got: " + text);
-        }
-        return text.substring(svgStart, svgEnd + 6).trim();
-    }
-
-    // ── HELPER ────────────────────────────────────────────────────────────────
 
     private static String jsonString(String s) {
         return "\""
@@ -135,9 +117,6 @@ public class AvatarService {
                 + "\"";
     }
 
-    // ── FALLBACK ─────────────────────────────────────────────────────────────
-
-    /** Simple coloured-circle fallback when the API call fails. */
     public static String fallbackAvatarSvg(String language) {
         String bg, fg;
         switch (language) {
