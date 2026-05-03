@@ -6,11 +6,12 @@ import java.sql.SQLException;
 
 public class MyDatabase {
 
-    private final String URL = "jdbc:mysql://localhost:3306/fluently";
-    private final String USER = "root";
-    private final String PASSWORD = "";
+    private static final String URL = "jdbc:mysql://10.206.162.141:3306/fluently";
+    private static final String USER = "fluently_user";
+    private static final String PASSWORD = "MotDePasseSecurise123!";
     private Connection connection;
     private static MyDatabase instance;
+
 
     private MyDatabase() {
         try {
