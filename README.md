@@ -1,3 +1,44 @@
+# 🌍 Fluently — Application Desktop JavaFX
+> Plateforme d'apprentissage des langues étrangères — ESPRIT School of Engineering
+
+---
+
+## 🧭 Présentation générale
+
+**Fluently** est une application desktop développée en **JavaFX 17** dans le cadre d'un projet académique à ESPRIT School of Engineering, Tunis. Elle constitue le pendant desktop d'une application web **Symfony** existante, avec laquelle elle partage la même base de données MySQL `fluently`.
+
+L'application couvre l'intégralité du parcours d'apprentissage d'une langue étrangère :
+
+| Module | Description |
+|--------|-------------|
+| 👤 **Utilisateurs** | Inscription, connexion (classique / Google OAuth / Face ID), profil, avatar IA |
+| 🌐 **Langues & Cours** | Gestion des langues, niveaux CECRL, cours, progression, IA pédagogique |
+| 📝 **Tests & Évaluation** | Tests QCM / oral / texte libre, duels, certificats, anti-fraude |
+| 🎯 **Objectifs & Gamification** | Kanban, streaks, XP, badges, recommandations IA |
+| 💬 **Groupes & Chat** | Groupes de conversation, chat en temps réel, modération IA, logs admin |
+
+### Stack technique
+
+- **Frontend :** JavaFX 17 + FXML + SceneBuilder
+- **Backend :** JDBC brut sur MySQL 8 (pas d'ORM)
+- **IA :** Groq (LLaMA), Mistral, Whisper
+- **APIs externes :** API Ninjas, detectlanguage.com, Google OAuth, YouTube, Wikipedia
+- **Build :** Maven + `module-info.java`
+
+### Démarrage rapide
+
+```bash
+# Compiler
+mvn -q -DskipTests compile
+
+# Lancer l'application
+mvn javafx:run
+```
+
+Créer `src/main/resources/config.properties` avec toutes les clés API (voir section ⚙️ Configuration de chaque module). Ce fichier est dans `.gitignore` — ne jamais le committer.
+
+---
+
 # 📝 Fluently — Module Test / Question / Réponse / Test Passage
 > Application desktop JavaFX — Apprentissage des langues par les tests
 
@@ -1255,6 +1296,345 @@ src/main/resources/
 | Membre | Module |
 |--------|--------|
 | **Azer Aissaoui** | User / Authentification / Avatar IA / Google Sheets |
+| Camarade | Test / Question / Réponse / TestPassage |
+| Camarade | Langue / Cours / Niveau / UserProgress |
+| Camarade | Objectif / Tâche / Gamification / IA |
+
+---
+
+## 🏫 Contexte académique
+
+Projet réalisé dans le cadre du cours de **Programmation Avancée Java** — ESPRIT School of Engineering, Tunis.
+
+Application web Symfony : `fluently` (base de données partagée)
+Application desktop JavaFX : ce module
+
+---
+
+*README mis à jour le 05/05/2026*
+
+---
+
+# 💬 Fluently — Module Groupe / Message / Modération / Chat
+> Application desktop JavaFX — Groupes de conversation avec modération IA et suivi admin
+
+---
+
+## 📌 Présentation du module
+
+Ce module est la partie **communication et collaboration** de l'application Fluently. Il permet aux étudiants de rejoindre des groupes de conversation selon leur langue et leur niveau CECRL, d'échanger des messages en temps réel, et de répondre aux messages des autres membres. Chaque message est automatiquement analysé par trois APIs : modération du contenu, détection de langue, et analyse de sentiment.
+
+Côté administration, un tableau de bord complet permet de consulter tous les messages, de les modérer, et de consulter le journal d'audit de toutes les actions effectuées.
+
+Développé en **JavaFX 17** (IntelliJ IDEA + SceneBuilder), connecté à la même base de données MySQL partagée.
+
+---
+
+## 🗂️ Structure du projet
+
+```
+com/example/pijava_fluently/
+├── entites/
+│   ├── Groupe.java         → groupe de conversation (nom, description, capacité, statut, langue, niveau)
+│   ├── Message.java        → message (contenu, type, statut, dates, sentiment, modération)
+│   └── MessageLog.java     → entrée d'audit (action, contenu original, nouveau contenu, auteur)
+│
+├── services/
+│   ├── GroupService.java               → CRUD groupes
+│   ├── MessageService.java             → envoi, lecture, suppression, rejoindre groupe, tables auto-créées
+│   ├── MessageLogService.java          → journal d'audit (INSERT dans message_log)
+│   ├── ModerationService.java          → filtre de contenu via API Ninjas (profanityfilter)
+│   ├── SentimentService.java           → analyse de sentiment via API Ninjas (sentiment)
+│   └── LanguageDetectionService.java   → détection de langue via detectlanguage.com
+│
+├── controller/
+│   ├── GroupesController.java          → navigation et filtrage des groupes (front office étudiant)
+│   ├── GroupChatController.java        → interface de chat, envoi, réponses, mentions
+│   ├── GroupFormController.java        → formulaire création/édition de groupe (admin)
+│   └── AdminGroupMessagesController.java → tableau de bord admin : messages + logs
+│
+├── fxml/
+│   ├── groupes.fxml
+│   ├── group-chat.fxml
+│   ├── group-form.fxml
+│   └── admin-group-messages.fxml (intégré dans admin-dashboard.fxml)
+│
+└── utils/
+    ├── MyDatabase.java     → Singleton connexion MySQL
+    └── AppConfig.java      → lecture config.properties + fallback variable d'environnement
+```
+
+---
+
+## 🗄️ Base de données
+
+**Nom :** `fluently`
+
+```sql
+-- Tables existantes (schéma Symfony)
+groupe       (id, nom, description, capacite, statut, date_creation, id_langue_id, id_niveau_id)
+message      (id, contenu, type_message, emoji_react, is_epingle, date_creation,
+              date_modif, statut_message, id_groupe_id, id_user_id)
+message_log  (id, action, message_id, groupe_id, user_id, user_name,
+              original_content, new_content, created_at, updated_at,
+              created_by_id, updated_by_id)
+
+-- Tables créées automatiquement au démarrage (MessageService)
+groupe_membre     (id, id_groupe_id, id_user_id, date_joined)
+message_metadata  (id, message_id, parent_message_id, mentions)
+message_moderation(id, message_id, provider, is_flagged, top_category, top_score,
+                   api_available, error_message, raw_response, checked_at)
+message_sentiment (id, message_id, sentiment, checked_at)
+```
+
+### Statuts de groupe
+| Statut | Description |
+|--------|-------------|
+| `actif` | Groupe ouvert aux membres |
+| `inactif` | Groupe fermé |
+| `complet` | Capacité maximale atteinte |
+
+### Valeurs de sentiment
+| Valeur | Badge affiché |
+|--------|---------------|
+| `positive` | 😊 Positif (fond vert) |
+| `negative` | 😠 Négatif (fond rouge) |
+| `neutral` | 😐 Neutre (fond jaune) |
+| `null` | ○ Sentiment inconnu (fond gris) |
+
+### Actions du journal d'audit
+| Action | Déclencheur |
+|--------|-------------|
+| `EDIT` | Modification du contenu d'un message |
+| `DELETE` | Suppression d'un message |
+
+---
+
+## ⚙️ Configuration
+
+Ajouter dans `src/main/resources/config.properties` :
+
+```properties
+# API Ninjas (modération + sentiment) — gratuit sur api-ninjas.com
+API_NINJAS_KEY=VOTRE_CLE_API_NINJAS
+
+# detectlanguage.com (détection de langue) — 1000 détections/jour gratuit
+DETECTLANGUAGE_KEY=VOTRE_CLE_DETECTLANGUAGE
+```
+
+> ⚠️ Ne jamais committer ce fichier — ajouté à `.gitignore`
+>
+> `AppConfig` lit d'abord `config.properties`, puis tombe sur la variable d'environnement du même nom si le fichier est absent.
+
+---
+
+## 📦 Dépendances (pom.xml)
+
+```xml
+<!-- Gson (parsing JSON des réponses API) -->
+<dependency>
+    <groupId>com.google.code.gson</groupId>
+    <artifactId>gson</artifactId>
+    <version>2.10.1</version>
+</dependency>
+
+<!-- org.json (parsing réponse Groq avec unicode escapes) -->
+<dependency>
+    <groupId>org.json</groupId>
+    <artifactId>json</artifactId>
+    <version>20231013</version>
+</dependency>
+```
+
+---
+
+## 🚀 Fonctionnalités implémentées
+
+### 1. 🏘️ Navigation des groupes (GroupesController)
+
+Interface de navigation avec filtres combinables :
+
+- **Recherche** par nom et description en temps réel
+- **Filtre par langue** — ComboBox peuplé depuis la table `langue`
+- **Filtre par niveau** — se met à jour dynamiquement selon la langue choisie
+- **Filtre par statut** (actif / inactif / complet)
+- **Filtre "Groupes que je peux rejoindre"** — checkbox qui ne montre que les groupes où l'utilisateur a la langue ET le niveau correspondants dans sa progression, et où il reste de la place (ou dont il est déjà membre)
+- **Cartes de groupe** — nom, description, langue, niveau, barre de progression membres/capacité, badge de statut coloré
+- **Compteur de résultats** en temps réel
+
+### 2. 🔑 Rejoindre un groupe (MessageService)
+
+`rejoindreGroupe()` effectue 4 vérifications dans l'ordre :
+
+```
+1. capacite <= 0              → GROUP_FULL (groupe invalide)
+2. estParticipant()           → ALREADY_PARTICIPANT (déjà membre, on ouvre le chat directement)
+3. belongsToLangueAndNiveau() → LANGUAGE_LEVEL_MISMATCH (niveau/langue non correspondants)
+4. participantsActuels >= capacite → GROUP_FULL (groupe plein)
+→ sinon : INSERT dans groupe_membre → JOINED
+```
+
+La vérification de correspondance niveau/langue est une jointure SQL entre `groupe` et `user_progress` :
+
+```sql
+SELECT 1 FROM groupe g
+JOIN user_progress up ON up.langue_id = g.id_langue_id
+                     AND up.niveau_actuel_id = g.id_niveau_id
+WHERE g.id = ? AND up.user_id = ?
+```
+
+### 3. 💬 Chat de groupe (GroupChatController)
+
+**Pipeline d'envoi d'un message :**
+
+```
+1. Validation (non vide, groupe sélectionné)
+2. Modération (ModerationService) → bloque si contenu inapproprié
+3. Détection de langue (LanguageDetectionService) → bloque si mauvaise langue
+4. INSERT dans message (ajouterEtRetournerId)
+5. INSERT dans message_metadata (parentMessageId + mentions si présents)
+6. INSERT dans message_moderation (résultat de l'étape 2)
+7. INSERT dans message_sentiment (résultat de l'analyse sentiment)
+8. Rechargement de la liste
+```
+
+**Affichage de chaque message :**
+- Contenu + auteur + date
+- Label de réponse `↪ Réponse à [nom]` si `parentMessageId` non null
+- Label de mentions `Mentions: @alice,@bob` si présent
+- Badge de sentiment coloré (😊 / 😠 / 😐 / ○)
+- Boutons Modifier / Supprimer / Répondre (visibles au survol uniquement)
+
+### 4. 🔞 Modération (ModerationService)
+
+GET `https://api.api-ninjas.com/v1/profanityfilter?text=...`
+
+Réponse : `{"has_profanity": true, "censored": "...", "original": "..."}`
+
+**Comportement fail-safe :** si l'API est indisponible → `apiAvailable = false` → le message passe. Ne bloque que si `apiAvailable == true` ET `flagged == true`.
+
+Le résultat est toujours sauvegardé dans `message_moderation` pour traçabilité, même si le message n'est pas bloqué.
+
+### 5. 🌐 Détection de langue (LanguageDetectionService)
+
+POST `https://ws.detectlanguage.com/0.2/detect`
+
+Réponse : `{"data":{"detections":[{"language":"fr","isReliable":true}]}}`
+
+Retourne un nom de langue en anglais (`"French"`, `"English"`, etc.) à partir du code ISO. Comparé à `expectedLanguage` résolu depuis le nom de la langue du groupe via `LANG_NAME_MAP`.
+
+**Comportement fail-safe :** si `detect()` retourne `null` (API indisponible, quota épuisé, clé absente), la vérification est intégralement ignorée — le message passe.
+
+> ⚠️ Le nom de la langue dans la base de données doit correspondre aux clés de `LANG_NAME_MAP` (ex: `"Francais"`, `"Anglais"`). Un nom en anglais (`"French"`) ne sera pas reconnu par défaut.
+
+### 6. 😊 Analyse de sentiment (SentimentService)
+
+GET `https://api.api-ninjas.com/v1/sentiment?text=...`
+
+Réponse : `{"sentiment":"positive","score":0.5}`
+
+N'est jamais bloquant — le résultat est uniquement affiché comme badge décoratif sur chaque message. Sauvegardé dans `message_sentiment`.
+
+### 7. ↩️ Réponses et mentions
+
+**Réponses :** cliquer sur "Répondre" ouvre un dialog pré-rempli avec `@nom `. Le message envoyé est lié au parent via `message_metadata.parent_message_id`. L'affichage montre `↪ Réponse à [nom]` au-dessus du contenu.
+
+**Mentions :** le regex `@([A-Za-z0-9_]+)` extrait tous les `@mot` du texte. Résultat stocké dans `message_metadata.mentions` (ex: `"@alice,@bob"`). Affiché sous le message. Purement visuel — aucune notification envoyée.
+
+### 8. 📋 Journal d'audit (MessageLogService)
+
+Tout **Modifier** ou **Supprimer** d'un message appelle `supprimerAvecLog()` ou `modifierContenuAvecLog()` dans `MessageService`, qui insèrent d'abord une entrée dans `message_log` avant d'effectuer l'action :
+
+```java
+// Suppression avec log
+logService.logDelete(messageId, groupeId, userId, userName, contenuOriginal, performedById);
+supprimer(messageId);
+
+// Modification avec log
+logService.logEdit(messageId, groupeId, userId, userName, contenuOriginal, nouveauContenu, performedById);
+modifierContenu(messageId, nouveauContenu);
+```
+
+### 9. 🏛️ Backoffice admin (AdminGroupMessagesController)
+
+- **Onglet Messages** : tableau de tous les messages toutes groupes confondus — colonnes ID, Groupe, Utilisateur (nom résolu), Contenu, Date, Statut. Actions Modifier / Supprimer avec confirmation.
+- **Onglet Logs** : journal d'audit complet depuis `message_log` — colonnes Action, Message ID, Groupe, Utilisateur, Contenu original, Nouveau contenu, Date, Auteur de l'action.
+- Les noms d'utilisateurs sont résolus via `UserService.findById()` avec cache en mémoire.
+
+---
+
+## 🔧 Patterns techniques
+
+### Tables auto-créées au démarrage
+```java
+// MessageService constructeur — CREATE TABLE IF NOT EXISTS sur les 4 tables
+ensureMembershipTableExists();      // groupe_membre
+ensureModerationTableExists();      // message_moderation
+ensureMessageMetadataTableExists(); // message_metadata
+ensureSentimentTableExists();       // message_sentiment
+```
+Ces appels sont idempotents — sûrs à exécuter à chaque démarrage.
+
+### Cache en mémoire
+```java
+// GroupChatController
+Map<Integer, String>  userDisplayCache  // userId → nom affiché
+Map<Integer, Message> messageCacheById  // messageId → Message (pour les réponses)
+
+// GroupesController
+Set<Integer> eligibleGroupIds  // groupes rejoignables (invalidé à chaque loadGroupes())
+```
+
+### Comptage des membres (UNION)
+```sql
+SELECT COUNT(*) FROM (
+    SELECT id_user_id FROM message WHERE id_groupe_id = ?
+    UNION
+    SELECT id_user_id FROM groupe_membre WHERE id_groupe_id = ?
+) participants
+```
+Un utilisateur compte comme membre s'il a envoyé un message OU s'il est dans `groupe_membre`.
+
+### AppConfig — lecture sécurisée des clés
+```java
+// config.properties en priorité, variable d'environnement en fallback
+public static String get(String key) {
+    return props.getProperty(key, System.getenv(key));
+}
+```
+
+---
+
+## 🌐 APIs externes utilisées
+
+| API | Usage | Endpoint | Coût |
+|-----|-------|----------|------|
+| **API Ninjas Profanity** | Détection de contenu inapproprié | `GET https://api.api-ninjas.com/v1/profanityfilter` | 🆓 Gratuit |
+| **API Ninjas Sentiment** | Analyse du ton des messages | `GET https://api.api-ninjas.com/v1/sentiment` | 🆓 Gratuit |
+| **detectlanguage.com** | Vérification de la langue d'un message | `POST https://ws.detectlanguage.com/0.2/detect` | 🆓 1000/jour |
+
+---
+
+## 🔑 Règles métier essentielles
+
+1. **Un utilisateur doit avoir la même langue ET le même niveau** dans `user_progress` pour rejoindre un groupe — vérifié par jointure SQL
+2. **Un groupe à capacité 0 ou négative** est considéré comme plein — personne ne peut le rejoindre
+3. **La modération ne bloque que si l'API répond** — en cas de panne, le message passe (fail-safe)
+4. **La détection de langue ne bloque que si elle retourne un résultat** — en cas de panne ou quota épuisé, le message passe
+5. **Le nom de la langue en base doit être en français** (ex: `"Francais"`, `"Anglais"`) pour être reconnu par `LANG_NAME_MAP`
+6. **Le sentiment est purement décoratif** — n'a aucun impact sur l'envoi du message
+7. **Tout modifier/supprimer est journalisé dans `message_log`** avant que l'action soit effectuée
+8. **Les mentions sont purement cosmétiques** — aucune notification, aucune validation d'existence du nom mentionné
+9. **Les réponses sont purement visuelles** — pas de navigation vers le message parent, pas de regroupement en thread
+
+---
+
+## 👥 Équipe
+
+| Membre | Module |
+|--------|--------|
+| **Jihed Ramedi** | Groupe / Message / Chat / Modération IA |
+| Azer Aissaoui | User / Authentification / Avatar IA / Google Sheets |
 | Camarade | Test / Question / Réponse / TestPassage |
 | Camarade | Langue / Cours / Niveau / UserProgress |
 | Camarade | Objectif / Tâche / Gamification / IA |
