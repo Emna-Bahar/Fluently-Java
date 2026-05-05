@@ -859,15 +859,6 @@ Les autres dépendances (JavaFX, MySQL) sont partagées avec les modules précé
 - **Navigation directe vers les tâches** depuis chaque carte
 - **Validation en temps réel** des champs du formulaire avec messages d'erreur colorés (rouge = erreur, vert = valide)
 
-**Règles de validation :**
-| Champ | Règle |
-|-------|-------|
-| Titre | 3 à 50 caractères, obligatoire |
-| Description | obligatoire, max 100 000 caractères |
-| Date de début | obligatoire, non future |
-| Date de fin | doit être après la date de début |
-| Statut | sélection obligatoire |
-
 ### 2. ✅ Gestion des Tâches — Kanban (TacheController)
 
 **Tableau Kanban à 4 colonnes** avec glisser-déposer natif JavaFX :
@@ -877,223 +868,352 @@ Les autres dépendances (JavaFX, MySQL) sont partagées avec les modules précé
 - **Compteurs** par colonne mis à jour en temps réel
 - **Badge "Retard"** (🟥 rouge) affiché automatiquement si la date limite est dépassée et la tâche non terminée
 - **Couleurs de priorité** : fond coloré de la bande supérieure de chaque carte selon la priorité
-- **Contrôle de propriété** : seul le propriétaire de l'objectif parent voit les boutons Modifier/Supprimer/Glisser
-- **Recherche Kanban** — filtre toutes les colonnes simultanément par titre et description
+- **Correcteur orthographique en temps réel** avec debounce 500ms, suggestions cliquables, support multilingue
 
-**Correcteur orthographique en temps réel (SpellCheckerService) :**
-- Debounce 500ms pour éviter les appels trop fréquents
-- Menu contextuel de suggestions cliquables (style chips violets)
-- Support multilingue : Français, Anglais, Espagnol, Allemand, Italien, Portugais
-- Remplacement automatique du mot erroné au clic sur une suggestion
+### 3. 🤖 Génération de Tâches par IA (AITaskGeneratorService)
 
-**Validation des tâches :**
-| Champ | Règle |
-|-------|-------|
-| Titre | 3 à 50 caractères |
-| Description | obligatoire, max 255 caractères |
-| Date limite | ne peut pas être dans le passé |
-| Statut + Priorité | sélection obligatoire |
+L'IA **Groq LLaMA 3** analyse l'objectif et génère 3 tâches personnalisées avec niveau de difficulté progressif.
 
-### 3. 🤖 Génération de Tâches par IA (AITaskGeneratorService + AITaskGeneratorController)
+### 4. 🔥 Système de Streaks & Gamification
 
-L'IA **Groq LLaMA 3** (100% gratuit) analyse l'objectif et l'historique de l'utilisateur pour générer 3 tâches personnalisées.
+Système inspiré de **Duolingo** avec 10 niveaux (🌱 → 🌌), badges débloquables, graphe hebdomadaire animé et dashboard dark-mode.
 
-**Profil utilisateur calculé automatiquement :**
-- **Niveau de langue** détecté depuis le titre de l'objectif (A1 → C2)
-- **Centres d'intérêt** extraits par mots-clés (musique, lecture, conversation, grammaire, écriture, cinéma)
-- **Taux de complétion** calculé depuis les tâches existantes
-- **Taux d'échec** (tâches annulées)
-- **Pattern préféré** déduit des statistiques (écoute active, exercices structurés, etc.)
+### 5. 🔔 Notifications de Deadlines
 
-**Prompt IA intelligent :**
-- Tâche 1 = Facile (correspond au pattern le plus fort de l'utilisateur)
-- Tâche 2 = Moyen (construit sur l'historique)
-- Tâche 3 = Défi (étend les capacités selon les intérêts)
+Badge rouge animé avec compteur, rafraîchissement toutes les 5 secondes.
 
-**Si objectif = musique + niveau A2** → suggère une vraie chanson pour enfants ou chanson pop simple
-**Si objectif = lecture + niveau B1** → recommande *Le Petit Prince* ou un livre gradué réel
-**Si taux d'échec > 40%** → génère des tâches plus simples et progressives
+### 6. 🤖 Recommandations IA d'Objectifs
 
-**Chaque tâche générée contient :**
-- Titre et description en français
-- Priorité (Basse / Normale / Haute / Urgente)
-- Durée estimée en jours
-- Explication personnalisée "Pourquoi cette tâche ?"
-- Ressource média concrète (titre + auteur/artiste)
-- 3 sous-tâches suggérées
+3 objectifs recommandés personnalisés générés par Groq LLaMA avec bouton "Régénérer".
 
-**Bouton "Ajouter à l'objectif"** → appelle `TacheService.ajouter()` et rafraîchit le Kanban en temps réel.
+---
 
-### 4. 🔥 Système de Streaks & Gamification (UserSessionService + StreakDashboardController)
+## 🌐 APIs externes utilisées
 
-Système inspiré de **Duolingo** — tracking complet des sessions de connexion.
+| API | Usage | Endpoint | Coût |
+|-----|-------|----------|------|
+| **Groq LLaMA 3** | Génération tâches + recommandations objectifs | `POST https://api.groq.com/openai/v1/chat/completions` | 🆓 Gratuit |
 
-**UserSessionService (Singleton) — événements trackés :**
+---
 
-| Événement | XP | Méthode appelée |
-|-----------|-----|-----------------|
-| Connexion journalière | +20 XP | `startSession(userId)` au login |
-| Nouvelle tâche créée | +10 XP | `recordTaskStarted()` dans `handleSave()` |
-| Tâche complétée (→ Terminée) | +50 XP | `recordTaskCompleted()` dans `handleSave()` |
-| Tâche supprimée | -20 XP | `recordTaskFailed()` dans `handleDelete()` |
-| Objectif consulté | +5 XP | `recordObjectifConsulted()` dans `showDetails()` |
-| Fermeture de l'application | sauvegarde durée | `endSession()` dans `Application.stop()` |
+# 👤 Fluently — Module User / Gestion des Utilisateurs
+> Application desktop JavaFX — Authentification, profil, avatar IA et administration des utilisateurs
 
-**Calcul du streak :**
-- Un streak est **actif** si l'utilisateur s'est connecté aujourd'hui ou hier
-- Si le dernier jour de connexion est avant-hier → streak reset à 0
-- L'algorithme parcourt les dates distinctes de `user_session` dans l'ordre décroissant et compte les jours consécutifs
+---
 
-**Système de niveaux (10 paliers) :**
-| Niveau | Emoji | XP requis |
-|--------|-------|-----------|
-| 1 | 🌱 Graine | 0 |
-| 2 | 🌿 Pousse | 100 |
-| 3 | 🍃 Apprenti | 300 |
-| 4 | 🌳 Explorateur | 600 |
-| 5 | ⭐ Érudit | 1 000 |
-| 6 | 🔥 Maître | 1 500 |
-| 7 | 💎 Expert | 2 500 |
-| 8 | 🚀 Champion | 4 000 |
-| 9 | 👑 Légende | 6 000 |
-| 10 | 🌌 Mythique | 10 000 |
+## 📌 Présentation du module
 
-**Badges débloqués automatiquement :**
-| Badge | Condition |
-|-------|-----------|
-| 🔥 Streak 3j | 3 jours consécutifs |
-| 💫 Semaine parfaite | 7 jours consécutifs |
-| 🌙 Mois de feu | 30 jours consécutifs |
-| ✅ 10 tâches | 10 tâches complétées |
-| 🏆 50 tâches | 50 tâches complétées |
-| ⚡ Efficace | Taux de complétion ≥ 80% |
-| ⏰ 1h d'étude | 60 min de connexion cumulées |
-| 📚 10h d'étude | 600 min de connexion cumulées |
-| 🗓️ 7 jours actifs | 7 jours d'activité au total |
-| 🎯 Record 7j | Meilleur streak ≥ 7 jours |
+Ce module est la partie **gestion des utilisateurs** de l'application Fluently. Il gère l'inscription, la connexion (classique, Google OAuth, Face ID), le profil utilisateur avec avatar généré par IA, et l'administration complète des comptes depuis un tableau de bord admin.
 
-**Dashboard Streaks (thème dark `#0F172A`) :**
-- **Arc de niveau** animé (0 → valeur en 900ms, `Interpolator.EASE_OUT`) — dessiné programmatiquement avec `Arc` JavaFX, centré par `StackPane.setAlignment(arc, Pos.TOP_LEFT)` pour respecter les coordonnées absolues
-- **Compteur animé** du streak (compte de 0 → valeur en 800ms)
-- **Barre de progression** vers 7 jours (animée)
-- **Émoji dynamique** selon le streak : ❄️ → 🌱 → ⚡ → 🔥 → 💪🔥 → 🌟🔥🔥 → 👑🔥🔥🔥
-- **Graphe barres hebdomadaire** — 7 barres animées (délai en cascade), barre "AUJ" orange, barres actives violettes, inactives grises
-- **Sessions récentes** — liste des 5 dernières avec animation slide-in depuis la gauche
-- **Badges** dorés avec hover glow (badges verrouillés affichés en gris avec tooltip)
-- **Stats en temps réel** : taux complétion, tâches faites, temps d'étude, sessions totales
+Développé en **JavaFX 17** (IntelliJ IDEA + SceneBuilder), connecté à la même base de données MySQL partagée.
 
-### 5. 🔔 Notifications de Deadlines (NotificationService)
+---
 
-- Vérification automatique à la connexion des deadlines d'objectifs et tâches
-- **Badge rouge animé** sur le bouton Notifications avec compteur
-- Rafraîchissement toutes les 5 secondes via `Timeline`
-- Filtre par utilisateur courant (chaque utilisateur voit uniquement ses propres alertes)
+## 🗂️ Structure du projet
 
-### 6. 🤖 Recommandations IA d'Objectifs (RecommendationDialogController)
+```
+com/example/pijava_fluently/
+├── entites/
+│   └── User.java               → utilisateur (email, nom, prénom, rôle, statut,
+│                                  password, faceDescriptor, chosenLanguage, avatarSvg)
+│
+├── services/
+│   ├── UserService.java        → CRUD utilisateurs + authentification BCrypt
+│   └── AvatarService.java      → génération avatar SVG via Groq LLaMA (IA)
+│
+├── controller/
+│   ├── LoginController.java            → connexion + inscription + validation
+│   ├── GoogleAuthController.java       → OAuth2 Google (login sans mot de passe)
+│   ├── FaceLoginController.java        → reconnaissance faciale via Python
+│   ├── LanguagePickerController.java   → choix de langue + génération avatar IA
+│   ├── FrontProfileController.java     → profil utilisateur avec avatar SVG
+│   └── AdminDashboardController.java   → tableau de bord admin + export Google Sheets
+│
+├── fxml/
+│   ├── login.fxml
+│   ├── language-picker.fxml
+│   ├── front-profile.fxml
+│   ├── face-login.fxml
+│   └── admin-dashboard.fxml
+│
+└── utils/
+    ├── MyDatabase.java     → Singleton connexion MySQL
+    └── ConfigLoader.java   → lecture config.properties (clés API)
+```
 
-- Analyse les objectifs et tâches existants de l'utilisateur
-- Génère 3 objectifs recommandés personnalisés avec niveau de difficulté (facile / moyen)
-- Affichage avec badges colorés, description détaillée, "Pourquoi ?" et liste de tâches suggérées
-- Bouton "Régénérer" pour obtenir de nouvelles recommandations
+---
+
+## 🗄️ Base de données
+
+**Nom :** `fluently`
+
+```sql
+user (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    email            VARCHAR(180) UNIQUE NOT NULL,
+    nom              VARCHAR(100),
+    prenom           VARCHAR(100),
+    roles            JSON,
+    statut           VARCHAR(20) DEFAULT 'actif',
+    password         VARCHAR(255),
+    face_descriptor  TEXT,
+    chosen_language  VARCHAR(50),     -- langue choisie à l'inscription
+    avatar_svg       MEDIUMTEXT        -- SVG généré par l'IA
+)
+```
+
+**Migration nécessaire :**
+```sql
+ALTER TABLE user ADD COLUMN chosen_language VARCHAR(50) NULL;
+ALTER TABLE user ADD COLUMN avatar_svg MEDIUMTEXT NULL;
+```
+
+### Rôles utilisateur
+| Rôle | Accès |
+|------|-------|
+| `ROLE_ETUDIANT` | Interface étudiant (home, profil, cours, tests) |
+| `ROLE_PROF` | Interface professeur |
+| `ROLE_ADMIN` | Tableau de bord admin complet |
+
+### Statuts utilisateur
+| Statut | Description |
+|--------|-------------|
+| `actif` | Compte actif |
+| `online` | Connecté en ce moment |
+| `inactif` | Compte désactivé |
+
+---
+
+## ⚙️ Configuration
+
+Créer `src/main/resources/config.properties` :
+
+```properties
+# Groq AI (avatar generation) — gratuit sur console.groq.com
+groq.api.key=gsk_VOTRE_CLE_GROQ
+
+# Google OAuth (login + sheets export)
+google.auth.client.id=VOTRE_GOOGLE_AUTH_CLIENT_ID
+google.auth.client.secret=VOTRE_GOOGLE_AUTH_CLIENT_SECRET
+google.sheets.client.id=VOTRE_GOOGLE_SHEETS_CLIENT_ID
+google.sheets.client.secret=VOTRE_GOOGLE_SHEETS_CLIENT_SECRET
+```
+
+> ⚠️ Ne jamais committer ce fichier — ajouté à `.gitignore`
+> Copier `config.properties.example` et remplir les vraies clés
+
+---
+
+## 📦 Dépendances ajoutées (pom.xml)
+
+```xml
+<!-- JavaFX Web (rendu SVG avatar via WebView) -->
+<dependency>
+    <groupId>org.openjfx</groupId>
+    <artifactId>javafx-web</artifactId>
+    <version>17.0.6</version>
+</dependency>
+```
+
+**module-info.java :**
+```java
+requires javafx.web;    // WebView pour afficher les avatars SVG
+requires java.desktop;  // Desktop.browse() pour Google OAuth
+requires jdk.httpserver; // HttpServer pour le callback OAuth local
+```
+
+---
+
+## 🚀 Fonctionnalités implémentées
+
+### 1. 🔐 Authentification (LoginController)
+
+Trois modes de connexion depuis un seul écran :
+
+- **Classique** : email + mot de passe hashé en **BCrypt** (`jbcrypt`)
+- **Google OAuth 2.0** : connexion sans mot de passe via compte Google
+- **Face ID** : reconnaissance faciale via caméra
+
+**Inscription :**
+- Validation en temps réel (regex nom/prénom, format email, longueur mot de passe, confirmation)
+- Vérification unicité email en base
+- Hash BCrypt automatique du mot de passe
+- Redirection vers `LanguagePickerController` après inscription (choix langue + génération avatar)
+
+### 2. 🔵 Google Login (GoogleAuthController)
+
+Implémenté en **pur Java** sans librairie externe :
+
+```
+1. Démarrage d'un HttpServer local sur un port aléatoire
+2. Ouverture du navigateur → écran de consentement Google
+3. L'utilisateur approuve → Google redirige vers http://localhost:PORT/callback?code=...
+4. Le serveur local capture le code d'autorisation
+5. Échange du code contre un ID token (JWT) via POST à oauth2.googleapis.com/token
+6. Décodage du payload JWT (base64) → extraction email, prénom, nom
+7. Création ou mise à jour du compte en base de données
+8. Navigation vers home ou admin selon le rôle
+```
+
+**Scope utilisé :** `openid email profile`
+
+### 3. 😐 Face ID (FaceLoginController + LoginController)
+
+Implémenté via **Python** lancé depuis Java avec `ProcessBuilder` :
+
+**Inscription :**
+```
+Java → ProcessBuilder("python", projectRoot + "/face_register.py")
+Python → ouvre webcam → détecte visage → génère descripteur 128 valeurs
+Java → lit le JSON retourné → sauvegarde dans user.face_descriptor
+```
+
+**Connexion :**
+```
+Java → ProcessBuilder("python", projectRoot + "/face_capture.py")
+Python → capture visage → retourne descripteur
+Java → compare avec tous les descripteurs en base (distance euclidienne)
+Si distance < 0.5 → utilisateur identifié → connexion automatique
+```
+
+**Librairies Python requises :**
+```bash
+pip install face_recognition opencv-python numpy
+```
+
+**Note :** Le chemin du script est dynamique (`System.getProperty("user.dir")`) — fonctionne sur n'importe quelle machine sans modification.
+
+### 4. 🌍 Sélection de langue + Avatar IA (LanguagePickerController)
+
+Écran affiché **une seule fois après l'inscription** :
+
+- 10 langues proposées avec drapeaux emoji (🇫🇷 🇪🇸 🇸🇦 🇯🇵 🇩🇪 🇮🇹 🇨🇳 🇧🇷 🇰🇷 🇬🇧)
+- Au clic → appel API Groq en arrière-plan (thread séparé) avec spinner
+- L'avatar généré est sauvegardé en base (`avatar_svg`) et affiché immédiatement
+- Si l'API échoue → avatar de secours (cercle coloré avec initiale de la langue)
+
+### 5. 🤖 Génération d'Avatar par IA (AvatarService)
+
+**API utilisée :** Groq AI (`meta-llama/llama-4-scout-17b-16e-instruct`) — gratuit
+
+**Concept de l'avatar :**
+- Visage humain cartoon avec le **motif du drapeau peint sur la peau** (comme du face paint)
+- 🇫🇷 Français → 3 bandes verticales bleu/blanc/rouge sur le visage
+- 🇯🇵 Japonais → visage blanc avec cercle rouge au centre
+- 🇩🇪 Allemand → 3 bandes horizontales noir/rouge/or
+- 🇰🇷 Coréen → visage blanc avec yin-yang rouge/bleu
+
+**Flow technique :**
+```java
+// 1. Appel API Groq
+POST https://api.groq.com/openai/v1/chat/completions
+Authorization: Bearer {groq.api.key}
+
+// 2. Parsing avec org.json (gère les unicode escapes \u003c → <)
+JSONObject json = new JSONObject(response);
+String svg = json.getJSONArray("choices")
+                 .getJSONObject(0)
+                 .getJSONObject("message")
+                 .getString("content");
+
+// 3. Extraction du bloc SVG
+int svgStart = content.indexOf("<svg");
+int svgEnd   = content.lastIndexOf("</svg>");
+```
+
+**Affichage :**
+- Dans le profil : `WebView` (96×96 px) injecté dans `fpAvatarPane` (StackPane avec `fx:id`)
+- Dans le tableau admin : `WebView` (36×36 px) dans la cellule de la colonne avatar
+
+### 6. 👤 Profil Utilisateur (FrontProfileController)
+
+- Affichage de l'avatar SVG via **WebView** (transparent, pas de scrollbar)
+- Badge langue étudiée (🌍 French)
+- Badge rôle coloré (Étudiant / Professeur / Admin)
+- Badge statut (actif / online)
+- Formulaire d'édition : prénom, nom, email, mot de passe
+- Indicateur de force du mot de passe (4 barres colorées)
+- Validation inline avec messages d'erreur par champ
+- Vérification unicité email (pas de collision avec un autre compte)
+
+### 7. 🏛️ Tableau de Bord Admin (AdminDashboardController)
+
+- **Statistiques** : nombre d'utilisateurs, taux actifs, dernières connexions
+- **Tableau des utilisateurs** avec avatar SVG dans la première colonne
+- **Recherche** en temps réel par nom/prénom/email
+- **Modifier / Supprimer** un utilisateur avec confirmation (`ButtonType.OK`)
+- **Changer le statut** (actif / inactif) directement depuis le tableau
+- **📊 Export Google Sheets** — crée une vraie feuille Google Sheets en ligne
+
+### 8. 📊 Export Google Sheets (AdminDashboardController)
+
+Implémenté en **pur Java** via l'API Google Sheets v4 :
+
+```
+1. Clic sur "📊 Exporter Google Sheets"
+2. Démarrage d'un HttpServer local sur le port 8888
+3. Ouverture navigateur → consentement Google (scope: spreadsheets)
+4. Échange code → access token
+5. POST https://sheets.googleapis.com/v4/spreadsheets → crée une nouvelle feuille
+6. PUT .../values/A1 → écrit les données (ID, Prénom, Nom, Email, Rôle, Statut, Langue)
+7. Ouverture automatique de la feuille dans le navigateur
+```
+
+**Colonnes exportées :** ID, Prénom, Nom, Email, Rôle, Statut, Langue étudiée
 
 ---
 
 ## 🔧 Patterns techniques
 
-### Singleton UserSessionService
+### ConfigLoader — chargement sécurisé des clés API
 ```java
-// Une seule instance pour tout l'app
-UserSessionService.getInstance().startSession(userId);
+// Lecture depuis config.properties (non commité)
+String key = ConfigLoader.get("groq.api.key");
 
-// Appels événementiels depuis TacheController
-UserSessionService.getInstance().recordTaskCompleted(); // +50 XP
-UserSessionService.getInstance().recordTaskStarted();   // +10 XP
-UserSessionService.getInstance().recordTaskFailed();    // -20 XP
-
-// Appel depuis ObjectifController
-UserSessionService.getInstance().recordObjectifConsulted(); // +5 XP
-
-// Appel depuis HomeController à la fermeture
-UserSessionService.getInstance().endSession(); // sauvegarde durée
+// config.properties placé dans src/main/resources/
+// Chargé via getResourceAsStream("/config.properties")
 ```
 
-### Création automatique des tables SQL
+### WebView pour rendu SVG
 ```java
-// Dans ensureTableExists() de UserSessionService
-// Les tables user_session et user_stats_cache sont créées automatiquement
-// au premier démarrage si elles n'existent pas
-st.executeUpdate("CREATE TABLE IF NOT EXISTS user_session (...)")
+WebView wv = new WebView();
+wv.setPrefSize(96, 96);
+String html = "<html><body style='margin:0;padding:0;background:transparent;overflow:hidden;'>"
+            + "<style>svg{width:100%;height:100%;display:block;}</style>"
+            + svgContent + "</body></html>";
+wv.getEngine().loadContent(html);
+fpAvatarPane.getChildren().add(wv);
 ```
 
-### Correction du bug de l'Arc JavaFX
+### OAuth local server pattern
 ```java
-// PROBLÈME : Arc utilise des coordonnées absolues (CX, CY)
-// Si alignement = CENTER → l'arc est décalé et coupé sur le bord
-
-// SOLUTION : aligner les arcs sur TOP_LEFT, seulement le texte sur CENTER
-StackPane.setAlignment(bgArc,  Pos.TOP_LEFT);  // coordonnées absolues
-StackPane.setAlignment(fgArc,  Pos.TOP_LEFT);  // coordonnées absolues
-StackPane.setAlignment(center, Pos.CENTER);    // texte centré
-```
-
-### Appel API Groq avec java.net.http (Java 11+)
-```java
-HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
-        .timeout(Duration.ofSeconds(30))
-        .header("Content-Type", "application/json")
-        .header("Authorization", "Bearer " + GROQ_API_KEY)
-        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-        .build();
-HttpResponse<String> response = httpClient.send(request,
-        HttpResponse.BodyHandlers.ofString());
-```
-
-### Drag & Drop Kanban
-```java
-// Sur la carte (source)
-card.setOnDragDetected(event -> {
-    Dragboard db = card.startDragAndDrop(TransferMode.MOVE);
-    ClipboardContent cc = new ClipboardContent();
-    cc.putString(String.valueOf(t.getId()));
-    db.setContent(cc);
+// Même pattern utilisé pour Google Login ET Google Sheets
+HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+server.createContext("/callback", exchange -> {
+    // Capturer le code depuis l'URL
+    String query = exchange.getRequestURI().getQuery();
+    // ...
+    server.stop(1);
 });
-
-// Sur la colonne (cible)
-col.setOnDragDropped(event -> {
-    tacheEnGlissement.setStatut(nouveauStatut);
-    service.modifier(tacheEnGlissement); // MAJ base immédiate
-    loadData(); // refresh Kanban
-});
+server.start();
+Desktop.getDesktop().browse(new URI(authUrl));
 ```
 
----
-
-## 🧪 Logique de scoring XP
-
-```
-Connexion journalière    → +20 XP (automatique)
-Tâche commencée         → +10 XP
-Tâche terminée          → +50 XP
-Objectif consulté        →  +5 XP
-Tâche supprimée/annulée → -20 XP (min 0, jamais négatif)
+### Face ID — chemin dynamique
+```java
+// Fonctionne sur n'importe quelle machine
+String projectRoot = System.getProperty("user.dir");
+String scriptPath  = projectRoot + "/face_register.py";
+ProcessBuilder pb  = new ProcessBuilder("python", scriptPath);
 ```
 
-### Calcul du streak
-```
-Si dates consécutives dans user_session :
-  [Lun, Mar, Mer, Jeu] → streak = 4
-  [Lun, Mar, __, Jeu]  → streak = 1 (cassé mercredi)
-  Pas de connexion aujourd'hui ni hier → streak = 0
-```
+### BCrypt pour les mots de passe
+```java
+// Hash à l'inscription
+String hashed = BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
 
----
-
-## 📁 Fichiers générés automatiquement
-
-```
-user_session         → table MySQL créée au premier lancement
-user_stats_cache     → table MySQL créée au premier lancement
+// Vérification à la connexion
+boolean ok = BCrypt.checkpw(plainPassword, hashedFromDb);
 ```
 
 ---
@@ -1102,27 +1222,31 @@ user_stats_cache     → table MySQL créée au premier lancement
 
 | API | Usage | Endpoint | Coût |
 |-----|-------|----------|------|
-| **Groq LLaMA 3** | Génération tâches personnalisées + recommandations objectifs | `POST https://api.groq.com/openai/v1/chat/completions` | 🆓 Gratuit |
-
-**Modèles disponibles chez Groq :**
-| Modèle | Vitesse | Qualité |
-|--------|---------|---------|
-| `llama3-8b-8192` | ⚡ Très rapide | Bonne |
-| `llama3-70b-8192` | 🐢 Plus lent | Excellente |
-| `mixtral-8x7b-32768` | ⚡ Rapide | Très bonne |
+| **Groq LLaMA** | Génération avatar SVG | `POST https://api.groq.com/openai/v1/chat/completions` | 🆓 Gratuit |
+| **Google OAuth 2.0** | Login Google + autorisation Sheets | `https://accounts.google.com/o/oauth2/v2/auth` | 🆓 Gratuit |
+| **Google Sheets API v4** | Création et écriture de feuilles | `https://sheets.googleapis.com/v4/spreadsheets` | 🆓 Gratuit |
 
 ---
 
 ## 🔑 Règles métier essentielles
 
-1. **Seul le propriétaire** d'un objectif peut créer, modifier, supprimer ses tâches et générer des tâches IA
-2. **Les autres utilisateurs** voient les objectifs en lecture seule (bouton "Détails" uniquement)
-3. **Le streak ne compte que les jours distincts** — plusieurs connexions le même jour ne comptent qu'une seule fois
-4. **Le streak est réinitialisé** si aucune connexion n'a eu lieu aujourd'hui ni hier
-5. **Les tables de sessions sont auto-créées** au démarrage — aucune migration SQL manuelle requise
-6. **L'IA adapte la difficulté** : si taux d'échec > 40%, les tâches générées sont simplifiées
-7. **La durée de session** est calculée à `endSession()` : différence entre `loginTime` et `now()`
-8. **Les points XP ne peuvent jamais être négatifs** — minimum 0 même après pénalité
+1. **L'email est unique** — vérification avant inscription ET avant modification du profil
+2. **Le mot de passe est toujours hashé en BCrypt** — jamais stocké en clair
+3. **L'avatar est généré une seule fois** à l'inscription — stocké en base, pas recalculé
+4. **Le chemin des scripts Python est dynamique** — `user.dir` pour compatibilité multi-machine
+5. **Google Login crée le compte automatiquement** si l'email n'existe pas encore en base
+6. **La langue choisie** est sauvegardée dans `user.chosen_language` et affichée dans le profil
+7. **L'export Google Sheets nécessite** que l'utilisateur soit ajouté comme testeur dans Google Cloud Console (mode test) ou que l'app soit publiée
+
+---
+
+## 📁 Fichiers de configuration
+
+```
+src/main/resources/
+├── config.properties          ← clés API réelles (dans .gitignore)
+└── config.properties.example  ← template sans clés (commité sur Git)
+```
 
 ---
 
@@ -1130,10 +1254,10 @@ user_stats_cache     → table MySQL créée au premier lancement
 
 | Membre | Module |
 |--------|--------|
-| **[Ton prénom]** | Objectif / Tâche / Gamification / IA |
+| **Azer Aissaoui** | User / Authentification / Avatar IA / Google Sheets |
 | Camarade | Test / Question / Réponse / TestPassage |
 | Camarade | Langue / Cours / Niveau / UserProgress |
-| Camarade | Groupe / Message / Session |
+| Camarade | Objectif / Tâche / Gamification / IA |
 
 ---
 
