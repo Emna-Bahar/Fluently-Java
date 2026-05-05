@@ -66,8 +66,7 @@ public class NiveauController {
     private Niveau selectedNiveau = null;
     private File selectedImageFile = null;
 
-    private static final String IMAGE_DIR =
-            "C:/xampp/htdocs/fluently/public/uploads/images/niveaux/";
+    private static final String UPLOAD_RECEIVER_URL = "http://10.206.162.141/upload_receiver.php";
 
     @FXML
     public void initialize() {
@@ -145,15 +144,12 @@ public class NiveauController {
                     setText("—"); setGraphic(null); return;
                 }
                 try {
-                    // Convertir le chemin relatif en chemin absolu
-                    String absolutePath = getAbsoluteImagePath(path);
-                    if (absolutePath != null) {
-                        File f = new File(absolutePath);
-                        if (f.exists()) {
-                            iv.setImage(new Image(f.toURI().toString()));
-                            setGraphic(iv); setText(null);
-                        } else { setText("🖼"); setGraphic(null); }
-                    } else { setText("🖼"); setGraphic(null); }
+                    String imageUrl = getImageUrl(path);
+                    if (imageUrl != null) {
+                        iv.setImage(new Image(imageUrl, true));
+                        setGraphic(iv); setText(null);
+                    } else { setText("🖼️"); setGraphic(null); }
+
                 } catch (Exception e) { setText("🖼"); setGraphic(null); }
             }
         });
@@ -314,16 +310,11 @@ public class NiveauController {
         );
         if (n.getImageCouverture() != null && !n.getImageCouverture().isBlank()) {
             try {
-                String absolutePath = getAbsoluteImagePath(n.getImageCouverture());
-                if (absolutePath != null) {
-                    File f = new File(absolutePath);
-                    if (f.exists()) {
-                        ImageView img = new ImageView(new Image(f.toURI().toString()));
-                        img.setFitWidth(70);
-                        img.setFitHeight(50);
-                        img.setPreserveRatio(true);
-                        header.getChildren().add(img);
-                    }
+                String imageUrl = getImageUrl(n.getImageCouverture());
+                if (imageUrl != null) {
+                    ImageView img = new ImageView(new Image(imageUrl, true));
+                    img.setFitWidth(70); img.setFitHeight(50); img.setPreserveRatio(true);
+                    header.getChildren().add(img);
                 }
             } catch (Exception ignored) {}
         }
@@ -423,12 +414,53 @@ public class NiveauController {
         }
     }
 
+    // APRÈS :
     private String saveImageToResources(File source) throws IOException {
-        Path dir = Paths.get(IMAGE_DIR);
-        if (!Files.exists(dir)) Files.createDirectories(dir);
         String fileName = System.currentTimeMillis() + "_" + source.getName();
-        Path dest = dir.resolve(fileName);
-        Files.copy(source.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
+
+        String boundary = "---boundary" + System.currentTimeMillis();
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                new java.net.URL(UPLOAD_RECEIVER_URL).openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(30000);
+
+        try (java.io.OutputStream os = conn.getOutputStream();
+             java.io.PrintWriter writer = new java.io.PrintWriter(
+                     new java.io.OutputStreamWriter(os, "UTF-8"), true)) {
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"secret\"").append("\r\n\r\n");
+            writer.append("fluently_secret_2024").append("\r\n");
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"type\"").append("\r\n\r\n");
+            writer.append("niveaux").append("\r\n");
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"filename\"").append("\r\n\r\n");
+            writer.append(fileName).append("\r\n");
+            writer.flush();
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
+                    .append(fileName).append("\"").append("\r\n");
+            writer.append("Content-Type: application/octet-stream").append("\r\n\r\n");
+            writer.flush();
+
+            Files.copy(source.toPath(), os);
+            os.flush();
+
+            writer.append("\r\n--").append(boundary).append("--").append("\r\n");
+            writer.flush();
+        }
+
+        int code = conn.getResponseCode();
+        conn.disconnect();
+        if (code != 200) throw new IOException("Erreur upload HTTP " + code);
+
         return "/uploads/images/niveaux/" + fileName;
     }
 
@@ -454,13 +486,10 @@ public class NiveauController {
 
         if (n.getImageCouverture() != null && !n.getImageCouverture().isBlank()) {
             try {
-                String absolutePath = getAbsoluteImagePath(n.getImageCouverture());
-                if (absolutePath != null) {
-                    File f = new File(absolutePath);
-                    if (f.exists()) {
-                        imagePreview.setImage(new Image(f.toURI().toString()));
-                        imagePlaceholder.setVisible(false);
-                    }
+                String imageUrl = getImageUrl(n.getImageCouverture());
+                if (imageUrl != null) {
+                    imagePreview.setImage(new Image(imageUrl, true));
+                    imagePlaceholder.setVisible(false);
                 }
             } catch (Exception ignored) {}
         }
@@ -741,16 +770,13 @@ public class NiveauController {
         a.showAndWait();
     }
 
-    private String getAbsoluteImagePath(String relativePath) {
+    // APRÈS :
+    private String getImageUrl(String relativePath) {
         if (relativePath == null || relativePath.isEmpty()) return null;
-        // Si c'est déjà un chemin absolu Windows
-        if (relativePath.startsWith("C:/") || relativePath.startsWith("file:/")) {
-            return relativePath;
-        }
-        // Si c'est un chemin relatif Symfony
         if (relativePath.startsWith("/uploads/")) {
-            return "C:/xampp/htdocs/fluently/public" + relativePath;
+            return "http://10.206.162.141/fluently/public" + relativePath;
         }
-        return relativePath;
+        return null;
     }
+
 }

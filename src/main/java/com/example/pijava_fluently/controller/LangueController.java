@@ -118,21 +118,12 @@ public class LangueController {
                     setGraphic(null);
                     return;
                 }
+                // APRÈS :
                 try {
-                    // Convertir le chemin relatif en chemin absolu
-                    String absolutePath = path;
-                    if (path.startsWith("/uploads/")) {
-                        absolutePath = "C:/xampp/htdocs/fluently/public" + path;
-                    }
-                    File f = new File(absolutePath);
-                    if (f.exists()) {
-                        iv.setImage(new Image(f.toURI().toString()));
-                        setGraphic(iv);
-                        setText(null);
-                    } else {
-                        setText("🖼");
-                        setGraphic(null);
-                    }
+                    String imageUrl = "http://10.206.162.141/fluently/public" + path;
+                    iv.setImage(new Image(imageUrl, true));
+                    setGraphic(iv);
+                    setText(null);
                 } catch (Exception e) {
                     setText("🖼");
                     setGraphic(null);
@@ -294,19 +285,13 @@ public class LangueController {
         );
         if (l.getDrapeau() != null && !l.getDrapeau().isBlank()) {
             try {
-                // Convertir le chemin relatif en chemin absolu
-                String absolutePath = l.getDrapeau();
-                if (absolutePath.startsWith("/uploads/")) {
-                    absolutePath = "C:/xampp/htdocs/fluently/public" + absolutePath;
-                }
-                File f = new File(absolutePath);
-                if (f.exists()) {
-                    ImageView flag = new ImageView(new Image(f.toURI().toString()));
-                    flag.setFitWidth(70);
-                    flag.setFitHeight(50);
-                    flag.setPreserveRatio(true);
-                    header.getChildren().add(flag);
-                }
+                // APRÈS :
+                String imageUrl = "http://10.206.162.141/fluently/public" + l.getDrapeau();
+                ImageView flag = new ImageView(new Image(imageUrl, true));
+                flag.setFitWidth(70);
+                flag.setFitHeight(50);
+                flag.setPreserveRatio(true);
+                header.getChildren().add(flag);
             } catch (Exception ignored) {}
         }
         VBox headerText = new VBox(4);
@@ -408,13 +393,69 @@ public class LangueController {
         }
     }
 
+    // APRÈS :
     private String saveImageToResources(File source) throws IOException {
-        Path dir = Paths.get(IMAGE_DIR);
-        if (!Files.exists(dir)) Files.createDirectories(dir);
         String fileName = System.currentTimeMillis() + "_" + source.getName();
-        Path dest = dir.resolve(fileName);
-        Files.copy(source.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
-        // Retourner le chemin relatif pour Symfony (accessible via URL)
+
+        // Envoyer via HTTP vers ton PC
+        String uploadUrl = "http://10.206.162.141/upload_receiver.php";
+
+        try {
+            java.net.URL url = new java.net.URL(uploadUrl);
+            String boundary = "---boundary" + System.currentTimeMillis();
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(30000);
+
+            try (java.io.OutputStream os = conn.getOutputStream();
+                 java.io.PrintWriter writer = new java.io.PrintWriter(
+                         new java.io.OutputStreamWriter(os, "UTF-8"), true)) {
+
+                // Champ secret
+                writer.append("--").append(boundary).append("\r\n");
+                writer.append("Content-Disposition: form-data; name=\"secret\"").append("\r\n\r\n");
+                writer.append("fluently_secret_2024").append("\r\n");
+
+                // Champ type
+                writer.append("--").append(boundary).append("\r\n");
+                writer.append("Content-Disposition: form-data; name=\"type\"").append("\r\n\r\n");
+                writer.append("images").append("\r\n");
+
+                // Champ filename
+                writer.append("--").append(boundary).append("\r\n");
+                writer.append("Content-Disposition: form-data; name=\"filename\"").append("\r\n\r\n");
+                writer.append(fileName).append("\r\n");
+
+                writer.flush();
+
+                // Fichier
+                writer.append("--").append(boundary).append("\r\n");
+                writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
+                        .append(fileName).append("\"").append("\r\n");
+                writer.append("Content-Type: application/octet-stream").append("\r\n\r\n");
+                writer.flush();
+
+                java.nio.file.Files.copy(source.toPath(), os);
+                os.flush();
+
+                writer.append("\r\n");
+                writer.append("--").append(boundary).append("--").append("\r\n");
+                writer.flush();
+            }
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                throw new IOException("Erreur upload: HTTP " + responseCode);
+            }
+            conn.disconnect();
+
+        } catch (Exception e) {
+            throw new IOException("Impossible d'uploader vers le serveur: " + e.getMessage());
+        }
+
         return "/uploads/images/langues/" + fileName;
     }
 
@@ -441,16 +482,10 @@ public class LangueController {
         checkActive.setSelected(l.isActive());
         if (l.getDrapeau() != null && !l.getDrapeau().isBlank()) {
             try {
-                // Convertir le chemin relatif en chemin absolu
-                String absolutePath = l.getDrapeau();
-                if (absolutePath.startsWith("/uploads/")) {
-                    absolutePath = "C:/xampp/htdocs/fluently/public" + absolutePath;
-                }
-                File f = new File(absolutePath);
-                if (f.exists()) {
-                    imagePreview.setImage(new Image(f.toURI().toString()));
-                    imagePlaceholder.setVisible(false);
-                }
+                // APRÈS :
+                String imageUrl = "http://10.206.162.141/fluently/public" + l.getDrapeau();
+                imagePreview.setImage(new Image(imageUrl, true));
+                imagePlaceholder.setVisible(false);
             } catch (Exception ignored) {}
         }
         formTitle.setText("Modifier la Langue");

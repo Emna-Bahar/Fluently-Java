@@ -209,20 +209,13 @@ public class LanguesEtudiantController {
         flagView.setFitHeight(50);
         flagView.setPreserveRatio(true);
 
+        // APRÈS :
         String imagePath = langue.getDrapeau();
         if (imagePath != null && !imagePath.isEmpty()) {
             try {
-                // CONVERSION DU CHEMIN RELATIF EN CHEMIN ABSOLU
-                String absolutePath = imagePath;
-                if (imagePath.startsWith("/uploads/")) {
-                    absolutePath = "C:/xampp/htdocs/fluently/public" + imagePath;
-                }
-                File file = new File(absolutePath);
-                if (file.exists()) {
-                    flagView.setImage(new Image(file.toURI().toString()));
-                } else {
-                    System.out.println("Fichier drapeau introuvable: " + absolutePath);
-                }
+                String imageUrl = "http://10.206.162.141/fluently/public" + imagePath;
+                Image img = new Image(imageUrl, true); // true = chargement en arrière-plan
+                flagView.setImage(img);
             } catch (Exception e) {
                 System.err.println("Erreur chargement drapeau: " + e.getMessage());
             }

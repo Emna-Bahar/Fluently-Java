@@ -146,37 +146,37 @@ exam.maxInfractions=3
     <version>17.0.2</version>
 </dependency>
 
-<!-- MySQL -->
+        <!-- MySQL -->
 <dependency>
-    <groupId>mysql</groupId>
-    <artifactId>mysql-connector-java</artifactId>
-    <version>8.0.33</version>
+<groupId>mysql</groupId>
+<artifactId>mysql-connector-java</artifactId>
+<version>8.0.33</version>
 </dependency>
 
-<!-- Jackson (JSON) -->
+        <!-- Jackson (JSON) -->
 <dependency>
-    <groupId>com.fasterxml.jackson.core</groupId>
-    <artifactId>jackson-databind</artifactId>
-    <version>2.15.2</version>
+<groupId>com.fasterxml.jackson.core</groupId>
+<artifactId>jackson-databind</artifactId>
+<version>2.15.2</version>
 </dependency>
 
-<!-- iTextPDF (certificats) -->
+        <!-- iTextPDF (certificats) -->
 <dependency>
-    <groupId>com.itextpdf</groupId>
-    <artifactId>itextpdf</artifactId>
-    <version>5.5.13.3</version>
+<groupId>com.itextpdf</groupId>
+<artifactId>itextpdf</artifactId>
+<version>5.5.13.3</version>
 </dependency>
 
-<!-- ZXing (QR code) -->
+        <!-- ZXing (QR code) -->
 <dependency>
-    <groupId>com.google.zxing</groupId>
-    <artifactId>core</artifactId>
-    <version>3.5.2</version>
+<groupId>com.google.zxing</groupId>
+<artifactId>core</artifactId>
+<version>3.5.2</version>
 </dependency>
 <dependency>
-    <groupId>com.google.zxing</groupId>
-    <artifactId>javase</artifactId>
-    <version>3.5.2</version>
+<groupId>com.google.zxing</groupId>
+<artifactId>javase</artifactId>
+<version>3.5.2</version>
 </dependency>
 ```
 
@@ -258,7 +258,7 @@ Client → DuelClient (Socket → IP de l'hôte)
 ```java
 DatagramSocket socket = new DatagramSocket();
 socket.connect(InetAddress.getByName("8.8.8.8"), 80);
-return socket.getLocalAddress().getHostAddress();
+        return socket.getLocalAddress().getHostAddress();
 ```
 
 ### 6. 🏅 Leaderboard (LeaderboardService)
@@ -327,7 +327,7 @@ MyDatabase.getInstance().getConnection()
 
 // Reconnexion si la connexion a expiré (après 8h d'inactivité MySQL)
 if (conn == null || conn.isClosed() || !conn.isValid(2)) {
-    MyDatabase.getInstance().reconnect();
+        MyDatabase.getInstance().reconnect();
 }
 ```
 
@@ -337,9 +337,9 @@ if (conn == null || conn.isClosed() || !conn.isValid(2)) {
 ```sql
 INSERT INTO user_progress (user_id, langue_id, niveau_actuel_id, ...)
 VALUES (?, ?, ?, ...)
-ON DUPLICATE KEY UPDATE
-    niveau_actuel_id = VALUES(niveau_actuel_id),
-    date_derniere_activite = NOW()
+    ON DUPLICATE KEY UPDATE
+                         niveau_actuel_id = VALUES(niveau_actuel_id),
+                         date_derniere_activite = NOW()
 ```
 Utilisé pour `user_progress` qui a une contrainte unique sur `(user_id, langue_id)`.
 
@@ -352,7 +352,7 @@ Platform.runLater(() -> { labelX.setText("..."); });
 ### Threads daemon pour les sockets
 ```java
 Thread t = new Thread(...);
-t.setDaemon(true); // s'arrête automatiquement quand l'app ferme
+        t.setDaemon(true); // s'arrête automatiquement quand l'app ferme
 t.start();
 ```
 
@@ -502,24 +502,22 @@ user         (id, email, nom, prenom, roles, statut, password)
 ```
 
 ### Popularités de langue
-| Type      | Rôle |
-|------     |------|
-|très haute |Langue très populaire (ex: Anglais)
-|haute	    |Langue populaire (ex: Espagnol)
-|moyenne	|Popularité moyenne
-|faible	    |Peu étudiée
+| Type | Rôle |
+|------|------|
+| très haute | Langue très populaire (ex: Anglais) |
+| haute | Langue populaire (ex: Espagnol) |
+| moyenne | Popularité moyenne |
+| faible | Peu étudiée |
 
 ### Difficulté de niveau
-| Type | Description |
-|------|-------------|
-|Difficulté| Ordre typique |Description
-|------    |-------------  |
-|A1	        1	            Débutant
-|A2	        2	            Élémentaire
-|B1	        3	            Intermédiaire
-|B2	        4	            Intermédiaire avancé
-|C1	        5	            Avancé
-|C2	        6	            Maîtrise
+| Difficulté | Ordre | Description |
+|------------|-------|-------------|
+| A1 | 1 | Débutant |
+| A2 | 2 | Élémentaire |
+| B1 | 3 | Intermédiaire |
+| B2 | 4 | Intermédiaire avancé |
+| C1 | 5 | Avancé |
+| C2 | 6 | Maîtrise |
 
 ---
 
@@ -582,190 +580,59 @@ youtube.api.key=VOTRE_CLE_API_YOUTUBE
 
 ## 🚀 Fonctionnalités implémentées
 
-### 1.  Gestion des Langues (LangueController)
+### 1. Gestion des Langues (LangueController)
 
-- **coté administrateur** :
-
-CRUD complet avec validation métier
-
-Upload d'image (drapeau) → sauvegarde dans C:/xampp/htdocs/fluently/public/uploads/images/langues/
-
-Aperçu image avant validation
-
-Recherche en temps réel
-
-Badges de popularité avec couleurs :
-
-🟠 très haute (orange)
-
-🟢 haute (verte)
-
-🔵 moyenne (bleue)
-
-🟣 faible (violette)
-
-Statut actif/inactif avec badge vert/rouge
+- **Côté administrateur** :
+    - CRUD complet avec validation métier
+    - Upload d'image (drapeau) → sauvegarde dans `C:/xampp/htdocs/fluently/public/uploads/images/langues/`
+    - Aperçu image avant validation
+    - Recherche en temps réel
+    - Badges de popularité avec couleurs : 🟠 très haute, 🟢 haute, 🔵 moyenne, 🟣 faible
+    - Statut actif/inactif avec badge vert/rouge
 
 - **Côté étudiant (LanguesEtudiantController)** :
+    - Cartes stylisées avec drapeau, popularité, description tronquée
+    - Effet hover avec ombre et translation
+    - Bouton "Commencer" → navigation vers l'apprentissage
 
-Cartes stylisées avec drapeau, popularité, description tronquée
-
-Effet hover avec ombre et translation
-
-Bouton "Commencer" → navigation vers l'apprentissage
 - **Statistiques avancées (LangueStatsController)** :
-
-Classement des langues par nombre d'étudiants
-
-Données enrichies via Wikipedia API :
-
-Nombre de locuteurs
-
-Famille linguistique
-
-Système d'écriture
-
-Pays principaux
-
-"Fun fact" culturel
-
-Étoiles de difficulté (1 à 5)
-
-Tendance de popularité (📈 Très populaire / 📈 Populaire / 📊 Moyenne / 📉 Peu étudiée)
-
+    - Classement des langues par nombre d'étudiants
+    - Données enrichies via Wikipedia API : nombre de locuteurs, famille linguistique, système d'écriture, pays principaux, "Fun fact" culturel
+    - Étoiles de difficulté (1 à 5)
+    - Tendance de popularité (📈 Très populaire / 📈 Populaire / 📊 Moyenne / 📉 Peu étudiée)
 
 ### 2. Gestion des Cours (CoursController + ApprentissageController)
-- **Coté administrateur (CoursController)** :
 
--CRUD complet des cours
--Numéro de cours (validation unicité par niveau)
--Date de création (non future)
--Cours précédent (évite l'auto-référence)
--Gestion avancée des ressources :
-
--Ajout fichiers (PDF, vidéos, audio, images)
--Ajout liens YouTube
--Suppression de ressources
--Double-clic pour ouvrir
--Sauvegarde dans C:/xampp/htdocs/fluently/public/uploads/ressources/
+- **Côté administrateur (CoursController)** :
+    - CRUD complet des cours
+    - Numéro de cours (validation unicité par niveau)
+    - Date de création (non future)
+    - Cours précédent (évite l'auto-référence)
+    - Gestion avancée des ressources : ajout fichiers (PDF, vidéos, audio, images), ajout liens YouTube, suppression de ressources, double-clic pour ouvrir
+    - Sauvegarde dans `C:/xampp/htdocs/fluently/public/uploads/ressources/`
 
 - **Côté étudiant (ApprentissageController)** :
+    - **a. Affichage des cours par niveau** — cercles numérotés avec effet 3D, badge "✅ Complété" ou bouton "Terminer", progression (ex: "2/5 cours"), marquage automatique dans user_progress
+    - **b. Ouverture d'un cours** — dialog moderne avec catégories (🎬 YouTube, 📄 PDF, 🎥 Vidéos, 🎵 Audios, 🖼️ Images), ouverture native des fichiers/liens
+    - **c. Génération de cours personnalisé par IA (Mistral)** — thème libre, points de grammaire, vocabulaire, niveau A1 à C2, prompt structuré avec 8 sections, loading overlay animé
+    - **d. Export PDF du cours généré** — mise en page professionnelle, en-tête violet, sauvegarde dans `cours_pdf/{langue}/`
+    - **e. Génération de Flashcards IA** — 5 flashcards (question + 4 options + réponse + explication), session interactive avec score
+    - **f. Quiz interactif** — 5 questions QCM générées par IA selon niveau, score en temps réel, feedback immédiat
+    - **g. Jeu "Compléter la phrase"** — questions à trous générées par IA, 4 options, correction automatique
+    - **h. Puzzle étymologique** — découpage en morphèmes (préfixe/racine/suffixe), niveaux A1 à C1
+    - **i. Dictionnaire intégré** — définitions + exemples + synonymes via Mistral
+    - **j. Recherche YouTube** — intégration YouTube API, cartes de résultats, lecture dans navigateur
+    - **k. Exploration culturelle** — lieux emblématiques, cuisine, traditions via IA + OpenStreetMap
+    - **l. Prononciation** — synthèse vocale des mots/phrases, support multilingue
+    - **m. Flashcards PDF** — extraction depuis PDFs exportés, session recto/verso
 
-**a. Affichage des cours par niveau**
+### 3. 📈 Suivi de progression (UserProgressController)
 
-Cercles numérotés avec effet 3D
-Badge "✅ Complété" ou bouton "Terminer"
-Progression affichée (ex: "2/5 cours")
-Marquage automatique dans user_progress
-
-**b. Ouverture d'un cours**
-
-Dialog moderne avec catégories :
-🎬 YouTube
-📄 PDF
-🎥 Vidéos
-🎵 Audios
-🖼️ Images
-Ouverture native des fichiers/liens
-
-**c. Génération de cours personnalisé par IA (Mistral)**
-
-Thème libre
-Points de grammaire (sélection multiple)
-Vocabulaire souhaité
-Niveau (A1 à C2)
-Prompt structuré avec sections :
-INTRODUCTION, VOCABULAIRE, GRAMMAIRE, DIALOGUE, EXERCICES, CORRECTION, ASTUCES, POUR ALLER PLUS LOIN
-Loading overlay avec animation
-Fallback local si API indisponible
-
-**d. Export PDF du cours généré**
-
-Mise en page professionnelle
-En-tête violet, sections structurées
-Sauvegarde dans C:/xampp/htdocs/fluently/public/uploads/cours_pdf/{langue}/
-Affichage en grille des PDFs générés
-Suppression via menu contextuel
-
-**e. Génération de Flashcards IA**
-
-Prompt personnalisable
-Niveau sélectionnable
-5 flashcards générées (question + 4 options + réponse + explication)
-Session interactive avec score
-Résultats détaillés avec analyse des erreurs
-
-**f. Quiz interactif**
-
-Généré par IA selon niveau
-5 questions QCM
-Score en temps réel
-Feedback immédiat
-Résultats avec pourcentage et conseils
-
-**g. Jeu "Compléter la phrase"**
-
-Questions à trous générées par IA
-4 options par question
-Score progressif
-Correction automatique
-
-**h. Puzzle étymologique**
-
-Découpage de mots en morphèmes (préfixe/racine/suffixe)
-Niveaux A1 à C1
-Indices disponibles
-Score dynamique
-
-**i. Dictionnaire intégré**
-
-Recherche de définitions via Mistral
-Exemples d'utilisation
-Synonymes
-Format structuré
-
-**j. Recherche YouTube**
-
-Intégration YouTube API
-Cartes de résultats avec titre, description
-Lecture dans navigateur
-
-**k. Exploration culturelle**
-
-Lieux emblématiques, cuisine, traditions, art
-Données enrichies par IA
-Cartes avec images générées par couleur (hash du nom)
-Adresses précises, horaires
-Carte interactive intégrée (Leaflet + OpenStreetMap)
-Écoute du nom et de la description (synthèse vocale)
-
-**l. Prononciation**
-
-Synthèse vocale des mots/phrases
-Suggestions : Bonjour, Merci, Comment allez-vous ?, Je t'aime
-Support multilingue
-
-**m. Flashcards PDF (cartes mémoire)**
-
-Extraction de contenu depuis les PDFs exportés
-Génération automatique de 5 flashcards
-Session de révision avec cartes recto/verso
-Progression sauvegardée
-
-### 3.📈 Suivi de progression (UserProgressController)
-
-**Interface administrateur :**
-
-Tableau complet des progressions
-Colonnes : Utilisateur, Langue, Niveau actuel, Dernier cours, Progression (barre), Test niveau, Date activité
-Filtres par langue et niveau
-Recherche par ID utilisateur
-Détails popup avec toutes les infos
-Mécanique de progression :
-Cours N°1 → bouton "Terminer" → marqué complété
-Cours N°2 → accessible après N°1
-...
-Dernier cours complété → `dernier_numero_cours` mis à jour
+- Tableau complet des progressions
+- Colonnes : Utilisateur, Langue, Niveau actuel, Dernier cours, Progression (barre), Test niveau, Date activité
+- Filtres par langue et niveau
+- Recherche par ID utilisateur
+- Détails popup avec toutes les infos
 
 ---
 
@@ -788,7 +655,6 @@ if (path.startsWith("/uploads/")) {
 }
 ```
 
-
 ## 📁 Fichiers générés à la racine du projet
 
 ```
@@ -802,12 +668,12 @@ if (path.startsWith("/uploads/")) {
 
 ## 🌐 APIs externes utilisées
 
-| API               | Usage                                                             | Endpoint |
-|-----              |-------                                                            |----------|
-**Mistral AI**	    Génération cours, flashcards, quiz, dictionnaire, puzzle, culture	`https://api.mistral.ai/v1/chat/completions`
-**Wikipedia**	    Données culturelles (locuteurs, pays, fun facts)	                `https://fr.wikipedia.org/api/rest_v1/page/summary/`
-**YouTube Data**	Recherche de vidéos éducatives	                                    `https://www.googleapis.com/youtube/v3/search`
-**OpenStreetMap**	Cartes interactives (intégrée via Leaflet)	                        `https://nominatim.openstreetmap.org/search`
+| API | Usage | Endpoint |
+|-----|-------|----------|
+| **Mistral AI** | Génération cours, flashcards, quiz, dictionnaire, puzzle, culture | `https://api.mistral.ai/v1/chat/completions` |
+| **Wikipedia** | Données culturelles (locuteurs, pays, fun facts) | `https://fr.wikipedia.org/api/rest_v1/page/summary/` |
+| **YouTube Data** | Recherche de vidéos éducatives | `https://www.googleapis.com/youtube/v3/search` |
+| **OpenStreetMap** | Cartes interactives (intégrée via Leaflet) | `https://nominatim.openstreetmap.org/search` |
 
 ---
 
@@ -826,23 +692,458 @@ if (path.startsWith("/uploads/")) {
 
 ## 👥 Équipe
 
-| Membre        | Module |
-|--------       |--------|
-[Ton prénom]	Langue / Niveau / Cours / Progression
-Camarade	    Test / Question / Réponse / TestPassage
-Camarade	    Groupe / Message / Session
-Camarade	    User / Objectif / Tâche
+| Membre | Module |
+|--------|--------|
+| **[Ton prénom]** | Langue / Niveau / Cours / Progression |
+| Camarade | Test / Question / Réponse / TestPassage |
+| Camarade | Groupe / Message / Session |
+| Camarade | User / Objectif / Tâche |
 
+---
 
+# 🎯 Fluently — Module Objectif / Tâche / Gamification / IA
+> Application desktop JavaFX — Gestion des objectifs d'apprentissage avec IA et suivi de progression
 
+---
+
+## 📌 Présentation du module
+
+Ce module est la partie **planification, suivi et gamification** de l'application Fluently. Il permet à un utilisateur de créer et gérer ses objectifs d'apprentissage, d'organiser ses tâches dans un tableau Kanban, de recevoir des recommandations personnalisées par IA, et de suivre sa progression via un système de streaks, de points XP et de badges — inspiré de Duolingo.
+
+Développé en **JavaFX 17** (IntelliJ IDEA + SceneBuilder), connecté à la même base de données MySQL partagée. L'IA est propulsée par **Groq AI (LLaMA 3, 100% gratuit)**.
+
+---
+
+## 🗂️ Structure du projet
+
+```
+com/example/pijava_fluently/
+├── entites/
+│   ├── Objectif.java           → objectif d'apprentissage (titre, desc, dates, statut, userId)
+│   ├── Tache.java              → tâche liée à un objectif (titre, desc, dateLimite, statut, priorité)
+│   ├── UserSession.java        → session de connexion (login/logout, durée, points)
+│   └── UserStats.java          → statistiques agrégées (streaks, XP, niveau, badges, graphe hebdo)
+│
+├── services/
+│   ├── ObjectifService.java         → CRUD objectifs + filtre par utilisateur
+│   ├── TacheService.java            → CRUD tâches + filtre par objectif
+│   ├── AITaskGeneratorService.java  → génération de tâches par Groq LLaMA 3
+│   ├── UserSessionService.java      → tracking sessions, calcul streaks, XP, badges (Singleton)
+│   └── NotificationService.java     → notifications deadlines avec badge animé
+│
+├── controller/
+│   ├── ObjectifController.java           → CRUD objectifs, cartes colorées, pagination
+│   ├── TacheController.java              → Kanban drag & drop, correcteur orthographe
+│   ├── AITaskGeneratorController.java    → dialog génération tâches IA
+│   ├── StreakDashboardController.java    → dashboard streaks, arc niveau, graphe hebdo, badges
+│   ├── RecommendationDialogController.java → recommandations IA d'objectifs
+│   └── GamificationCardController.java  → carte gamification intégrée dans l'écran objectifs
+│
+├── fxml/
+│   ├── Objectif-view.fxml            → liste des objectifs (cartes + formulaire + pagination)
+│   ├── Tache-view.fxml               → kanban 4 colonnes (À faire / En cours / Terminée / Annulée)
+│   ├── AITaskGenerator-dialog.fxml   → dialog génération tâches IA
+│   ├── StreakDashboard.fxml          → dashboard dark-mode (streaks, arc, graphe, badges)
+│   ├── RecommendationDialog.fxml     → dialog recommandations objectifs IA
+│   └── Gamificationcard.fxml         → carte gamification intégrée
+│
+└── utils/
+    └── MyDatabase.java     → Singleton connexion MySQL
+```
+
+---
+
+## 🗄️ Base de données
+
+**Nom :** `fluently`
+
+```sql
+-- Tables existantes réutilisées
+objectif      (id, titre, description, date_deb, date_fin, statut, id_user_id)
+tache         (id, titre, description, date_limite, statut, priorite, id_objectif_id)
+user          (id, email, nom, prenom, roles, statut, password)
+
+-- Tables créées automatiquement au démarrage (UserSessionService)
+user_session  (
+    id                  INT AUTO_INCREMENT PRIMARY KEY,
+    user_id             INT NOT NULL,
+    session_date        DATE NOT NULL,
+    login_time          DATETIME NOT NULL,
+    logout_time         DATETIME,
+    duree_minutes       INT DEFAULT 0,
+    taches_completees   INT DEFAULT 0,
+    taches_commencees   INT DEFAULT 0,
+    objectifs_consultes INT DEFAULT 0,
+    points_gagnes       INT DEFAULT 0,
+    INDEX idx_user_date (user_id, session_date)
+)
+
+user_stats_cache (
+    user_id             INT PRIMARY KEY,
+    streak_actuel       INT DEFAULT 0,
+    streak_max          INT DEFAULT 0,
+    total_jours_actifs  INT DEFAULT 0,
+    total_sessions      INT DEFAULT 0,
+    total_points        INT DEFAULT 0,
+    niveau              INT DEFAULT 1,
+    updated_at          DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+```
+
+### Statuts d'Objectif
+| Statut | Description |
+|--------|-------------|
+| `En cours` | Objectif actif |
+| `Terminé` | Objectif accompli |
+| `En pause` | Mis en attente |
+| `Annulé` | Abandonné |
+
+### Statuts de Tâche
+| Statut | Colonne Kanban |
+|--------|----------------|
+| `À faire` | Colonne 1 — tâches non commencées |
+| `En cours` | Colonne 2 — tâches en progression |
+| `Terminée` | Colonne 3 — tâches accomplies (+50 XP) |
+| `Annulée` | Colonne 4 — tâches abandonnées (-20 XP) |
+
+### Priorités de Tâche
+| Priorité | Couleur | Icône |
+|----------|---------|-------|
+| `Basse` | 🟢 Vert | Priorité faible |
+| `Normale` | 🔵 Bleu | Priorité standard |
+| `Haute` | 🟠 Orange | Attention requise |
+| `Urgente` | 🔴 Rouge | Action immédiate |
+
+---
+
+## ⚙️ Configuration
+
+Ajouter dans `src/main/resources/config.properties` :
+
+```properties
+# Clé Groq gratuite → https://console.groq.com/keys
+groq.api.key=gsk_VOTRE_CLE_GROQ
+```
+
+> ⚠️ Ne jamais committer ce fichier — ajouter à `.gitignore`
+
+---
+
+## 📦 Dépendances (pom.xml)
+
+```xml
+<!-- Jackson (parsing JSON réponses Groq) -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.15.2</version>
+</dependency>
+```
+
+Les autres dépendances (JavaFX, MySQL) sont partagées avec les modules précédents.
+
+---
+
+## 🚀 Fonctionnalités implémentées
+
+### 1. 🎯 Gestion des Objectifs (ObjectifController)
+
+**Interface en cartes colorées** avec 8 dégradés distincts selon l'index :
+
+- **CRUD complet** avec formulaire inline (apparaît/disparaît sans changer de page)
+- **Pagination** — 4 objectifs par page avec boutons Précédent / Suivant et indicateur "Page X / Y (N-M sur Total)"
+- **Barre de progression** calculée en temps réel depuis les tâches (tâches terminées / total)
+- **Recherche en temps réel** — filtre par titre, description et statut simultanément
+- **Contrôle de propriété** — seul le créateur peut modifier/supprimer ses objectifs, les autres voient uniquement les détails
+- **Dialog de détails** — popup stylisé avec gradient, grille de métadonnées (ID, dates, utilisateur, progression)
+- **Navigation directe vers les tâches** depuis chaque carte
+- **Validation en temps réel** des champs du formulaire avec messages d'erreur colorés (rouge = erreur, vert = valide)
+
+**Règles de validation :**
+| Champ | Règle |
+|-------|-------|
+| Titre | 3 à 50 caractères, obligatoire |
+| Description | obligatoire, max 100 000 caractères |
+| Date de début | obligatoire, non future |
+| Date de fin | doit être après la date de début |
+| Statut | sélection obligatoire |
+
+### 2. ✅ Gestion des Tâches — Kanban (TacheController)
+
+**Tableau Kanban à 4 colonnes** avec glisser-déposer natif JavaFX :
+
+- **Drag & Drop** — une carte glissée d'une colonne à l'autre met à jour le statut en base immédiatement
+- **Highlight visuel** au drag-over (bordure bleue + fond semi-transparent sur la colonne cible)
+- **Compteurs** par colonne mis à jour en temps réel
+- **Badge "Retard"** (🟥 rouge) affiché automatiquement si la date limite est dépassée et la tâche non terminée
+- **Couleurs de priorité** : fond coloré de la bande supérieure de chaque carte selon la priorité
+- **Contrôle de propriété** : seul le propriétaire de l'objectif parent voit les boutons Modifier/Supprimer/Glisser
+- **Recherche Kanban** — filtre toutes les colonnes simultanément par titre et description
+
+**Correcteur orthographique en temps réel (SpellCheckerService) :**
+- Debounce 500ms pour éviter les appels trop fréquents
+- Menu contextuel de suggestions cliquables (style chips violets)
+- Support multilingue : Français, Anglais, Espagnol, Allemand, Italien, Portugais
+- Remplacement automatique du mot erroné au clic sur une suggestion
+
+**Validation des tâches :**
+| Champ | Règle |
+|-------|-------|
+| Titre | 3 à 50 caractères |
+| Description | obligatoire, max 255 caractères |
+| Date limite | ne peut pas être dans le passé |
+| Statut + Priorité | sélection obligatoire |
+
+### 3. 🤖 Génération de Tâches par IA (AITaskGeneratorService + AITaskGeneratorController)
+
+L'IA **Groq LLaMA 3** (100% gratuit) analyse l'objectif et l'historique de l'utilisateur pour générer 3 tâches personnalisées.
+
+**Profil utilisateur calculé automatiquement :**
+- **Niveau de langue** détecté depuis le titre de l'objectif (A1 → C2)
+- **Centres d'intérêt** extraits par mots-clés (musique, lecture, conversation, grammaire, écriture, cinéma)
+- **Taux de complétion** calculé depuis les tâches existantes
+- **Taux d'échec** (tâches annulées)
+- **Pattern préféré** déduit des statistiques (écoute active, exercices structurés, etc.)
+
+**Prompt IA intelligent :**
+- Tâche 1 = Facile (correspond au pattern le plus fort de l'utilisateur)
+- Tâche 2 = Moyen (construit sur l'historique)
+- Tâche 3 = Défi (étend les capacités selon les intérêts)
+
+**Si objectif = musique + niveau A2** → suggère une vraie chanson pour enfants ou chanson pop simple
+**Si objectif = lecture + niveau B1** → recommande *Le Petit Prince* ou un livre gradué réel
+**Si taux d'échec > 40%** → génère des tâches plus simples et progressives
+
+**Chaque tâche générée contient :**
+- Titre et description en français
+- Priorité (Basse / Normale / Haute / Urgente)
+- Durée estimée en jours
+- Explication personnalisée "Pourquoi cette tâche ?"
+- Ressource média concrète (titre + auteur/artiste)
+- 3 sous-tâches suggérées
+
+**Bouton "Ajouter à l'objectif"** → appelle `TacheService.ajouter()` et rafraîchit le Kanban en temps réel.
+
+### 4. 🔥 Système de Streaks & Gamification (UserSessionService + StreakDashboardController)
+
+Système inspiré de **Duolingo** — tracking complet des sessions de connexion.
+
+**UserSessionService (Singleton) — événements trackés :**
+
+| Événement | XP | Méthode appelée |
+|-----------|-----|-----------------|
+| Connexion journalière | +20 XP | `startSession(userId)` au login |
+| Nouvelle tâche créée | +10 XP | `recordTaskStarted()` dans `handleSave()` |
+| Tâche complétée (→ Terminée) | +50 XP | `recordTaskCompleted()` dans `handleSave()` |
+| Tâche supprimée | -20 XP | `recordTaskFailed()` dans `handleDelete()` |
+| Objectif consulté | +5 XP | `recordObjectifConsulted()` dans `showDetails()` |
+| Fermeture de l'application | sauvegarde durée | `endSession()` dans `Application.stop()` |
+
+**Calcul du streak :**
+- Un streak est **actif** si l'utilisateur s'est connecté aujourd'hui ou hier
+- Si le dernier jour de connexion est avant-hier → streak reset à 0
+- L'algorithme parcourt les dates distinctes de `user_session` dans l'ordre décroissant et compte les jours consécutifs
+
+**Système de niveaux (10 paliers) :**
+| Niveau | Emoji | XP requis |
+|--------|-------|-----------|
+| 1 | 🌱 Graine | 0 |
+| 2 | 🌿 Pousse | 100 |
+| 3 | 🍃 Apprenti | 300 |
+| 4 | 🌳 Explorateur | 600 |
+| 5 | ⭐ Érudit | 1 000 |
+| 6 | 🔥 Maître | 1 500 |
+| 7 | 💎 Expert | 2 500 |
+| 8 | 🚀 Champion | 4 000 |
+| 9 | 👑 Légende | 6 000 |
+| 10 | 🌌 Mythique | 10 000 |
+
+**Badges débloqués automatiquement :**
+| Badge | Condition |
+|-------|-----------|
+| 🔥 Streak 3j | 3 jours consécutifs |
+| 💫 Semaine parfaite | 7 jours consécutifs |
+| 🌙 Mois de feu | 30 jours consécutifs |
+| ✅ 10 tâches | 10 tâches complétées |
+| 🏆 50 tâches | 50 tâches complétées |
+| ⚡ Efficace | Taux de complétion ≥ 80% |
+| ⏰ 1h d'étude | 60 min de connexion cumulées |
+| 📚 10h d'étude | 600 min de connexion cumulées |
+| 🗓️ 7 jours actifs | 7 jours d'activité au total |
+| 🎯 Record 7j | Meilleur streak ≥ 7 jours |
+
+**Dashboard Streaks (thème dark `#0F172A`) :**
+- **Arc de niveau** animé (0 → valeur en 900ms, `Interpolator.EASE_OUT`) — dessiné programmatiquement avec `Arc` JavaFX, centré par `StackPane.setAlignment(arc, Pos.TOP_LEFT)` pour respecter les coordonnées absolues
+- **Compteur animé** du streak (compte de 0 → valeur en 800ms)
+- **Barre de progression** vers 7 jours (animée)
+- **Émoji dynamique** selon le streak : ❄️ → 🌱 → ⚡ → 🔥 → 💪🔥 → 🌟🔥🔥 → 👑🔥🔥🔥
+- **Graphe barres hebdomadaire** — 7 barres animées (délai en cascade), barre "AUJ" orange, barres actives violettes, inactives grises
+- **Sessions récentes** — liste des 5 dernières avec animation slide-in depuis la gauche
+- **Badges** dorés avec hover glow (badges verrouillés affichés en gris avec tooltip)
+- **Stats en temps réel** : taux complétion, tâches faites, temps d'étude, sessions totales
+
+### 5. 🔔 Notifications de Deadlines (NotificationService)
+
+- Vérification automatique à la connexion des deadlines d'objectifs et tâches
+- **Badge rouge animé** sur le bouton Notifications avec compteur
+- Rafraîchissement toutes les 5 secondes via `Timeline`
+- Filtre par utilisateur courant (chaque utilisateur voit uniquement ses propres alertes)
+
+### 6. 🤖 Recommandations IA d'Objectifs (RecommendationDialogController)
+
+- Analyse les objectifs et tâches existants de l'utilisateur
+- Génère 3 objectifs recommandés personnalisés avec niveau de difficulté (facile / moyen)
+- Affichage avec badges colorés, description détaillée, "Pourquoi ?" et liste de tâches suggérées
+- Bouton "Régénérer" pour obtenir de nouvelles recommandations
+
+---
+
+## 🔧 Patterns techniques
+
+### Singleton UserSessionService
+```java
+// Une seule instance pour tout l'app
+UserSessionService.getInstance().startSession(userId);
+
+// Appels événementiels depuis TacheController
+UserSessionService.getInstance().recordTaskCompleted(); // +50 XP
+UserSessionService.getInstance().recordTaskStarted();   // +10 XP
+UserSessionService.getInstance().recordTaskFailed();    // -20 XP
+
+// Appel depuis ObjectifController
+UserSessionService.getInstance().recordObjectifConsulted(); // +5 XP
+
+// Appel depuis HomeController à la fermeture
+UserSessionService.getInstance().endSession(); // sauvegarde durée
+```
+
+### Création automatique des tables SQL
+```java
+// Dans ensureTableExists() de UserSessionService
+// Les tables user_session et user_stats_cache sont créées automatiquement
+// au premier démarrage si elles n'existent pas
+st.executeUpdate("CREATE TABLE IF NOT EXISTS user_session (...)")
+```
+
+### Correction du bug de l'Arc JavaFX
+```java
+// PROBLÈME : Arc utilise des coordonnées absolues (CX, CY)
+// Si alignement = CENTER → l'arc est décalé et coupé sur le bord
+
+// SOLUTION : aligner les arcs sur TOP_LEFT, seulement le texte sur CENTER
+StackPane.setAlignment(bgArc,  Pos.TOP_LEFT);  // coordonnées absolues
+StackPane.setAlignment(fgArc,  Pos.TOP_LEFT);  // coordonnées absolues
+StackPane.setAlignment(center, Pos.CENTER);    // texte centré
+```
+
+### Appel API Groq avec java.net.http (Java 11+)
+```java
+HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
+        .timeout(Duration.ofSeconds(30))
+        .header("Content-Type", "application/json")
+        .header("Authorization", "Bearer " + GROQ_API_KEY)
+        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+        .build();
+HttpResponse<String> response = httpClient.send(request,
+        HttpResponse.BodyHandlers.ofString());
+```
+
+### Drag & Drop Kanban
+```java
+// Sur la carte (source)
+card.setOnDragDetected(event -> {
+    Dragboard db = card.startDragAndDrop(TransferMode.MOVE);
+    ClipboardContent cc = new ClipboardContent();
+    cc.putString(String.valueOf(t.getId()));
+    db.setContent(cc);
+});
+
+// Sur la colonne (cible)
+col.setOnDragDropped(event -> {
+    tacheEnGlissement.setStatut(nouveauStatut);
+    service.modifier(tacheEnGlissement); // MAJ base immédiate
+    loadData(); // refresh Kanban
+});
+```
+
+---
+
+## 🧪 Logique de scoring XP
+
+```
+Connexion journalière    → +20 XP (automatique)
+Tâche commencée         → +10 XP
+Tâche terminée          → +50 XP
+Objectif consulté        →  +5 XP
+Tâche supprimée/annulée → -20 XP (min 0, jamais négatif)
+```
+
+### Calcul du streak
+```
+Si dates consécutives dans user_session :
+  [Lun, Mar, Mer, Jeu] → streak = 4
+  [Lun, Mar, __, Jeu]  → streak = 1 (cassé mercredi)
+  Pas de connexion aujourd'hui ni hier → streak = 0
+```
+
+---
+
+## 📁 Fichiers générés automatiquement
+
+```
+user_session         → table MySQL créée au premier lancement
+user_stats_cache     → table MySQL créée au premier lancement
+```
+
+---
+
+## 🌐 APIs externes utilisées
+
+| API | Usage | Endpoint | Coût |
+|-----|-------|----------|------|
+| **Groq LLaMA 3** | Génération tâches personnalisées + recommandations objectifs | `POST https://api.groq.com/openai/v1/chat/completions` | 🆓 Gratuit |
+
+**Modèles disponibles chez Groq :**
+| Modèle | Vitesse | Qualité |
+|--------|---------|---------|
+| `llama3-8b-8192` | ⚡ Très rapide | Bonne |
+| `llama3-70b-8192` | 🐢 Plus lent | Excellente |
+| `mixtral-8x7b-32768` | ⚡ Rapide | Très bonne |
+
+---
+
+## 🔑 Règles métier essentielles
+
+1. **Seul le propriétaire** d'un objectif peut créer, modifier, supprimer ses tâches et générer des tâches IA
+2. **Les autres utilisateurs** voient les objectifs en lecture seule (bouton "Détails" uniquement)
+3. **Le streak ne compte que les jours distincts** — plusieurs connexions le même jour ne comptent qu'une seule fois
+4. **Le streak est réinitialisé** si aucune connexion n'a eu lieu aujourd'hui ni hier
+5. **Les tables de sessions sont auto-créées** au démarrage — aucune migration SQL manuelle requise
+6. **L'IA adapte la difficulté** : si taux d'échec > 40%, les tâches générées sont simplifiées
+7. **La durée de session** est calculée à `endSession()` : différence entre `loginTime` et `now()`
+8. **Les points XP ne peuvent jamais être négatifs** — minimum 0 même après pénalité
+
+---
+
+## 👥 Équipe
+
+| Membre | Module |
+|--------|--------|
+| **[Ton prénom]** | Objectif / Tâche / Gamification / IA |
+| Camarade | Test / Question / Réponse / TestPassage |
+| Camarade | Langue / Cours / Niveau / UserProgress |
+| Camarade | Groupe / Message / Session |
+
+---
 
 ## 🏫 Contexte académique
 
 Projet réalisé dans le cadre du cours de **Programmation Avancée Java** — ESPRIT School of Engineering, Tunis.
 
-Application web Symfony : `fluently` (base de données partagée)  
+Application web Symfony : `fluently` (base de données partagée)
 Application desktop JavaFX : ce module
 
 ---
 
-*README généré le 30/04/2026*
+*README mis à jour le 05/05/2026*

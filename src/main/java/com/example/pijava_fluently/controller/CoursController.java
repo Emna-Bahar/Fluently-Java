@@ -64,8 +64,7 @@ public class CoursController {
     private Cours selectedCours = null;
     private ObservableList<String> ressources = FXCollections.observableArrayList();
 
-    private static final String RESSOURCES_DIR =
-            "C:/xampp/htdocs/fluently/public/uploads/ressources/";
+    private static final String UPLOAD_RECEIVER_URL = "http://10.206.162.141/upload_receiver.php";
 
     @FXML
     public void initialize() {
@@ -356,10 +355,10 @@ public class CoursController {
         File file = chooser.showOpenDialog(stage);
         if (file != null) {
             try {
-                Path dest = saveFileToResources(file);
-                ressources.add(dest.toString());
+                String relativePath = saveFileToResources(file);
+                ressources.add(relativePath);
             } catch (IOException e) {
-                showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de copier le fichier");
+                showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible d'uploader le fichier : " + e.getMessage());
             }
         }
     }
@@ -385,14 +384,54 @@ public class CoursController {
         }
     }
 
-    private Path saveFileToResources(File source) throws IOException {
-        Path dir = Paths.get(RESSOURCES_DIR);
-        if (!Files.exists(dir)) Files.createDirectories(dir);
+    // APRÈS :
+    private String saveFileToResources(File source) throws IOException {
         String fileName = System.currentTimeMillis() + "_" + source.getName();
-        Path dest = dir.resolve(fileName);
-        Files.copy(source.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
-        // Retourner le chemin absolu pour l'instant, mais vous pouvez aussi stocker le relatif
-        return dest;
+
+        String boundary = "---boundary" + System.currentTimeMillis();
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                new java.net.URL(UPLOAD_RECEIVER_URL).openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(30000);
+
+        try (java.io.OutputStream os = conn.getOutputStream();
+             java.io.PrintWriter writer = new java.io.PrintWriter(
+                     new java.io.OutputStreamWriter(os, "UTF-8"), true)) {
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"secret\"").append("\r\n\r\n");
+            writer.append("fluently_secret_2024").append("\r\n");
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"type\"").append("\r\n\r\n");
+            writer.append("ressources").append("\r\n");
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"filename\"").append("\r\n\r\n");
+            writer.append(fileName).append("\r\n");
+            writer.flush();
+
+            writer.append("--").append(boundary).append("\r\n");
+            writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"")
+                    .append(fileName).append("\"").append("\r\n");
+            writer.append("Content-Type: application/octet-stream").append("\r\n\r\n");
+            writer.flush();
+
+            Files.copy(source.toPath(), os);
+            os.flush();
+
+            writer.append("\r\n--").append(boundary).append("--").append("\r\n");
+            writer.flush();
+        }
+
+        int code = conn.getResponseCode();
+        conn.disconnect();
+        if (code != 200) throw new IOException("Erreur upload HTTP " + code);
+
+        return "/uploads/ressources/" + fileName;
     }
 
     private void ouvrirRessource(String chemin) {
@@ -403,16 +442,11 @@ public class CoursController {
             }
             // Vérifier si c'est un fichier local
             else {
-                // Convertir le chemin relatif en chemin absolu si nécessaire
-                String absolutePath = chemin;
-                if (chemin.startsWith("/uploads/")) {
-                    absolutePath = "C:/xampp/htdocs/fluently/public" + chemin;
-                }
-                File file = new File(absolutePath);
-                if (file.exists()) {
-                    Desktop.getDesktop().open(file);
-                } else {
-                    showAlert(Alert.AlertType.WARNING, "Erreur", "Fichier introuvable : " + chemin);
+                try {
+                    String url = "http://10.206.162.141/fluently/public" + chemin;
+                    Desktop.getDesktop().browse(new URI(url));
+                } catch (Exception e) {
+                    showAlert(Alert.AlertType.WARNING, "Erreur", "Impossible d'ouvrir : " + chemin);
                 }
             }
         } catch (IOException | URISyntaxException e) {
@@ -728,10 +762,10 @@ public class CoursController {
                 }
             }
             // Vérifier les fichiers
-            else if (!res.startsWith("src/main/resources/")) {
-                File file = new File(res);
-                if (!file.exists()) {
-                    afficherErreur("Fichier introuvable : " + res);
+            else {
+                // Fichier uploadé sur le serveur — chemin relatif /uploads/ressources/...
+                if (!res.startsWith("/uploads/")) {
+                    afficherErreur("Ressource invalide : " + res);
                     return false;
                 }
             }

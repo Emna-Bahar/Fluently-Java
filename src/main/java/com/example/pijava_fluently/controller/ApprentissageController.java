@@ -3,9 +3,6 @@ package com.example.pijava_fluently.controller;
 import com.example.pijava_fluently.entites.QuizQuestion;
 import com.example.pijava_fluently.entites.*;
 import com.example.pijava_fluently.services.*;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -234,6 +231,7 @@ public class ApprentissageController {
 
     @FXML
     public void initialize() {
+
         ajouterSuggestionsTheme();
         ajouterSuggestionsGrammaire();
         fieldTheme.textProperty().addListener((obs, oldVal, newVal) -> {
