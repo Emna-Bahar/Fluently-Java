@@ -1634,10 +1634,10 @@ public static String get(String key) {
 | Membre | Module |
 |--------|--------|
 | **Jihed Ramedi** | Groupe / Message / Chat / Modération IA |
-| Azer Aissaoui | User / Authentification / Avatar IA / Google Sheets |
-| Camarade | Test / Question / Réponse / TestPassage |
-| Camarade | Langue / Cours / Niveau / UserProgress |
-| Camarade | Objectif / Tâche / Gamification / IA |
+| **Azer Aissaoui** | User / Authentification / Avatar IA / Google Sheets |
+| **emna bahar** | Test / Question / Réponse / TestPassage |
+| **oumaima ben hammou** | Langue / Cours / Niveau / UserProgress |
+| **sarra ben boubaker** | Objectif / Tâche / Gamification / IA |
 
 ---
 
