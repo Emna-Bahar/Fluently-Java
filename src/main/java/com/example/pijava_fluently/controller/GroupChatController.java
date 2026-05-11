@@ -4,18 +4,21 @@ import com.example.pijava_fluently.entites.Groupe;
 import com.example.pijava_fluently.entites.Message;
 import com.example.pijava_fluently.entites.User;
 import com.example.pijava_fluently.services.DictionaryService;
+import com.example.pijava_fluently.services.GrammarSuggestionService;
 import com.example.pijava_fluently.services.LanguageDetectionService;
 import com.example.pijava_fluently.services.LangueService;
 import com.example.pijava_fluently.services.ModerationService;
 import com.example.pijava_fluently.services.MessageLogService;
 import com.example.pijava_fluently.services.MessageService;
 import com.example.pijava_fluently.services.UserService;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -51,6 +54,7 @@ public class GroupChatController implements Initializable {
     @FXML private Label lblError;
     @FXML private ListView<Message> listMessages;
     @FXML private TextArea txtMessage;
+    @FXML private Button btnAiSuggest;
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     private MessageService messageService;
@@ -59,6 +63,7 @@ public class GroupChatController implements Initializable {
     private final LanguageDetectionService languageDetectionService = new LanguageDetectionService();
     private final DictionaryService dictionaryService = new DictionaryService();
     private final LangueService langueService = new LangueService();
+    private final GrammarSuggestionService grammarSuggestionService = new GrammarSuggestionService();
     private Groupe currentGroupe;
     private String expectedLanguage = null; // API language name for this group, e.g. "French"
     private int currentUserId = 1;
@@ -193,6 +198,52 @@ public class GroupChatController implements Initializable {
     private void handleRefresh() {
         hideError();
         loadMessages();
+    }
+
+    @FXML
+    private void handleAiSuggest() {
+        String text = txtMessage.getText() == null ? "" : txtMessage.getText().trim();
+        if (text.isEmpty()) {
+            showError("Écrivez un message avant d'utiliser AI Suggest.");
+            return;
+        }
+
+        hideError();
+        btnAiSuggest.setDisable(true);
+        btnAiSuggest.setText("⏳ ...");
+
+        new Thread(() -> {
+            try {
+                String suggestion = grammarSuggestionService.suggest(text, expectedLanguage);
+                Platform.runLater(() -> {
+                    btnAiSuggest.setDisable(false);
+                    btnAiSuggest.setText("✨ AI Suggest");
+                    showSuggestionDialog(suggestion);
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    btnAiSuggest.setDisable(false);
+                    btnAiSuggest.setText("✨ AI Suggest");
+                    showError("AI Suggest indisponible : " + e.getMessage());
+                });
+            }
+        }, "ai-suggest-thread").start();
+    }
+
+    private void showSuggestionDialog(String suggestion) {
+        ButtonType useIt = new ButtonType("Utiliser", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancel = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        Alert dialog = new Alert(Alert.AlertType.NONE, suggestion, useIt, cancel);
+        dialog.setTitle("AI Suggest");
+        dialog.setHeaderText("Suggestion corrigée :");
+
+        dialog.showAndWait().ifPresent(btn -> {
+            if (btn == useIt) {
+                txtMessage.setText(suggestion);
+                txtMessage.positionCaret(suggestion.length());
+            }
+        });
     }
 
     private void loadMessages() {
