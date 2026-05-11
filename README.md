@@ -1,3 +1,45 @@
+# 🌍 Fluently — Application Desktop JavaFX
+> Plateforme d'apprentissage des langues étrangères — ESPRIT School of Engineering
+
+---
+
+## 🧭 Présentation générale
+
+**Fluently** est une application desktop développée en **JavaFX 17** dans le cadre d'un projet académique à ESPRIT School of Engineering, Tunis. Elle constitue le pendant desktop d'une application web **Symfony** existante, avec laquelle elle partage la même base de données MySQL `fluently`.
+
+L'application couvre l'intégralité du parcours d'apprentissage d'une langue étrangère :
+
+| Module | Description |
+|--------|-------------|
+| 👤 **Utilisateurs** | Inscription, connexion (classique / Google OAuth / Face ID), profil, avatar IA |
+| 🌐 **Langues & Cours** | Gestion des langues, niveaux CECRL, cours, progression, IA pédagogique |
+| 📝 **Tests & Évaluation** | Tests QCM / oral / texte libre, duels, certificats, anti-fraude |
+| 🎯 **Objectifs & Gamification** | Kanban, streaks, XP, badges, recommandations IA |
+| 💬 **Groupes & Chat** | Groupes de conversation, chat en temps réel, modération IA, logs admin |
+| 📅 **Sessions & Réservations** | Sessions planifiées, réservation, QR code, Google Calendar, Jitsi/Meet, notifications |
+
+### Stack technique
+
+- **Frontend :** JavaFX 17 + FXML + SceneBuilder
+- **Backend :** JDBC brut sur MySQL 8 (pas d'ORM)
+- **IA :** Groq (LLaMA), Mistral, Whisper
+- **APIs externes :** API Ninjas, detectlanguage.com, Google OAuth, YouTube, Wikipedia, Google Calendar, Jitsi Meet
+- **Build :** Maven + `module-info.java`
+
+### Démarrage rapide
+
+```bash
+# Compiler
+mvn -q -DskipTests compile
+
+# Lancer l'application
+mvn javafx:run
+```
+
+Créer `src/main/resources/config.properties` avec toutes les clés API (voir section ⚙️ Configuration de chaque module). Ce fichier est dans `.gitignore` — ne jamais le committer.
+
+---
+
 # 📝 Fluently — Module Test / Question / Réponse / Test Passage
 > Application desktop JavaFX — Apprentissage des langues par les tests
 
@@ -146,37 +188,37 @@ exam.maxInfractions=3
     <version>17.0.2</version>
 </dependency>
 
-        <!-- MySQL -->
+<!-- MySQL -->
 <dependency>
-<groupId>mysql</groupId>
-<artifactId>mysql-connector-java</artifactId>
-<version>8.0.33</version>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.33</version>
 </dependency>
 
-        <!-- Jackson (JSON) -->
+<!-- Jackson (JSON) -->
 <dependency>
-<groupId>com.fasterxml.jackson.core</groupId>
-<artifactId>jackson-databind</artifactId>
-<version>2.15.2</version>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.15.2</version>
 </dependency>
 
-        <!-- iTextPDF (certificats) -->
+<!-- iTextPDF (certificats) -->
 <dependency>
-<groupId>com.itextpdf</groupId>
-<artifactId>itextpdf</artifactId>
-<version>5.5.13.3</version>
+    <groupId>com.itextpdf</groupId>
+    <artifactId>itextpdf</artifactId>
+    <version>5.5.13.3</version>
 </dependency>
 
-        <!-- ZXing (QR code) -->
+<!-- ZXing (QR code) -->
 <dependency>
-<groupId>com.google.zxing</groupId>
-<artifactId>core</artifactId>
-<version>3.5.2</version>
+    <groupId>com.google.zxing</groupId>
+    <artifactId>core</artifactId>
+    <version>3.5.2</version>
 </dependency>
 <dependency>
-<groupId>com.google.zxing</groupId>
-<artifactId>javase</artifactId>
-<version>3.5.2</version>
+    <groupId>com.google.zxing</groupId>
+    <artifactId>javase</artifactId>
+    <version>3.5.2</version>
 </dependency>
 ```
 
@@ -258,7 +300,7 @@ Client → DuelClient (Socket → IP de l'hôte)
 ```java
 DatagramSocket socket = new DatagramSocket();
 socket.connect(InetAddress.getByName("8.8.8.8"), 80);
-        return socket.getLocalAddress().getHostAddress();
+return socket.getLocalAddress().getHostAddress();
 ```
 
 ### 6. 🏅 Leaderboard (LeaderboardService)
@@ -327,7 +369,7 @@ MyDatabase.getInstance().getConnection()
 
 // Reconnexion si la connexion a expiré (après 8h d'inactivité MySQL)
 if (conn == null || conn.isClosed() || !conn.isValid(2)) {
-        MyDatabase.getInstance().reconnect();
+    MyDatabase.getInstance().reconnect();
 }
 ```
 
@@ -337,9 +379,9 @@ if (conn == null || conn.isClosed() || !conn.isValid(2)) {
 ```sql
 INSERT INTO user_progress (user_id, langue_id, niveau_actuel_id, ...)
 VALUES (?, ?, ?, ...)
-    ON DUPLICATE KEY UPDATE
-                         niveau_actuel_id = VALUES(niveau_actuel_id),
-                         date_derniere_activite = NOW()
+ON DUPLICATE KEY UPDATE
+    niveau_actuel_id = VALUES(niveau_actuel_id),
+    date_derniere_activite = NOW()
 ```
 Utilisé pour `user_progress` qui a une contrainte unique sur `(user_id, langue_id)`.
 
@@ -352,7 +394,7 @@ Platform.runLater(() -> { labelX.setText("..."); });
 ### Threads daemon pour les sockets
 ```java
 Thread t = new Thread(...);
-        t.setDaemon(true); // s'arrête automatiquement quand l'app ferme
+t.setDaemon(true); // s'arrête automatiquement quand l'app ferme
 t.start();
 ```
 
@@ -422,10 +464,12 @@ fraude_logs/          → fichiers JSON d'infractions par utilisateur
 
 | Membre | Module |
 |--------|--------|
-| **[Ton prénom]** | Test / Question / Réponse / TestPassage |
-| Camarade | Langue / Cours / Niveau / UserProgress |
-| Camarade | Groupe / Message / Session |
-| Camarade | User / Objectif / Tâche |
+| **Emna Bahar** | Test / Question / Réponse / TestPassage |
+| **Oumaima Ben Hammou** | Langue / Cours / Niveau / UserProgress |
+| **Jihed Ramedi** | Groupe / Message / Session |
+| **Azer Aissaoui** | User / Objectif / Tâche |
+| **Sarra Ben Boubaker** | Objectif / Tâche / Gamification / IA |
+| **Yosr Ben Hamouda** | Session / Réservation / Google Calendar / Jitsi |
 
 ---
 
@@ -494,7 +538,7 @@ com/example/pijava_fluently/
 
 ```sql
 langue       (id, nom, drapeau, description, popularite, is_active, date_ajout, updated_at)
-niveau       (id, titre, description, image_couverture, difficulte, ordre,seuil_score_max, seuil_score_min, id_langue_id)
+niveau       (id, titre, description, image_couverture, difficulte, ordre, seuil_score_max, seuil_score_min, id_langue_id)
 cours        (id, numero, ressource, date_creation, cours_precedent_id, id_niveau_id)
 user_progress(id, dernier_numero_cours, test_niveau_complete, date_derniere_activite,
               user_id, langue_id, niveau_actuel_id, dernier_cours_complete_id)
@@ -526,9 +570,9 @@ user         (id, email, nom, prenom, roles, statut, password)
 Créer le fichier `src/main/resources/config.properties` :
 
 ```properties
-# Clé API Mistral 
+# Clé API Mistral
 mistral.api.key=VOTRE_CLE_API_MISTRAL
-# Clé API YouTube 
+# Clé API YouTube
 youtube.api.key=VOTRE_CLE_API_YOUTUBE
 ```
 
@@ -694,10 +738,12 @@ if (path.startsWith("/uploads/")) {
 
 | Membre | Module |
 |--------|--------|
-| **[Ton prénom]** | Langue / Niveau / Cours / Progression |
-| Camarade | Test / Question / Réponse / TestPassage |
-| Camarade | Groupe / Message / Session |
-| Camarade | User / Objectif / Tâche |
+| **Oumaima Ben Hammou** | Langue / Niveau / Cours / Progression |
+| **Emna Bahar** | Test / Question / Réponse / TestPassage |
+| **Jihed Ramedi** | Groupe / Message / Session |
+| **Azer Aissaoui** | User / Objectif / Tâche |
+| **Sarra Ben Boubaker** | Objectif / Tâche / Gamification / IA |
+| **Yosr Ben Hamouda** | Session / Réservation / Google Calendar / Jitsi |
 
 ---
 
@@ -758,7 +804,6 @@ com/example/pijava_fluently/
 **Nom :** `fluently`
 
 ```sql
--- Tables existantes réutilisées
 objectif      (id, titre, description, date_deb, date_fin, statut, id_user_id)
 tache         (id, titre, description, date_limite, statut, priorite, id_objectif_id)
 user          (id, email, nom, prenom, roles, statut, password)
@@ -957,8 +1002,8 @@ user (
     statut           VARCHAR(20) DEFAULT 'actif',
     password         VARCHAR(255),
     face_descriptor  TEXT,
-    chosen_language  VARCHAR(50),     -- langue choisie à l'inscription
-    avatar_svg       MEDIUMTEXT        -- SVG généré par l'IA
+    chosen_language  VARCHAR(50),
+    avatar_svg       MEDIUMTEXT
 )
 ```
 
@@ -1000,7 +1045,6 @@ google.sheets.client.secret=VOTRE_GOOGLE_SHEETS_CLIENT_SECRET
 ```
 
 > ⚠️ Ne jamais committer ce fichier — ajouté à `.gitignore`
-> Copier `config.properties.example` et remplir les vraies clés
 
 ---
 
@@ -1055,166 +1099,33 @@ Implémenté en **pur Java** sans librairie externe :
 8. Navigation vers home ou admin selon le rôle
 ```
 
-**Scope utilisé :** `openid email profile`
-
 ### 3. 😐 Face ID (FaceLoginController + LoginController)
 
 Implémenté via **Python** lancé depuis Java avec `ProcessBuilder` :
-
-**Inscription :**
-```
-Java → ProcessBuilder("python", projectRoot + "/face_register.py")
-Python → ouvre webcam → détecte visage → génère descripteur 128 valeurs
-Java → lit le JSON retourné → sauvegarde dans user.face_descriptor
-```
-
-**Connexion :**
-```
-Java → ProcessBuilder("python", projectRoot + "/face_capture.py")
-Python → capture visage → retourne descripteur
-Java → compare avec tous les descripteurs en base (distance euclidienne)
-Si distance < 0.5 → utilisateur identifié → connexion automatique
-```
 
 **Librairies Python requises :**
 ```bash
 pip install face_recognition opencv-python numpy
 ```
 
-**Note :** Le chemin du script est dynamique (`System.getProperty("user.dir")`) — fonctionne sur n'importe quelle machine sans modification.
-
 ### 4. 🌍 Sélection de langue + Avatar IA (LanguagePickerController)
 
-Écran affiché **une seule fois après l'inscription** :
-
-- 10 langues proposées avec drapeaux emoji (🇫🇷 🇪🇸 🇸🇦 🇯🇵 🇩🇪 🇮🇹 🇨🇳 🇧🇷 🇰🇷 🇬🇧)
-- Au clic → appel API Groq en arrière-plan (thread séparé) avec spinner
-- L'avatar généré est sauvegardé en base (`avatar_svg`) et affiché immédiatement
-- Si l'API échoue → avatar de secours (cercle coloré avec initiale de la langue)
+- 10 langues proposées avec drapeaux emoji
+- Avatar généré par Groq LLaMA sauvegardé en base (`avatar_svg`)
+- Fallback avatar (cercle coloré avec initiale) si l'API échoue
 
 ### 5. 🤖 Génération d'Avatar par IA (AvatarService)
 
-**API utilisée :** Groq AI (`meta-llama/llama-4-scout-17b-16e-instruct`) — gratuit
-
-**Concept de l'avatar :**
-- Visage humain cartoon avec le **motif du drapeau peint sur la peau** (comme du face paint)
-- 🇫🇷 Français → 3 bandes verticales bleu/blanc/rouge sur le visage
-- 🇯🇵 Japonais → visage blanc avec cercle rouge au centre
-- 🇩🇪 Allemand → 3 bandes horizontales noir/rouge/or
-- 🇰🇷 Coréen → visage blanc avec yin-yang rouge/bleu
-
-**Flow technique :**
-```java
-// 1. Appel API Groq
-POST https://api.groq.com/openai/v1/chat/completions
-Authorization: Bearer {groq.api.key}
-
-// 2. Parsing avec org.json (gère les unicode escapes \u003c → <)
-JSONObject json = new JSONObject(response);
-String svg = json.getJSONArray("choices")
-                 .getJSONObject(0)
-                 .getJSONObject("message")
-                 .getString("content");
-
-// 3. Extraction du bloc SVG
-int svgStart = content.indexOf("<svg");
-int svgEnd   = content.lastIndexOf("</svg>");
-```
-
-**Affichage :**
-- Dans le profil : `WebView` (96×96 px) injecté dans `fpAvatarPane` (StackPane avec `fx:id`)
-- Dans le tableau admin : `WebView` (36×36 px) dans la cellule de la colonne avatar
+Visage humain cartoon avec le **motif du drapeau peint sur la peau** selon la langue choisie.
 
 ### 6. 👤 Profil Utilisateur (FrontProfileController)
 
-- Affichage de l'avatar SVG via **WebView** (transparent, pas de scrollbar)
-- Badge langue étudiée (🌍 French)
-- Badge rôle coloré (Étudiant / Professeur / Admin)
-- Badge statut (actif / online)
-- Formulaire d'édition : prénom, nom, email, mot de passe
-- Indicateur de force du mot de passe (4 barres colorées)
-- Validation inline avec messages d'erreur par champ
-- Vérification unicité email (pas de collision avec un autre compte)
+- Avatar SVG via WebView, badges langue/rôle/statut
+- Formulaire d'édition avec indicateur force du mot de passe
 
-### 7. 🏛️ Tableau de Bord Admin (AdminDashboardController)
+### 7. 🏛️ Tableau de Bord Admin + Export Google Sheets
 
-- **Statistiques** : nombre d'utilisateurs, taux actifs, dernières connexions
-- **Tableau des utilisateurs** avec avatar SVG dans la première colonne
-- **Recherche** en temps réel par nom/prénom/email
-- **Modifier / Supprimer** un utilisateur avec confirmation (`ButtonType.OK`)
-- **Changer le statut** (actif / inactif) directement depuis le tableau
-- **📊 Export Google Sheets** — crée une vraie feuille Google Sheets en ligne
-
-### 8. 📊 Export Google Sheets (AdminDashboardController)
-
-Implémenté en **pur Java** via l'API Google Sheets v4 :
-
-```
-1. Clic sur "📊 Exporter Google Sheets"
-2. Démarrage d'un HttpServer local sur le port 8888
-3. Ouverture navigateur → consentement Google (scope: spreadsheets)
-4. Échange code → access token
-5. POST https://sheets.googleapis.com/v4/spreadsheets → crée une nouvelle feuille
-6. PUT .../values/A1 → écrit les données (ID, Prénom, Nom, Email, Rôle, Statut, Langue)
-7. Ouverture automatique de la feuille dans le navigateur
-```
-
-**Colonnes exportées :** ID, Prénom, Nom, Email, Rôle, Statut, Langue étudiée
-
----
-
-## 🔧 Patterns techniques
-
-### ConfigLoader — chargement sécurisé des clés API
-```java
-// Lecture depuis config.properties (non commité)
-String key = ConfigLoader.get("groq.api.key");
-
-// config.properties placé dans src/main/resources/
-// Chargé via getResourceAsStream("/config.properties")
-```
-
-### WebView pour rendu SVG
-```java
-WebView wv = new WebView();
-wv.setPrefSize(96, 96);
-String html = "<html><body style='margin:0;padding:0;background:transparent;overflow:hidden;'>"
-            + "<style>svg{width:100%;height:100%;display:block;}</style>"
-            + svgContent + "</body></html>";
-wv.getEngine().loadContent(html);
-fpAvatarPane.getChildren().add(wv);
-```
-
-### OAuth local server pattern
-```java
-// Même pattern utilisé pour Google Login ET Google Sheets
-HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-server.createContext("/callback", exchange -> {
-    // Capturer le code depuis l'URL
-    String query = exchange.getRequestURI().getQuery();
-    // ...
-    server.stop(1);
-});
-server.start();
-Desktop.getDesktop().browse(new URI(authUrl));
-```
-
-### Face ID — chemin dynamique
-```java
-// Fonctionne sur n'importe quelle machine
-String projectRoot = System.getProperty("user.dir");
-String scriptPath  = projectRoot + "/face_register.py";
-ProcessBuilder pb  = new ProcessBuilder("python", scriptPath);
-```
-
-### BCrypt pour les mots de passe
-```java
-// Hash à l'inscription
-String hashed = BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
-
-// Vérification à la connexion
-boolean ok = BCrypt.checkpw(plainPassword, hashedFromDb);
-```
+- Tableau des utilisateurs avec avatars, recherche, modification, export vers Google Sheets v4
 
 ---
 
@@ -1233,20 +1144,7 @@ boolean ok = BCrypt.checkpw(plainPassword, hashedFromDb);
 1. **L'email est unique** — vérification avant inscription ET avant modification du profil
 2. **Le mot de passe est toujours hashé en BCrypt** — jamais stocké en clair
 3. **L'avatar est généré une seule fois** à l'inscription — stocké en base, pas recalculé
-4. **Le chemin des scripts Python est dynamique** — `user.dir` pour compatibilité multi-machine
-5. **Google Login crée le compte automatiquement** si l'email n'existe pas encore en base
-6. **La langue choisie** est sauvegardée dans `user.chosen_language` et affichée dans le profil
-7. **L'export Google Sheets nécessite** que l'utilisateur soit ajouté comme testeur dans Google Cloud Console (mode test) ou que l'app soit publiée
-
----
-
-## 📁 Fichiers de configuration
-
-```
-src/main/resources/
-├── config.properties          ← clés API réelles (dans .gitignore)
-└── config.properties.example  ← template sans clés (commité sur Git)
-```
+4. **Google Login crée le compte automatiquement** si l'email n'existe pas encore en base
 
 ---
 
@@ -1255,9 +1153,480 @@ src/main/resources/
 | Membre | Module |
 |--------|--------|
 | **Azer Aissaoui** | User / Authentification / Avatar IA / Google Sheets |
-| Camarade | Test / Question / Réponse / TestPassage |
-| Camarade | Langue / Cours / Niveau / UserProgress |
-| Camarade | Objectif / Tâche / Gamification / IA |
+| **Emna Bahar** | Test / Question / Réponse / TestPassage |
+| **Oumaima Ben Hammou** | Langue / Cours / Niveau / UserProgress |
+| **Sarra Ben Boubaker** | Objectif / Tâche / Gamification / IA |
+| **Jihed Ramedi** | Groupe / Message / Chat / Modération IA |
+| **Yosr Ben Hamouda** | Session / Réservation / Google Calendar / Jitsi |
+
+---
+
+# 💬 Fluently — Module Groupe / Message / Modération / Chat
+> Application desktop JavaFX — Groupes de conversation avec modération IA et suivi admin
+
+---
+
+## 📌 Présentation du module
+
+Ce module est la partie **communication et collaboration** de l'application Fluently. Il permet aux étudiants de rejoindre des groupes de conversation selon leur langue et leur niveau CECRL, d'échanger des messages en temps réel, et de répondre aux messages des autres membres. Chaque message est automatiquement analysé par trois APIs : modération du contenu, détection de langue, et analyse de sentiment.
+
+Développé en **JavaFX 17** (IntelliJ IDEA + SceneBuilder), connecté à la même base de données MySQL partagée.
+
+---
+
+## 🗂️ Structure du projet
+
+```
+com/example/pijava_fluently/
+├── entites/
+│   ├── Groupe.java         → groupe de conversation (nom, description, capacité, statut, langue, niveau)
+│   ├── Message.java        → message (contenu, type, statut, dates, sentiment, modération)
+│   └── MessageLog.java     → entrée d'audit (action, contenu original, nouveau contenu, auteur)
+│
+├── services/
+│   ├── GroupService.java               → CRUD groupes
+│   ├── MessageService.java             → envoi, lecture, suppression, rejoindre groupe, tables auto-créées
+│   ├── MessageLogService.java          → journal d'audit (INSERT dans message_log)
+│   ├── ModerationService.java          → filtre de contenu via API Ninjas (profanityfilter)
+│   ├── SentimentService.java           → analyse de sentiment via API Ninjas (sentiment)
+│   └── LanguageDetectionService.java   → détection de langue via detectlanguage.com
+│
+├── controller/
+│   ├── GroupesController.java          → navigation et filtrage des groupes
+│   ├── GroupChatController.java        → interface de chat, envoi, réponses, mentions
+│   ├── GroupFormController.java        → formulaire création/édition de groupe (admin)
+│   └── AdminGroupMessagesController.java → tableau de bord admin : messages + logs
+│
+├── fxml/
+│   ├── groupes.fxml
+│   ├── group-chat.fxml
+│   ├── group-form.fxml
+│   └── admin-group-messages.fxml
+│
+└── utils/
+    ├── MyDatabase.java     → Singleton connexion MySQL
+    └── AppConfig.java      → lecture config.properties + fallback variable d'environnement
+```
+
+---
+
+## 🗄️ Base de données
+
+**Nom :** `fluently`
+
+```sql
+groupe       (id, nom, description, capacite, statut, date_creation, id_langue_id, id_niveau_id)
+message      (id, contenu, type_message, emoji_react, is_epingle, date_creation,
+              date_modif, statut_message, id_groupe_id, id_user_id)
+message_log  (id, action, message_id, groupe_id, user_id, user_name,
+              original_content, new_content, created_at, updated_at,
+              created_by_id, updated_by_id)
+
+-- Tables créées automatiquement au démarrage
+groupe_membre     (id, id_groupe_id, id_user_id, date_joined)
+message_metadata  (id, message_id, parent_message_id, mentions)
+message_moderation(id, message_id, provider, is_flagged, top_category, top_score,
+                   api_available, error_message, raw_response, checked_at)
+message_sentiment (id, message_id, sentiment, checked_at)
+```
+
+### Statuts de groupe
+| Statut | Description |
+|--------|-------------|
+| `actif` | Groupe ouvert aux membres |
+| `inactif` | Groupe fermé |
+| `complet` | Capacité maximale atteinte |
+
+### Valeurs de sentiment
+| Valeur | Badge affiché |
+|--------|---------------|
+| `positive` | 😊 Positif (fond vert) |
+| `negative` | 😠 Négatif (fond rouge) |
+| `neutral` | 😐 Neutre (fond jaune) |
+| `null` | ○ Sentiment inconnu (fond gris) |
+
+---
+
+## ⚙️ Configuration
+
+Ajouter dans `src/main/resources/config.properties` :
+
+```properties
+API_NINJAS_KEY=VOTRE_CLE_API_NINJAS
+DETECTLANGUAGE_KEY=VOTRE_CLE_DETECTLANGUAGE
+```
+
+---
+
+## 🚀 Fonctionnalités implémentées
+
+### 1. 🏘️ Navigation des groupes (GroupesController)
+
+- Recherche par nom/description, filtres langue/niveau/statut
+- Filtre "Groupes que je peux rejoindre" — vérifie langue ET niveau dans `user_progress`
+- Cartes avec barre de progression membres/capacité
+
+### 2. 🔑 Rejoindre un groupe — 4 vérifications dans l'ordre
+
+```
+1. capacite <= 0              → GROUP_FULL
+2. estParticipant()           → ALREADY_PARTICIPANT
+3. belongsToLangueAndNiveau() → LANGUAGE_LEVEL_MISMATCH
+4. participantsActuels >= capacite → GROUP_FULL
+→ sinon : INSERT dans groupe_membre → JOINED
+```
+
+### 3. 💬 Chat — Pipeline d'envoi
+
+```
+1. Validation → 2. Modération → 3. Détection langue → 4. INSERT message
+→ 5. INSERT metadata → 6. INSERT moderation → 7. INSERT sentiment → 8. Rechargement
+```
+
+### 4. 🔞 Modération (fail-safe)
+
+API Ninjas `profanityfilter` — bloque uniquement si `apiAvailable == true` ET `flagged == true`.
+
+### 5. 🌐 Détection de langue (fail-safe)
+
+detectlanguage.com — ignorée si l'API retourne `null` (panne, quota épuisé).
+
+### 6. 📋 Journal d'audit
+
+Tout modifier/supprimer insère dans `message_log` avant d'effectuer l'action.
+
+### 7. 🏛️ Backoffice admin
+
+Onglet Messages + Onglet Logs — noms résolus via cache en mémoire.
+
+---
+
+## 🌐 APIs externes utilisées
+
+| API | Usage | Endpoint | Coût |
+|-----|-------|----------|------|
+| **API Ninjas Profanity** | Détection contenu inapproprié | `GET https://api.api-ninjas.com/v1/profanityfilter` | 🆓 Gratuit |
+| **API Ninjas Sentiment** | Analyse ton des messages | `GET https://api.api-ninjas.com/v1/sentiment` | 🆓 Gratuit |
+| **detectlanguage.com** | Vérification langue d'un message | `POST https://ws.detectlanguage.com/0.2/detect` | 🆓 1000/jour |
+
+---
+
+## 🔑 Règles métier essentielles
+
+1. **Même langue ET même niveau** dans `user_progress` pour rejoindre un groupe
+2. **Modération et détection langue sont fail-safe** — en cas de panne le message passe
+3. **Tout modifier/supprimer est journalisé** avant que l'action soit effectuée
+4. **Le sentiment est purement décoratif** — aucun impact sur l'envoi
+
+---
+
+## 👥 Équipe
+
+| Membre | Module |
+|--------|--------|
+| **Jihed Ramedi** | Groupe / Message / Chat / Modération IA |
+| **Azer Aissaoui** | User / Authentification / Avatar IA / Google Sheets |
+| **Emna Bahar** | Test / Question / Réponse / TestPassage |
+| **Oumaima Ben Hammou** | Langue / Cours / Niveau / UserProgress |
+| **Sarra Ben Boubaker** | Objectif / Tâche / Gamification / IA |
+| **Yosr Ben Hamouda** | Session / Réservation / Google Calendar / Jitsi |
+
+---
+
+# 📅 Fluently — Module Session / Réservation
+> Application desktop JavaFX — Sessions de conversation avec réservation, Google Calendar, Jitsi/Meet et notifications
+
+---
+
+## 📌 Présentation du module
+
+Ce module est la partie **planification et réservation de sessions** de l'application Fluently. Il permet à un étudiant de consulter les sessions disponibles, de réserver une place, de recevoir une confirmation par QR code, et de rejoindre la session via **Google Meet** ou **Jitsi** intégré dans l'application. Un système de suggestions personnalisées par IA (**Groq LLaMA 3**) recommande les sessions les plus adaptées au profil de l'étudiant. Les sessions sont synchronisées automatiquement avec **Google Calendar**.
+
+Développé en **JavaFX 17** (IntelliJ IDEA + SceneBuilder), connecté à la même base de données MySQL partagée.
+
+---
+
+## 🗂️ Structure du projet
+
+```
+com/example/pijava_fluently/
+├── entites/
+│   ├── Session.java        → session (titre, date, durée, lien Meet/Jitsi, statut, langue, niveau)
+│   └── Reservation.java    → réservation (statut, date, QR code, user, session)
+│
+├── services/
+│   ├── SessionService.java             → CRUD sessions
+│   ├── ReservationService.java         → CRUD réservations + génération QR code
+│   ├── AISessionSuggestionService.java → suggestions personnalisées via Groq LLaMA 3
+│   ├── GoogleCalendarService.java      → synchronisation Google Calendar
+│   ├── NotificationService.java        → notifications in-app + rappels de sessions
+│   └── JitsiService.java               → intégration Jitsi Meet dans l'application
+│
+├── controller/
+│   ├── SessionController.java              → CRUD sessions (admin)
+│   ├── SessionEtudiantController.java      → liste sessions + suggestions IA (étudiant)
+│   ├── ReservationController.java          → réserver, annuler, QR code (étudiant)
+│   └── AdminReservationController.java     → tableau de bord réservations (admin)
+│
+├── fxml/
+│   ├── sessions.fxml
+│   ├── sessions-etudiant.fxml
+│   ├── reservations.fxml
+│   └── admin-reservations.fxml
+│
+└── utils/
+    ├── MyDatabase.java     → Singleton connexion MySQL
+    └── ConfigLoader.java   → lecture config.properties (clés API)
+```
+
+---
+
+## 🗄️ Base de données
+
+**Nom :** `fluently`
+
+```sql
+session     (id, titre, description, date_session, duree_minutes, lien_meet,
+             type_session, statut, capacite, id_langue_id, id_niveau_id, id_user_id)
+
+reservation (id, date_reservation, statut, qr_code_data,
+             id_session_id, id_user_id)
+```
+
+### Types de session
+| Type | Description |
+|------|-------------|
+| `google_meet` | Session via lien Google Meet externe |
+| `jitsi` | Session via Jitsi intégré dans l'application |
+
+### Statuts de session
+| Statut | Description |
+|--------|-------------|
+| `planifiee` | Session à venir, ouverte aux réservations |
+| `en_cours` | Session active en ce moment |
+| `terminee` | Session passée |
+| `annulee` | Session annulée par l'admin |
+
+### Statuts de réservation
+| Statut | Description |
+|--------|-------------|
+| `confirmee` | Réservation validée, QR code généré |
+| `annulee` | Annulée par l'étudiant |
+| `en_attente` | En attente de confirmation admin |
+
+---
+
+## ⚙️ Configuration
+
+Ajouter dans `src/main/resources/config.properties` :
+
+```properties
+# Groq AI (suggestions de sessions)
+groq.api.key=gsk_VOTRE_CLE_GROQ
+
+# Google Calendar + Meet
+google.calendar.client.id=VOTRE_CLIENT_ID
+google.calendar.client.secret=VOTRE_CLIENT_SECRET
+```
+
+> ⚠️ Ne jamais committer ce fichier — ajouté à `.gitignore`
+
+---
+
+## 📦 Dépendances (pom.xml)
+
+```xml
+<!-- ZXing (génération QR code) — partagé avec module Test -->
+<dependency>
+    <groupId>com.google.zxing</groupId>
+    <artifactId>core</artifactId>
+    <version>3.5.2</version>
+</dependency>
+<dependency>
+    <groupId>com.google.zxing</groupId>
+    <artifactId>javase</artifactId>
+    <version>3.5.2</version>
+</dependency>
+
+<!-- JavaFX Web (intégration Jitsi via WebView) — partagé avec module User -->
+<dependency>
+    <groupId>org.openjfx</groupId>
+    <artifactId>javafx-web</artifactId>
+    <version>17.0.6</version>
+</dependency>
+
+<!-- Jackson (parsing JSON Groq) — partagé avec module Test -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.15.2</version>
+</dependency>
+```
+
+---
+
+## 🚀 Fonctionnalités implémentées
+
+### 1. 📋 Gestion des Sessions (SessionController)
+
+**Côté administrateur :**
+- CRUD complet avec validation métier (date non passée, capacité > 0)
+- Choix du type de session : Google Meet (lien externe) ou Jitsi (intégré dans l'application)
+- Synchronisation automatique avec **Google Calendar** à chaque création ou modification
+- Filtres par langue, niveau, statut et date
+- Compteur de places restantes en temps réel
+
+**Côté étudiant (SessionEtudiantController) :**
+- Liste des sessions disponibles filtrables par langue et niveau
+- **Suggestions IA** — Groq LLaMA 3 analyse le profil de l'étudiant (langue, niveau actuel, historique) et recommande les 3 sessions les plus pertinentes avec justification
+- Bouton "Rejoindre" actif uniquement si une réservation confirmée existe
+- Accès direct à Jitsi intégré ou ouverture du lien Google Meet dans le navigateur
+
+### 2. 🎟️ Réservation (ReservationController)
+
+**Pipeline de réservation :**
+```
+1. Vérification places disponibles (capacite - réservations confirmées)
+2. Vérification non-doublon (l'étudiant n'a pas déjà réservé cette session)
+3. INSERT dans reservation (statut = "confirmee")
+4. Génération du QR code (ZXing)
+5. Notification in-app de confirmation
+6. Rechargement de la vue
+```
+
+**QR code de confirmation :**
+- Encodé avec ZXing : nom de l'étudiant, titre de la session, date, ID de réservation
+- Affiché dans un dialog popup avec option de sauvegarde en PNG
+- Auto-contenu — lisible sans serveur
+
+### 3. 🤖 Suggestions IA (AISessionSuggestionService)
+
+Groq LLaMA 3 reçoit en contexte le niveau actuel, la langue étudiée, et les sessions disponibles, puis retourne les 3 sessions les plus adaptées avec une explication courte pour chacune.
+
+```java
+// Prompt structuré envoyé à Groq
+"Voici le profil de l'étudiant : niveau {niveau}, langue {langue}.
+Voici les sessions disponibles : {sessionsJSON}.
+Recommande les 3 sessions les plus adaptées.
+Réponds uniquement en JSON : [{id, titre, raison}]"
+```
+
+Affichage : cartes surlignées avec badge 🤖 et texte de justification.
+
+### 4. 📅 Google Calendar (GoogleCalendarService)
+
+Synchronisation automatique via l'API Google Calendar v3 (même pattern OAuth local que le module User) :
+
+```
+Création session  → INSERT dans Calendar (titre, date, durée, lien Meet/Jitsi)
+Modification      → PATCH dans Calendar (via eventId stocké dans session)
+Annulation        → DELETE dans Calendar
+```
+
+### 5. 📹 Intégration Jitsi (JitsiService)
+
+Les sessions de type `jitsi` s'ouvrent directement dans l'application via **WebView** :
+
+```java
+String roomUrl = "https://meet.jit.si/" + sessionId + "-fluently";
+webView.getEngine().load(roomUrl);
+```
+
+Les sessions Google Meet ouvrent le lien dans le navigateur par défaut via `Desktop.getDesktop().browse()`.
+
+### 6. 🔔 Notifications in-app (NotificationService)
+
+Toasts non-bloquants affichés 3 secondes via `Platform.runLater()` :
+
+| Déclencheur | Message affiché |
+|-------------|----------------|
+| Réservation confirmée | ✅ "Réservation confirmée — [titre session]" |
+| Nouvelle session ajoutée (langue correspondante) | 📅 "Nouvelle session disponible : [titre]" |
+| Session dans moins de 30 minutes | ⏰ "Rappel : [titre] commence dans 30 min" |
+| Annulation par l'admin | ❌ "Session annulée : [titre]" |
+
+**Rappels :** un `ScheduledExecutorService` tourne en arrière-plan et vérifie toutes les 5 minutes si une session réservée approche des 30 minutes.
+
+### 7. 🏛️ Backoffice Admin (AdminReservationController)
+
+- Tableau de toutes les réservations (ID, Session, Étudiant, Date, Statut, QR code)
+- Aperçu du QR code directement depuis la ligne du tableau
+- Confirmation ou annulation manuelle d'une réservation
+- Statistiques : taux de remplissage par session, nombre de réservations par langue
+
+---
+
+## 🔧 Patterns techniques
+
+### Scheduler pour les rappels
+```java
+ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+scheduler.scheduleAtFixedRate(() -> {
+    checkUpcomingSessions();
+}, 0, 5, TimeUnit.MINUTES);
+
+Platform.runLater(() -> showToastNotification("⏰ Rappel : " + session.getTitre()));
+```
+
+### Génération QR code (ZXing)
+```java
+QRCodeWriter writer = new QRCodeWriter();
+BitMatrix matrix  = writer.encode(qrData, BarcodeFormat.QR_CODE, 200, 200);
+BufferedImage img = MatrixToImageWriter.toBufferedImage(matrix);
+```
+
+### Intégration Jitsi via WebView
+```java
+WebView webView = new WebView();
+webView.setPrefSize(900, 600);
+String roomUrl = "https://meet.jit.si/" + sessionId + "-fluently";
+webView.getEngine().load(roomUrl);
+jitsiContainer.getChildren().add(webView);
+```
+
+### Singleton MyDatabase
+```java
+MyDatabase.getInstance().getConnection()
+if (conn == null || conn.isClosed() || !conn.isValid(2)) {
+    MyDatabase.getInstance().reconnect();
+}
+```
+
+---
+
+## 🌐 APIs externes utilisées
+
+| API | Usage | Endpoint | Coût |
+|-----|-------|----------|------|
+| **Groq LLaMA 3** | Suggestions de sessions personnalisées | `POST https://api.groq.com/openai/v1/chat/completions` | 🆓 Gratuit |
+| **Google Calendar API v3** | Synchronisation des sessions | `https://www.googleapis.com/calendar/v3/calendars` | 🆓 Gratuit |
+| **Jitsi Meet** | Visioconférence intégrée (WebView) | `https://meet.jit.si/` | 🆓 Gratuit |
+| **Google Meet** | Visioconférence externe (lien) | Via lien généré | 🆓 Gratuit |
+
+---
+
+## 🔑 Règles métier essentielles
+
+1. **Un étudiant ne peut pas réserver deux fois la même session** — vérification avant INSERT
+2. **Une session pleine n'accepte plus de réservations** — vérifiée en temps réel
+3. **Le QR code est généré à la confirmation uniquement** — pas en statut `en_attente`
+4. **Les rappels ne se déclenchent que pour les réservations confirmées** — statut vérifié avant notification
+5. **Jitsi s'ouvre dans l'application (WebView)**, Google Meet s'ouvre dans le navigateur
+6. **Toute création ou modification de session sync Google Calendar automatiquement** — sans action manuelle de l'admin
+7. **Les notifications sont non-bloquantes** — toast 3 secondes, `Platform.runLater()` obligatoire depuis les threads secondaires
+
+---
+
+## 👥 Équipe
+
+| Membre | Module |
+|--------|--------|
+| **Yosr Ben Hamouda** | Session / Réservation / Google Calendar / Jitsi |
+| **Azer Aissaoui** | User / Authentification / Avatar IA / Google Sheets |
+| **Emna Bahar** | Test / Question / Réponse / TestPassage |
+| **Oumaima Ben Hammou** | Langue / Cours / Niveau / UserProgress |
+| **Sarra Ben Boubaker** | Objectif / Tâche / Gamification / IA |
+| **Jihed Ramedi** | Groupe / Message / Chat / Modération IA |
 
 ---
 
@@ -1270,4 +1639,4 @@ Application desktop JavaFX : ce module
 
 ---
 
-*README mis à jour le 05/05/2026*
+*README mis à jour le 11/05/2026*

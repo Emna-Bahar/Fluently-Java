@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.SVGPath;
+import javafx.scene.transform.Scale;
 import javafx.stage.Popup;
 import javafx.util.Duration;
 
@@ -37,10 +38,7 @@ public class NotificationBell {
     private final List<NotifItem>  notifications = new ArrayList<>();
     private final Set<String>      notifiedKeys  = new HashSet<>();
 
-    // ── Suivi des réservations déjà vues ──────────────────────────
-    // Pour le prof : IDs des réservations "en attente" déjà notifiées
     private final Set<Integer> resasEnAttenteNotifiees = new HashSet<>();
-    // Pour l'étudiant : IDs des réservations "acceptée" déjà notifiées
     private final Set<Integer> resasAccepteesNotifiees = new HashSet<>();
 
     private int                    unreadCount   = 0;
@@ -55,8 +53,6 @@ public class NotificationBell {
     private ScheduledExecutorService scheduler;
 
     private static final DateTimeFormatter FMT_DATE = DateTimeFormatter.ofPattern("dd/MM HH:mm");
-
-    // Fenêtre de détection : 60 jours
     private static final long FENETRE_MINUTES = 86400L;
 
     // ═════════════════════════════════════════════════════════════
@@ -68,14 +64,26 @@ public class NotificationBell {
         this.isProfesseur = isProfesseur;
         this.rootOverlay  = rootOverlay;
 
-        bellIcon = new Label();
-        bellIcon.setGraphic(createBellShape());
-        bellIcon.setStyle(
-                "-fx-cursor:hand;" +
-                        "-fx-padding:10;" +
-                        "-fx-background-color:rgba(0,0,0,0.25);" +
-                        "-fx-background-radius:50;"
+        // ✅ FIX : StackPane violet avec icône parfaitement centrée
+        StackPane bellGraphic = new StackPane();
+        bellGraphic.setPrefSize(40, 40);
+        bellGraphic.setMinSize(40, 40);
+        bellGraphic.setMaxSize(40, 40);
+        bellGraphic.setAlignment(Pos.CENTER);
+        bellGraphic.setStyle(
+                "-fx-background-color:#7C3AED;" +
+                        "-fx-background-radius:50;" +
+                        "-fx-cursor:hand;"
         );
+
+        SVGPath svgBell = createBellShape();
+        StackPane.setAlignment(svgBell, Pos.CENTER);
+        bellGraphic.getChildren().add(svgBell);
+
+        bellIcon = new Label();
+        bellIcon.setGraphic(bellGraphic);
+        bellIcon.setStyle("-fx-cursor:hand; -fx-padding:0;");
+        bellIcon.setAlignment(Pos.CENTER);
 
         badgeLabel = new Label("");
         badgeLabel.setVisible(false);
@@ -94,43 +102,45 @@ public class NotificationBell {
         StackPane.setMargin(badgeLabel, new Insets(-5, -3, 0, 0));
 
         bellRoot = new StackPane(bellIcon, badgeLabel);
-        bellRoot.setPrefSize(40, 40);
-        bellRoot.setMaxSize(40, 40);
+        bellRoot.setPrefSize(48, 48);
+        bellRoot.setMaxSize(48, 48);
         bellRoot.setAlignment(Pos.CENTER);
 
-        bellRoot.setOnMouseEntered(e -> bellIcon.setStyle(
-                "-fx-font-size:20px;-fx-cursor:hand;-fx-padding:7 8 7 8;" +
-                        "-fx-background-color:rgba(0,0,0,0.4);-fx-background-radius:50;" +
-                        "-fx-text-fill:white;"
+        // ✅ Hover sur le fond violet
+        bellGraphic.setOnMouseEntered(e -> bellGraphic.setStyle(
+                "-fx-background-color:#6D28D9;" +
+                        "-fx-background-radius:50;" +
+                        "-fx-cursor:hand;"
         ));
-        bellRoot.setOnMouseExited(e -> bellIcon.setStyle(
-                "-fx-font-size:20px;-fx-cursor:hand;-fx-padding:7 8 7 8;" +
-                        "-fx-background-color:rgba(0,0,0,0.25);-fx-background-radius:50;" +
-                        "-fx-text-fill:white;"
+        bellGraphic.setOnMouseExited(e -> bellGraphic.setStyle(
+                "-fx-background-color:#7C3AED;" +
+                        "-fx-background-radius:50;" +
+                        "-fx-cursor:hand;"
         ));
+
         bellRoot.setOnMouseClicked(e -> {
             e.consume();
             togglePanneau();
         });
 
         demarrerScheduler();
-        // Vérification initiale immédiate en arrière-plan
         new Thread(this::verifierSessionsSilencieux).start();
     }
 
     public StackPane getBellRoot() { return bellRoot; }
 
-    private Node createBellShape() {
+    // ✅ FIX PRINCIPAL : plus de translateX/Y — scale centré sur pivot 12,12
+    private SVGPath createBellShape() {
         SVGPath s = new SVGPath();
         s.setContent("M12 22c1.1 0 2-.9 2-2h-4a2 2 0 002 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 00-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2h16l-2-2z");
         s.setFill(Color.WHITE);
-        s.setScaleX(1.2); s.setScaleY(1.2);
-        s.setTranslateX(4); s.setTranslateY(4);
+        Scale scale = new Scale(1.1, 1.1, 12, 12);
+        s.getTransforms().add(scale);
         return s;
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  SCHEDULER — vérification toutes les 30 secondes
+    //  SCHEDULER
     // ═════════════════════════════════════════════════════════════
 
     private void demarrerScheduler() {
@@ -140,11 +150,11 @@ public class NotificationBell {
             return t;
         });
         scheduler.scheduleAtFixedRate(
-                this::verifierSessionsSilencieux, 0, 30, TimeUnit.SECONDS);  // ← ICI
+                this::verifierSessionsSilencieux, 0, 30, TimeUnit.SECONDS);
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  POINT D'ENTRÉE VÉRIFICATION
+    //  VÉRIFICATION
     // ═════════════════════════════════════════════════════════════
 
     private void verifierSessionsSilencieux() {
@@ -163,14 +173,10 @@ public class NotificationBell {
 
         try {
             if (isProfesseur) {
-                // ── PROFESSEUR : nouvelles demandes de réservation ──
                 verifierDemandesReservationProfesseur(nouvelles);
-                // ── PROFESSEUR : rappels sessions à venir ──────────
                 verifierRappelsSessionsProfesseur(nouvelles);
             } else {
-                // ── ÉTUDIANT : réservations acceptées/refusées ─────
                 verifierStatutReservationsEtudiant(nouvelles);
-                // ── ÉTUDIANT : rappels sessions à venir ────────────
                 verifierRappelsSessionsEtudiant(nouvelles);
             }
         } catch (SQLException e) {
@@ -194,31 +200,25 @@ public class NotificationBell {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  PROFESSEUR — Nouvelles demandes de réservation en attente
+    //  PROFESSEUR — Demandes de réservation
     // ═════════════════════════════════════════════════════════════
 
     private void verifierDemandesReservationProfesseur(List<NotifItem> nouvelles)
             throws SQLException {
-        // Récupérer toutes les réservations en attente pour les sessions du prof
         List<Reservation> toutesResas = reservationSvc.recuperer();
 
         for (Reservation r : toutesResas) {
             if (r.getStatut() == null) continue;
-
             String statut = normaliserStatut(r.getStatut());
 
-            // Notifier uniquement les "en attente" pas encore vues
             if (statut.contains("attente") && !resasEnAttenteNotifiees.contains(r.getId())) {
-                // Vérifier que la session appartient bien à ce professeur
                 Session session = sessionSvc.recupererParId(r.getIdSessionId());
                 if (session != null && session.getIdUserId() == userId) {
                     resasEnAttenteNotifiees.add(r.getId());
-
-                    String nomSession = nomSession(session);
                     nouvelles.add(new NotifItem(
                             "📩",
                             "Nouvelle demande de réservation",
-                            "Un étudiant demande à rejoindre : " + nomSession,
+                            "Un étudiant demande à rejoindre : " + nomSession(session),
                             "#7C3AED",
                             LocalDateTime.now(),
                             session
@@ -241,13 +241,12 @@ public class NotificationBell {
             if (s.getIdUserId() != userId) continue;
             if (s.getDateHeure() == null) continue;
             if ("annulée".equals(s.getStatut())) continue;
-
             ajouterRappelsTemporels(s, now, nouvelles);
         }
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  ÉTUDIANT — Statut réservations (acceptée / refusée)
+    //  ÉTUDIANT — Statut réservations
     // ═════════════════════════════════════════════════════════════
 
     private void verifierStatutReservationsEtudiant(List<NotifItem> nouvelles)
@@ -256,15 +255,12 @@ public class NotificationBell {
 
         for (Reservation r : resas) {
             if (r.getStatut() == null) continue;
-
             String statut = normaliserStatut(r.getStatut());
 
-            // Réservation ACCEPTÉE — notifier l'étudiant
             if ((statut.contains("accept") || statut.contains("confirmee") || statut.contains("validee"))
                     && !resasAccepteesNotifiees.contains(r.getId())) {
 
                 resasAccepteesNotifiees.add(r.getId());
-
                 Session session = sessionSvc.recupererParId(r.getIdSessionId());
                 String nomSession = session != null ? nomSession(session) : "Session #" + r.getIdSessionId();
                 String dateInfo = (session != null && session.getDateHeure() != null)
@@ -280,13 +276,11 @@ public class NotificationBell {
                 ));
             }
 
-            // Réservation REFUSÉE — notifier l'étudiant
             String keyRefus = "refus_" + r.getId();
             if ((statut.contains("refus") || statut.contains("rejet") || statut.contains("annul"))
                     && !notifiedKeys.contains(keyRefus)) {
 
                 notifiedKeys.add(keyRefus);
-
                 Session session = sessionSvc.recupererParId(r.getIdSessionId());
                 String nomSession = session != null ? nomSession(session) : "Session #" + r.getIdSessionId();
 
@@ -308,7 +302,6 @@ public class NotificationBell {
 
     private void verifierRappelsSessionsEtudiant(List<NotifItem> nouvelles)
             throws SQLException {
-        // Récupérer les sessions pour lesquelles l'étudiant a une réservation acceptée
         List<Session> sessions = chargerSessionsEtudiant();
         LocalDateTime now = LocalDateTime.now();
 
@@ -320,7 +313,7 @@ public class NotificationBell {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  RAPPELS TEMPORELS COMMUNS (prof + étudiant)
+    //  RAPPELS TEMPORELS COMMUNS
     // ═════════════════════════════════════════════════════════════
 
     private void ajouterRappelsTemporels(Session s, LocalDateTime now,
@@ -329,7 +322,6 @@ public class NotificationBell {
         String nom   = nomSession(s);
         String heure = s.getDateHeure().format(FMT_DATE);
 
-        // Dans les 60 jours
         String kSoon = "soon_" + s.getId();
         if (min > 0 && min <= FENETRE_MINUTES && !notifiedKeys.contains(kSoon)) {
             notifiedKeys.add(kSoon);
@@ -353,7 +345,6 @@ public class NotificationBell {
                     LocalDateTime.now(), s));
         }
 
-        // 1h avant
         String k1h = "1h_" + s.getId();
         if (min >= 55 && min <= 65 && !notifiedKeys.contains(k1h)) {
             notifiedKeys.add(k1h);
@@ -362,7 +353,6 @@ public class NotificationBell {
                     "#F59E0B", LocalDateTime.now(), s));
         }
 
-        // 15 min avant
         String k15 = "15m_" + s.getId();
         if (min >= 12 && min <= 17 && !notifiedKeys.contains(k15)) {
             notifiedKeys.add(k15);
@@ -371,7 +361,6 @@ public class NotificationBell {
                     "#EF4444", LocalDateTime.now(), s));
         }
 
-        // En live
         String kNow = "live_" + s.getId();
         if (min >= -3 && min <= 3 && !notifiedKeys.contains(kNow)) {
             notifiedKeys.add(kNow);
@@ -407,7 +396,7 @@ public class NotificationBell {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  HELPER — normaliser le statut (accents, casse)
+    //  HELPER — normaliser statut
     // ═════════════════════════════════════════════════════════════
 
     private String normaliserStatut(String statut) {
@@ -417,7 +406,7 @@ public class NotificationBell {
     }
 
     // ═════════════════════════════════════════════════════════════
-    //  AJOUT MANUEL (depuis controllers)
+    //  AJOUT MANUEL
     // ═════════════════════════════════════════════════════════════
 
     public void ajouterNotification(String icon, String titre, String message,
@@ -483,7 +472,6 @@ public class NotificationBell {
             panneauPopup = null;
         }
 
-        // Délai pour laisser Platform.runLater() finir
         javafx.animation.PauseTransition delay =
                 new javafx.animation.PauseTransition(Duration.millis(150));
         delay.setOnFinished(ev -> {
@@ -491,7 +479,7 @@ public class NotificationBell {
             VBox p = buildPanneau();
 
             javafx.scene.Scene sc = new javafx.scene.Scene(p);
-            sc.setFill(null); // transparent
+            sc.setFill(null);
 
             javafx.stage.Stage popStage = new javafx.stage.Stage();
             popStage.initStyle(javafx.stage.StageStyle.UNDECORATED);
@@ -499,14 +487,12 @@ public class NotificationBell {
             popStage.setScene(sc);
             popStage.setAlwaysOnTop(true);
 
-            // Position sous la cloche
             javafx.geometry.Point2D pt = bellRoot.localToScreen(0, 0);
             double x = Math.max(8, pt.getX() - 360 + 40);
             double y = pt.getY() + 50;
             popStage.setX(x);
             popStage.setY(y);
 
-            // Fermer si on clique ailleurs
             popStage.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
                 if (!isFocused) {
                     popStage.close();
@@ -522,14 +508,12 @@ public class NotificationBell {
                 panneauPopup  = null;
             });
 
-            // Garder référence dans panneauPopup via un wrapper
             panneauPopup = new Popup();
             panneauPopup.setOnHidden(e -> popStage.close());
 
             panneau = p;
             popStage.show();
 
-            // Animation d'ouverture
             p.setOpacity(0);
             FadeTransition fd = new FadeTransition(Duration.millis(200), p);
             fd.setFromValue(0); fd.setToValue(1);
@@ -537,6 +521,7 @@ public class NotificationBell {
         });
         delay.play();
     }
+
     private void fermerPanneau() {
         panneauOuvert = false;
         panneau = null;
@@ -566,7 +551,6 @@ public class NotificationBell {
                         "-fx-effect:dropshadow(gaussian,rgba(124,58,237,0.25),32,0,0,12);"
         );
 
-        // ── Header ────────────────────────────────────────────────
         HBox header = new HBox(8);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(16, 18, 12, 18));
@@ -610,7 +594,6 @@ public class NotificationBell {
         sep.setStyle("-fx-background-color:#EDE9FE;");
         root.getChildren().add(sep);
 
-        // ── Liste ────────────────────────────────────────────────
         VBox liste = new VBox(0);
         ScrollPane scroll = new ScrollPane(liste);
         scroll.setFitToWidth(true);
@@ -694,7 +677,6 @@ public class NotificationBell {
 
         root.getChildren().add(scroll);
 
-        // ── Footer ───────────────────────────────────────────────
         Separator sep2 = new Separator();
         sep2.setStyle("-fx-background-color:#EDE9FE;");
         Button btnAct = new Button(notifications.isEmpty()
@@ -714,7 +696,6 @@ public class NotificationBell {
                         "-fx-font-size:13px;-fx-font-weight:bold;-fx-cursor:hand;" +
                         "-fx-padding:12 0 12 0;-fx-background-radius:0 0 16 16;"));
         btnAct.setOnAction(e -> {
-            // Forcer une nouvelle vérification complète
             notifiedKeys.clear();
             resasEnAttenteNotifiees.clear();
             resasAccepteesNotifiees.clear();
@@ -746,10 +727,12 @@ public class NotificationBell {
         row.setStyle("-fx-background-color:transparent;-fx-cursor:hand;");
 
         StackPane iconBox = new StackPane();
-        iconBox.setPrefSize(46, 46); iconBox.setMinSize(46, 46);
+        iconBox.setPrefSize(46, 46);
+        iconBox.setMinSize(46, 46);
         Circle bg = new Circle(23);
         bg.setFill(Color.web(item.couleur + "22"));
-        bg.setStroke(Color.web(item.couleur)); bg.setStrokeWidth(1.5);
+        bg.setStroke(Color.web(item.couleur));
+        bg.setStrokeWidth(1.5);
         Label iconL = new Label(item.icon);
         iconL.setStyle("-fx-font-size:20px;");
         iconBox.getChildren().addAll(bg, iconL);
@@ -769,17 +752,16 @@ public class NotificationBell {
         msgL.setWrapText(true);
 
         long minAgo = ChronoUnit.MINUTES.between(item.dateHeure, LocalDateTime.now());
-        String temps = minAgo < 1    ? "À l'instant"
-                : minAgo < 60  ? "Il y a " + minAgo + " min"
+        String temps = minAgo < 1     ? "À l'instant"
+                : minAgo < 60   ? "Il y a " + minAgo + " min"
                 : minAgo < 1440 ? "Il y a " + (minAgo / 60) + "h"
-                :                "Il y a " + (minAgo / 1440) + "j";
+                :                 "Il y a " + (minAgo / 1440) + "j";
         Label dateL = new Label(temps);
         dateL.setStyle(
                 "-fx-font-size:11px;-fx-text-fill:" + item.couleur + ";-fx-font-weight:bold;"
         );
         content.getChildren().addAll(titreL, msgL, dateL);
 
-        // Bouton Rejoindre si lien disponible
         if (item.session != null
                 && item.session.getLienReunion() != null
                 && !item.session.getLienReunion().isBlank()) {

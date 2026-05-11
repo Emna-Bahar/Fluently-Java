@@ -15,6 +15,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -65,20 +67,44 @@ public class PerformanceDashboardController {
     }
 
     private void setupCharts() {
-        // Configuration du graphique de progression
-        progressionChart.setTitle("Évolution des scores");
-        progressionChart.getXAxis().setLabel("Date");
-        progressionChart.getYAxis().setLabel("Score (%)");
+        // LineChart — désactiver l'animation, activer symboles, configurer axes
+        progressionChart.setAnimated(false);
         progressionChart.setCreateSymbols(true);
         progressionChart.setLegendVisible(false);
+        progressionChart.setHorizontalGridLinesVisible(true);
+        progressionChart.setVerticalGridLinesVisible(false);
 
-        // Configuration du graphique des compétences
-        competencesChart.setTitle("Compétences par type");
-        competencesChart.getXAxis().setLabel("Compétence");
-        competencesChart.getYAxis().setLabel("Score (%)");
+        CategoryAxis xAxis = (CategoryAxis) progressionChart.getXAxis();
+        NumberAxis yAxis = (NumberAxis) progressionChart.getYAxis();
+
+        xAxis.setLabel("Date");
+        xAxis.setTickLabelRotation(-35);        // ← évite le chevauchement des dates
+        xAxis.setTickLabelGap(8);
+
+        yAxis.setLabel("Score (%)");
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(0);
+        yAxis.setUpperBound(100);
+        yAxis.setTickUnit(25);
+        yAxis.setForceZeroInRange(true);
+
+        // BarChart — compétences
+        competencesChart.setAnimated(false);
         competencesChart.setLegendVisible(false);
-        competencesChart.setCategoryGap(30);
-        competencesChart.setBarGap(10);
+        competencesChart.setHorizontalGridLinesVisible(true);
+        competencesChart.setVerticalGridLinesVisible(false);
+        competencesChart.setCategoryGap(20);
+        competencesChart.setBarGap(4);
+
+        CategoryAxis xAxisBar = (CategoryAxis) competencesChart.getXAxis();
+        NumberAxis yAxisBar  = (NumberAxis) competencesChart.getYAxis();
+
+        xAxisBar.setLabel("");                  // les noms sont déjà clairs
+        yAxisBar.setLabel("Score (%)");
+        yAxisBar.setAutoRanging(false);
+        yAxisBar.setLowerBound(0);
+        yAxisBar.setUpperBound(100);
+        yAxisBar.setTickUnit(20);
     }
 
     private void loadLanguages() {
@@ -206,26 +232,72 @@ public class PerformanceDashboardController {
 
     private void updateProgressionChart(List<AdvancedAnalyticsService.PointProgression> points) {
         progressionChart.getData().clear();
+        if (points == null || points.isEmpty()) return;
+
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Score");
 
+        DateTimeFormatter inputFmt  = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("dd/MM");
+
         for (AdvancedAnalyticsService.PointProgression p : points) {
-            series.getData().add(new XYChart.Data<>(p.date, p.score));
+            String label;
+            try {
+                label = LocalDate.parse(p.date, inputFmt).format(outputFmt);
+            } catch (Exception e) {
+                label = p.date;   // fallback si format inattendu
+            }
+            // Borner le score entre 0 et 100
+            double score = Math.max(0, Math.min(100, p.score));
+            series.getData().add(new XYChart.Data<>(label, score));
         }
         progressionChart.getData().add(series);
+
+        // Colorier la ligne après ajout (le CSS style n'est disponible qu'après layout)
+        Platform.runLater(() -> {
+            progressionChart.lookupAll(".chart-series-line").forEach(node ->
+                    node.setStyle("-fx-stroke: #6366F1; -fx-stroke-width: 2.5px;"));
+            progressionChart.lookupAll(".chart-line-symbol").forEach(node ->
+                    node.setStyle(
+                            "-fx-background-color: #6366F1, white;" +
+                                    "-fx-background-radius: 6px;" +
+                                    "-fx-padding: 5px;"));
+        });
     }
 
     private void updateCompetencesChart(AdvancedAnalyticsService.CompetencesHeatmap comp) {
         competencesChart.getData().clear();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Score");
 
-        series.getData().add(new XYChart.Data<>("Grammaire", comp.grammaire));
-        series.getData().add(new XYChart.Data<>("Vocabulaire", comp.vocabulaire));
-        series.getData().add(new XYChart.Data<>("Compréhension", comp.comprehension));
-        series.getData().add(new XYChart.Data<>("Oral", comp.oral));
+        String[][] data = {
+                {"Grammaire",      String.valueOf(Math.min(100, comp.grammaire))},
+                {"Vocabulaire",    String.valueOf(Math.min(100, comp.vocabulaire))},
+                {"Compréhension",  String.valueOf(Math.min(100, comp.comprehension))},
+                {"Oral",           String.valueOf(Math.min(100, comp.oral))}
+        };
 
+        for (String[] d : data) {
+            series.getData().add(new XYChart.Data<>(d[0], Double.parseDouble(d[1])));
+        }
         competencesChart.getData().add(series);
+
+        // Colorier les barres selon le score
+        Platform.runLater(() -> {
+            int i = 0;
+            for (XYChart.Data<String, Number> item : series.getData()) {
+                double val = item.getYValue().doubleValue();
+                String color = val >= 70 ? "#10B981" : val >= 50 ? "#F59E0B" : "#EF4444";
+                if (item.getNode() != null) {
+                    item.getNode().setStyle(
+                            "-fx-bar-fill: " + color + ";" +
+                                    "-fx-background-radius: 4 4 0 0;");
+                    // Tooltip avec la valeur
+                    Tooltip.install(item.getNode(),
+                            new Tooltip(item.getXValue() + " : " + String.format("%.0f%%", val)));
+                }
+                i++;
+            }
+        });
     }
 
     private void updateHoraireCard(AdvancedAnalyticsService.HoraireAnalysis horaire) {

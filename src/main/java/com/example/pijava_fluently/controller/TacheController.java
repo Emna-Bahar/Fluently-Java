@@ -77,7 +77,7 @@ public class TacheController {
     private Timeline titreDebounceTimer;
     private Timeline descDebounceTimer;
 
-    // ── Services & État ──────────────────────────────────────────
+    // ── Services & État ──+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++────────────────────────────────────────
     private final TacheService    service         = new TacheService();
     private final ObjectifService objectifService = new ObjectifService();
     private SpellCheckerService   spellChecker;
@@ -94,7 +94,7 @@ public class TacheController {
     private Tache tacheEnGlissement = null;
 
     // ── Constantes ───────────────────────────────────────────────
-    private static final String[] STATUTS   = {"À faire", "En cours", "Terminée", "Annulée"};
+    private static final String[] STATUTS = {"À faire", "En cours", "terminee", "Annulée"};
     private static final String[] PRIORITES = {"Basse", "Normale", "Haute", "Urgente"};
     private static final String[] LANGUES   = {"Français", "Anglais", "Espagnol", "Allemand", "Italien", "Portugais"};
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
